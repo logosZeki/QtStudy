@@ -1,41 +1,33 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
 
-// 前向声明
-class QGraphicsScene;
-class FlowchartGraphicsView;
-class ComponentListWidget;
-class QToolBar;
-class QAction;
-class QDockWidget;
+#include <QWidget>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QRect>
 
-class MainWindow : public QMainWindow
+class MainWindow : public QWidget
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit MainWindow(QWidget *parent = nullptr);
 
-private slots:
-    void saveFlowchart(); // 保存按钮的槽函数 (待实现)
-    void loadFlowchart(); // 加载按钮的槽函数 (待实现)
+protected:
+    // 重写绘制事件
+    void paintEvent(QPaintEvent *event) override;
+    // 重写鼠标按下事件
+    void mousePressEvent(QMouseEvent *event) override;
+    // 重写鼠标移动事件
+    void mouseMoveEvent(QMouseEvent *event) override;
+    // 重写鼠标释放事件
+    void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
-    void createActions();      // 创建动作 (Save/Load)
-    void createToolbars();     // 创建工具栏
-    void createDocks();        // 创建组件库停靠窗口
-    void createCentralWidget();// 创建编辑区
-
-    QGraphicsScene *scene;          // 图形场景
-    FlowchartGraphicsView *view;    // 图形视图 (编辑区)
-    ComponentListWidget *componentList; // 组件库列表
-    QDockWidget *componentDock;     // 组件库停靠窗口
-
-    QToolBar *fileToolBar;       // 文件工具栏
-    QAction *saveAction;         // 保存动作
-    QAction *loadAction;         // 加载动作
+    QRect m_rect;          // 矩形
+    bool m_dragging;       // 是否正在拖动
+    QPoint m_dragStart;    // 拖动开始点
+    QPoint m_rectStart;    // 矩形原始位置
 };
 #endif // MAINWINDOW_H
