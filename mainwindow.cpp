@@ -1,87 +1,31 @@
 #include "mainwindow.h"
 
-
-
-MainWindow::MainWindow(QWidget *parent) : QWidget(parent),
-    m_dragging(false)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
 {
-    // 设置窗口背景为白色
-    setAutoFillBackground(true);
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, Qt::white);
-    setPalette(pal);
+    // 创建中央部件
+    m_centralWidget = new QWidget(this);
+    setCentralWidget(m_centralWidget);
 
-    // 设置初始矩形位置
-    m_rect = QRect(100, 100, 200, 150);
+    // 创建水平布局
+    m_layout = new QHBoxLayout(m_centralWidget);
 
-    // 允许鼠标追踪，以便实现平滑的拖动效果
-    setMouseTracking(true);//启用鼠标跟踪，即使没有按下任何按钮，wideget也会接收鼠标移动事件。默认情况不启用鼠标跟踪，按下按钮才会接收鼠标移动事件
+    // 创建工具栏和绘图区域
+    m_toolBar = new ToolBar(this);
+    m_drawingArea = new DrawingArea(this);
+
+    // 设置工具栏固定宽度
+    m_toolBar->setFixedWidth(150);
+
+    // 添加到布局
+    m_layout->addWidget(m_toolBar);
+    m_layout->addWidget(m_drawingArea);
+
+    // 设置窗口标题和大小
+    setWindowTitle("简单流程图设计器");
+    resize(800, 600);
 }
 
-void MainWindow::paintEvent(QPaintEvent *event)
+MainWindow::~MainWindow()
 {
-    Q_UNUSED(event);
-
-    // 创建绘图器
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-
-    // 设置矩形样式与颜色
-    painter.setPen(QPen(Qt::black, 2));
-    painter.setBrush(QBrush(QColor(1, 162, 232, 128)));
-
-    // 绘制矩形
-    painter.drawRect(m_rect);
-}
-
-void MainWindow::mousePressEvent(QMouseEvent *event)
-{
-    // 检查鼠标点击是否在矩形内
-    if (event->button() == Qt::LeftButton && m_rect.contains(event->pos()))
-    {
-        m_dragging = true;
-        m_dragStart = event->pos();
-        m_rectStart = m_rect.topLeft();
-        setCursor(Qt::ClosedHandCursor);//把鼠标光标变为一个握紧的手的图标
-    }
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent *event)
-{
-    // 如果正在拖动，更新矩形位置
-    if (m_dragging)
-    {
-        QPoint delta = event->pos() - m_dragStart;
-        m_rect.moveTo(m_rectStart + delta);
-
-        // 重绘窗口以更新矩形位置
-        update();
-    }
-    else if (m_rect.contains(event->pos()))
-    {
-        // 当鼠标悬停在矩形上时，改变光标形状
-        setCursor(Qt::OpenHandCursor);//把鼠标光标变为一个张开的手的图标
-    }
-    else
-    {
-        // 鼠标不在矩形上时，使用默认光标
-        setCursor(Qt::ArrowCursor);
-    }
-}
-
-void MainWindow::mouseReleaseEvent(QMouseEvent *event)
-{
-    // 如果释放左键，结束拖动状态
-    if (event->button() == Qt::LeftButton && m_dragging)
-    {
-        m_dragging = false;
-        if (m_rect.contains(event->pos()))
-        {
-            setCursor(Qt::OpenHandCursor);
-        }
-        else
-        {
-            setCursor(Qt::ArrowCursor);
-        }
-    }
 }
