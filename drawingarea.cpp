@@ -25,18 +25,19 @@ DrawingArea::~DrawingArea()
 void DrawingArea::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
-
+    
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-
+    
     // 绘制所有形状
     for (Shape *shape : m_shapes) {
         shape->paint(&painter);
-
+        
         // 如果是当前选中的形状，绘制一个选中框
         if (shape == m_selectedShape) {
             painter.setPen(QPen(Qt::blue, 2, Qt::DashLine));
             painter.setBrush(Qt::NoBrush);
+            // 直接使用形状的rect来绘制选中框
             painter.drawRect(shape->rect().adjusted(-2, -2, 2, 2));
         }
     }
@@ -62,13 +63,29 @@ void DrawingArea::dropEvent(QDropEvent *event)
         // 获取形状类型
         bool ok;
         int typeValue = event->mimeData()->text().toInt(&ok);
-
+        
         if (ok) {
             ShapeType type = static_cast<ShapeType>(typeValue);
-
+            
             // 创建形状的初始区域
-            QRect shapeRect(event->pos().x() - 40, event->pos().y() - 30, 80, 60);
-
+            QRect shapeRect;
+            
+            // 根据类型设置不同的初始大小
+            switch (type) {
+            case Rectangle:
+                shapeRect = QRect(event->pos().x() - 40, event->pos().y() - 30, 80, 60);
+                break;
+            case Circle:
+                shapeRect = QRect(event->pos().x() - 35, event->pos().y() - 35, 70, 70);
+                break;
+            case Pentagon:
+                shapeRect = QRect(event->pos().x() - 35, event->pos().y() - 35, 70, 70);
+                break;
+            case Ellipse:
+                shapeRect = QRect(event->pos().x() - 50, event->pos().y() - 30, 100, 60);
+                break;
+            }
+            
             // 根据类型创建对应的形状
             Shape *newShape = nullptr;
             switch (type) {
@@ -85,22 +102,23 @@ void DrawingArea::dropEvent(QDropEvent *event)
                 newShape = new EllipseShape(shapeRect);
                 break;
             }
-
+            
             if (newShape) {
                 // 添加到形状列表
                 m_shapes.append(newShape);
-
+                
                 // 选中新创建的形状
                 m_selectedShape = newShape;
-
+                
                 // 重绘
                 update();
             }
         }
-
+        
         event->acceptProposedAction();
     }
 }
+
 
 void DrawingArea::mousePressEvent(QMouseEvent *event)
 {

@@ -21,26 +21,26 @@ class Shape
 public:
     Shape(ShapeType type, const QRect &rect);
     virtual ~Shape();
-
+    
     // 绘制形状
     virtual void paint(QPainter *painter) = 0;
-
+    
     // 获取和设置位置和大小
     QRect rect() const { return m_rect; }
-    void setRect(const QRect &rect) { m_rect = rect; }
-
+    virtual void setRect(const QRect &rect);
+    
     // 获取形状类型
     ShapeType type() const { return m_type; }
-
+    
     // 检查点是否在形状内
     virtual bool contains(const QPoint &point) const;
-
+    
     // 获取形状名称
     QString name() const;
 
 protected:
     ShapeType m_type;
-    QRect m_rect;
+    QRect m_rect;  // 形状的边界矩形
 };
 
 // 矩形形状
@@ -57,6 +57,8 @@ class CircleShape : public Shape
 public:
     CircleShape(const QRect &rect);
     void paint(QPainter *painter) override;
+    bool contains(const QPoint &point) const override;
+    void setRect(const QRect &rect) override;
 };
 
 // 五边形形状
@@ -65,6 +67,10 @@ class PentagonShape : public Shape
 public:
     PentagonShape(const QRect &rect);
     void paint(QPainter *painter) override;
+    bool contains(const QPoint &point) const override;
+    
+private:
+    QPolygon createPentagonPolygon() const;
 };
 
 // 椭圆形形状
@@ -73,6 +79,7 @@ class EllipseShape : public Shape
 public:
     EllipseShape(const QRect &rect);
     void paint(QPainter *painter) override;
+    bool contains(const QPoint &point) const override;
 };
 
 #endif // SHAPE_H

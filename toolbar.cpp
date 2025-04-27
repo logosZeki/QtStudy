@@ -9,26 +9,43 @@ ShapeItem::ShapeItem(ShapeType type, const QString &name, QWidget *parent)
 {
     // 设置固定大小
     setFixedHeight(70);
-    m_shapeRect = QRect(20, 10, 50, 50);
-
+    
+    // 修改：根据类型调整形状的大小和位置
+    switch (m_type) {
+    case Rectangle:
+        m_shapeRect = QRect(25, 10, 50, 50);
+        break;
+    case Circle:
+        m_shapeRect = QRect(25, 10, 50, 50);
+        break;
+    case Pentagon:
+        m_shapeRect = QRect(25, 10, 50, 50);
+        break;
+    case Ellipse:
+        // 椭圆形使用更宽的矩形
+        m_shapeRect = QRect(15, 15, 70, 40);
+        break;
+    }
+    
     // 允许鼠标追踪
     setMouseTracking(true);
 }
 
+
 void ShapeItem::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
-
+    
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-
+    
     // 绘制背景
     painter.fillRect(rect(), QColor(240, 240, 240));
-
+    
     // 绘制形状
     painter.setPen(QPen(Qt::black, 2));
     painter.setBrush(QBrush(QColor(255, 255, 255)));
-
+    
     switch (m_type) {
     case Rectangle:
         painter.drawRect(m_shapeRect);
@@ -41,14 +58,14 @@ void ShapeItem::paintEvent(QPaintEvent *event)
         int centerX = m_shapeRect.center().x();
         int centerY = m_shapeRect.center().y();
         int radius = qMin(m_shapeRect.width(), m_shapeRect.height()) / 2;
-
+        
         for (int i = 0; i < 5; ++i) {
             double angle = i * 2 * M_PI / 5 - M_PI / 2;
             int x = centerX + radius * cos(angle);
             int y = centerY + radius * sin(angle);
             polygon << QPoint(x, y);
         }
-
+        
         painter.drawPolygon(polygon);
         break;
     }
@@ -57,9 +74,6 @@ void ShapeItem::paintEvent(QPaintEvent *event)
         break;
     }
 
-    // 绘制名称
-    painter.drawText(QRect(0, m_shapeRect.bottom() + 5, width(), 20),
-                    Qt::AlignCenter, m_name);
 }
 
 void ShapeItem::mousePressEvent(QMouseEvent *event)
