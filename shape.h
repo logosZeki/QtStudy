@@ -4,8 +4,8 @@
 #include <QRect>
 #include <QPainter>
 #include <QString>
-#define _USE_MATH_DEFINES // <--- 添加这一行，确保 M_PI 可用
-#include <cmath>          // <--- 添加这一行，包含数学函数和常量
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 // 形状类型枚举
 enum ShapeType {
@@ -19,7 +19,7 @@ enum ShapeType {
 class Shape
 {
 public:
-    Shape(ShapeType type, const QRect &rect);
+    Shape(ShapeType type, const int &basis);
     virtual ~Shape();
     
     // 绘制形状
@@ -47,7 +47,7 @@ protected:
 class RectangleShape : public Shape
 {
 public:
-    RectangleShape(const QRect &rect);
+    RectangleShape(const int &basis);
     void paint(QPainter *painter) override;
 };
 
@@ -55,7 +55,7 @@ public:
 class CircleShape : public Shape
 {
 public:
-    CircleShape(const QRect &rect);
+    CircleShape(const int &basis);
     void paint(QPainter *painter) override;
     bool contains(const QPoint &point) const override;
     void setRect(const QRect &rect) override;
@@ -65,19 +65,20 @@ public:
 class PentagonShape : public Shape
 {
 public:
-    PentagonShape(const QRect &rect);
+    PentagonShape(const int &basis);
     void paint(QPainter *painter) override;
     bool contains(const QPoint &point) const override;
     
 private:
     QPolygon createPentagonPolygon() const;
+    int m_basis; // 存储基准值用于绘制
 };
 
 // 椭圆形形状
 class EllipseShape : public Shape
 {
 public:
-    EllipseShape(const QRect &rect);
+    EllipseShape(const int &basis);
     void paint(QPainter *painter) override;
     bool contains(const QPoint &point) const override;
 };
