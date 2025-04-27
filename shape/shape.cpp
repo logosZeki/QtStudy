@@ -1,5 +1,5 @@
-#include "shape.h"
-#include <QPolygon>
+#include "shape/shape.h"
+
 
 // Shape基类
 Shape::Shape(ShapeType type, const int &basis)

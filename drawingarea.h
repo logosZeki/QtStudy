@@ -6,7 +6,7 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMouseEvent>
-#include "shape.h"
+#include "shape/shape.h"
 
 class DrawingArea : public QWidget
 {
