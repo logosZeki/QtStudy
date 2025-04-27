@@ -1,6 +1,7 @@
 #include "drawingarea.h"
 #include <QPainter>
 #include <QMimeData>
+#include "shape/shapefactory.h"
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false)
@@ -60,42 +61,21 @@ void DrawingArea::dropEvent(QDropEvent *event)
 {
     if (event->mimeData()->hasText()) {
         // 获取形状类型
-        bool ok;
-        int typeValue = event->mimeData()->text().toInt(&ok);
+        QString type = event->mimeData()->text();
         
-        if (ok) {
-            ShapeType type = static_cast<ShapeType>(typeValue);
-            
-            
-            // 根据类型创建形状对象
-            Shape *newShape = nullptr;
-            int basis = 55; // 基准值设为55
-
-            switch (type) {
-            case Rectangle:
-                newShape = new RectangleShape(basis);
-                break;
-            case Circle:
-                newShape = new CircleShape(basis);
-                break;
-            case Pentagon:
-                newShape = new PentagonShape(basis);
-                break;
-            case Ellipse:
-                newShape = new EllipseShape(basis);
-                break;
-            }
-            
-            // 设置形状位置
-            if (newShape) {
-                QRect shapeRect = newShape->rect();
-                shapeRect.moveCenter(event->pos());
-                newShape->setRect(shapeRect);
-                m_selectedShape = newShape; // 设置为当前选中形状
-                // 添加形状到列表
-                m_shapes.append(newShape);
-                update();
-            }
+        // 使用工厂创建形状对象
+        int basis = 55; // 基准值设为55
+        Shape *newShape = ShapeFactory::instance().createShape(type, basis);
+        
+        // 设置形状位置
+        if (newShape) {
+            QRect shapeRect = newShape->rect();
+            shapeRect.moveCenter(event->pos());
+            newShape->setRect(shapeRect);
+            m_selectedShape = newShape; // 设置为当前选中形状
+            // 添加形状到列表
+            m_shapes.append(newShape);
+            update();
         }
         
         event->acceptProposedAction();

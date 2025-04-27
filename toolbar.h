@@ -14,18 +14,18 @@ class ShapeItem : public QWidget
     Q_OBJECT
 
 public:
-    ShapeItem(ShapeType type, const QString &name, QWidget *parent = nullptr);
+    ShapeItem(const QString& type, const QString& displayName, QWidget* parent = nullptr);
 
-    ShapeType type() const { return m_type; }
+    QString type() const { return m_type; }
 
 protected:
-    void paintEvent(QPaintEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
+    void paintEvent(QPaintEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
 
 private:
-    ShapeType m_type;
-    QString m_name;
+    QString m_type;
+    QString m_displayName;
     QRect m_shapeRect;
 };
 
@@ -35,11 +35,11 @@ class ToolBar : public QWidget
     Q_OBJECT
 
 public:
-    ToolBar(QWidget *parent = nullptr);
+    ToolBar(QWidget* parent = nullptr);
 
 private:
-    QVBoxLayout *m_layout;
-    QLabel *m_titleLabel;
+    QVBoxLayout* m_layout;
+    QLabel* m_titleLabel;
 };
 
 #endif // TOOLBAR_H

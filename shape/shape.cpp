@@ -1,8 +1,8 @@
 #include "shape/shape.h"
-
+#include "shape/shapefactory.h"
 
 // Shape基类
-Shape::Shape(ShapeType type, const int &basis)
+Shape::Shape(const QString& type, const int& basis)
     : m_type(type)
 {
     // m_rect will be initialized in derived classes
@@ -12,31 +12,20 @@ Shape::~Shape()
 {
 }
 
-void Shape::setRect(const QRect &rect)
+void Shape::setRect(const QRect& rect)
 {
     m_rect = rect;
 }
 
-bool Shape::contains(const QPoint &point) const
+bool Shape::contains(const QPoint& point) const
 {
     // 基类默认用矩形包含判断，子类可以重写提供更精确的检测
     return m_rect.contains(point);
 }
 
-QString Shape::name() const
-{
-    switch (m_type) {
-    case Rectangle: return "矩形";
-    case Circle: return "圆形";
-    case Pentagon: return "五边形";
-    case Ellipse: return "椭圆形";
-    default: return "未知形状";
-    }
-}
-
 // RectangleShape实现
-RectangleShape::RectangleShape(const int &basis)
-    : Shape(Rectangle, basis)
+RectangleShape::RectangleShape(const int& basis)
+    : Shape(ShapeTypes::Rectangle, basis)
 {
     // 长宽比为98:55，basis为宽
     int width = basis * 98 / 55;
@@ -44,23 +33,31 @@ RectangleShape::RectangleShape(const int &basis)
     m_rect = QRect(0, 0, width, height);
 }
 
-void RectangleShape::paint(QPainter *painter)
+void RectangleShape::paint(QPainter* painter)
 {
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
     painter->drawRect(m_rect);
 }
 
+void RectangleShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::Rectangle,
+        [](const int& basis) -> Shape* { return new RectangleShape(basis); }
+    );
+}
+
 // CircleShape实现
-CircleShape::CircleShape(const int &basis)
-    : Shape(Circle, basis)
+CircleShape::CircleShape(const int& basis)
+    : Shape(ShapeTypes::Circle, basis)
 {
     // 长和宽都为1.5*basis
     int size = 1.5 * basis;
     m_rect = QRect(0, 0, size, size);
 }
 
-void CircleShape::paint(QPainter *painter)
+void CircleShape::paint(QPainter* painter)
 {
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
@@ -69,7 +66,7 @@ void CircleShape::paint(QPainter *painter)
     painter->drawEllipse(m_rect);
 }
 
-void CircleShape::setRect(const QRect &rect)
+void CircleShape::setRect(const QRect& rect)
 {
     // 确保圆形的边界矩形始终是正方形
     int side = qMin(rect.width(), rect.height());
@@ -80,20 +77,29 @@ void CircleShape::setRect(const QRect &rect)
     );
 }
 
-bool CircleShape::contains(const QPoint &point) const
+bool CircleShape::contains(const QPoint& point) const
 {
-    // 计算点到圆心的距离
+    // 计算点到圆心的距离，与半径比较
     QPoint center = m_rect.center();
-    int radius = m_rect.width() / 2;  // 已经确保是正方形，所以宽高相等
     int dx = point.x() - center.x();
     int dy = point.y() - center.y();
+    int distanceSquared = dx * dx + dy * dy;
     
-    return (dx * dx + dy * dy <= radius * radius);
+    int radius = qMin(m_rect.width(), m_rect.height()) / 2;
+    return distanceSquared <= radius * radius;
+}
+
+void CircleShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::Circle,
+        [](const int& basis) -> Shape* { return new CircleShape(basis); }
+    );
 }
 
 // PentagonShape实现
-PentagonShape::PentagonShape(const int &basis)
-    : Shape(Pentagon, basis), m_basis(basis)
+PentagonShape::PentagonShape(const int& basis)
+    : Shape(ShapeTypes::Pentagon, basis), m_basis(basis)
 {
     // 根据数学公式计算五边形的边界矩形
     double cos18 = cos(M_PI / 10); // cos(18°)
@@ -105,7 +111,7 @@ PentagonShape::PentagonShape(const int &basis)
     m_rect = QRect(0, 0, width, height);
 }
 
-void PentagonShape::paint(QPainter *painter)
+void PentagonShape::paint(QPainter* painter)
 {
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
@@ -135,14 +141,22 @@ QPolygon PentagonShape::createPentagonPolygon() const
     return polygon;
 }
 
-bool PentagonShape::contains(const QPoint &point) const
+bool PentagonShape::contains(const QPoint& point) const
 {
     return createPentagonPolygon().containsPoint(point, Qt::OddEvenFill);
 }
 
+void PentagonShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::Pentagon,
+        [](const int& basis) -> Shape* { return new PentagonShape(basis); }
+    );
+}
+
 // EllipseShape实现
-EllipseShape::EllipseShape(const int &basis)
-    : Shape(Ellipse, basis)
+EllipseShape::EllipseShape(const int& basis)
+    : Shape(ShapeTypes::Ellipse, basis)
 {
     // 长宽比为98:55，basis为宽
     int width = basis * 98 / 55;
@@ -150,22 +164,30 @@ EllipseShape::EllipseShape(const int &basis)
     m_rect = QRect(0, 0, width, height);
 }
 
-void EllipseShape::paint(QPainter *painter)
+void EllipseShape::paint(QPainter* painter)
 {
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
     painter->drawEllipse(m_rect);
 }
 
-bool EllipseShape::contains(const QPoint &point) const
+bool EllipseShape::contains(const QPoint& point) const
 {
-    // 椭圆的包含判断
+    // 检查点是否在椭圆内
     QPoint center = m_rect.center();
-    double a = m_rect.width() / 2.0;  // 长轴
-    double b = m_rect.height() / 2.0; // 短轴
+    double a = m_rect.width() / 2.0;  // 半长轴
+    double b = m_rect.height() / 2.0; // 半短轴
     
-    double dx = (point.x() - center.x()) / a;
-    double dy = (point.y() - center.y()) / b;
+    double normX = (point.x() - center.x()) / a;
+    double normY = (point.y() - center.y()) / b;
     
-    return (dx * dx + dy * dy <= 1.0);
+    return (normX * normX + normY * normY) <= 1.0;
+}
+
+void EllipseShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::Ellipse,
+        [](const int& basis) -> Shape* { return new EllipseShape(basis); }
+    );
 }
