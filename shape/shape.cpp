@@ -23,6 +23,129 @@ bool Shape::contains(const QPoint& point) const
     return m_rect.contains(point);
 }
 
+void Shape::drawResizeHandles(QPainter* painter) const
+{
+    painter->save();
+    painter->setPen(QPen(Qt::blue, 1));
+    painter->setBrush(QBrush(Qt::white));
+    
+    // 绘制八个调整大小的手柄
+    for (int i = 0; i < 8; i++) {
+        HandlePosition pos = static_cast<HandlePosition>(i);
+        painter->drawRect(handleRect(pos));
+    }
+    
+    painter->restore();
+}
+
+Shape::HandlePosition Shape::hitHandle(const QPoint& point) const
+{
+    // 检查点击的是哪个手柄
+    for (int i = 0; i < 8; i++) {
+        HandlePosition pos = static_cast<HandlePosition>(i);
+        if (handleRect(pos).contains(point)) {
+            return pos;
+        }
+    }
+    return None;
+}
+
+QRect Shape::handleRect(HandlePosition position) const
+{
+    int halfSize = HANDLE_SIZE / 2;
+    QPoint center;
+    
+    // 根据位置计算手柄的中心点
+    switch (position) {
+    case TopLeft:
+        center = m_rect.topLeft();
+        break;
+    case Top:
+        center = QPoint(m_rect.center().x(), m_rect.top());
+        break;
+    case TopRight:
+        center = m_rect.topRight();
+        break;
+    case Right:
+        center = QPoint(m_rect.right(), m_rect.center().y());
+        break;
+    case BottomRight:
+        center = m_rect.bottomRight();
+        break;
+    case Bottom:
+        center = QPoint(m_rect.center().x(), m_rect.bottom());
+        break;
+    case BottomLeft:
+        center = m_rect.bottomLeft();
+        break;
+    case Left:
+        center = QPoint(m_rect.left(), m_rect.center().y());
+        break;
+    default:
+        return QRect();
+    }
+    
+    // 返回以中心点为中心的手柄矩形
+    return QRect(center.x() - halfSize, center.y() - halfSize, 
+                 HANDLE_SIZE, HANDLE_SIZE);
+}
+
+void Shape::resize(HandlePosition handle, const QPoint& offset)
+{
+    QRect newRect = m_rect;
+    
+    // 根据不同的手柄位置调整矩形的不同部分
+    switch (handle) {
+    case TopLeft:
+        newRect.setTopLeft(newRect.topLeft() + offset);
+        break;
+    case Top:
+        newRect.setTop(newRect.top() + offset.y());
+        break;
+    case TopRight:
+        newRect.setTopRight(newRect.topRight() + offset);
+        break;
+    case Right:
+        newRect.setRight(newRect.right() + offset.x());
+        break;
+    case BottomRight:
+        newRect.setBottomRight(newRect.bottomRight() + offset);
+        break;
+    case Bottom:
+        newRect.setBottom(newRect.bottom() + offset.y());
+        break;
+    case BottomLeft:
+        newRect.setBottomLeft(newRect.bottomLeft() + offset);
+        break;
+    case Left:
+        newRect.setLeft(newRect.left() + offset.x());
+        break;
+    default:
+        return;
+    }
+    
+    // 确保形状有最小尺寸
+    const int MIN_SIZE = 20;
+    if (newRect.width() < MIN_SIZE) {
+        if (newRect.left() != m_rect.left()) {
+            newRect.setLeft(newRect.right() - MIN_SIZE);
+        } else {
+            newRect.setRight(newRect.left() + MIN_SIZE);
+        }
+    }
+    
+    if (newRect.height() < MIN_SIZE) {
+        if (newRect.top() != m_rect.top()) {
+            newRect.setTop(newRect.bottom() - MIN_SIZE);
+        } else {
+            newRect.setBottom(newRect.top() + MIN_SIZE);
+        }
+    }
+    
+    // 更新矩形
+    m_rect = newRect;
+}
+
 // RectangleShape实现
 RectangleShape::RectangleShape(const int& basis)
     : Shape(ShapeTypes::Rectangle, basis)

@@ -4,7 +4,8 @@
 #include "shape/shapefactory.h"
 
 DrawingArea::DrawingArea(QWidget *parent)
-    : QWidget(parent), m_selectedShape(nullptr), m_dragging(false)
+    : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
+      m_activeHandle(Shape::None), m_resizing(false)
 {
     // 设置接受拖放
     setAcceptDrops(true);
@@ -34,11 +35,14 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     for (Shape *shape : m_shapes) {
         shape->paint(&painter);
         
-        // 如果是当前选中的形状，绘制一个选中框
+        // 如果是当前选中的形状，绘制一个选中框和调整大小的手柄
         if (shape == m_selectedShape) {
             painter.setPen(QPen(Qt::blue, 2, Qt::DashLine));
             painter.setBrush(Qt::NoBrush);
             painter.drawRect(shape->getRect().adjusted(-2, -2, 2, 2));//扩大轮廓
+            
+            // 绘制调整大小的手柄
+            shape->drawResizeHandles(&painter);
         }
     }
 }
@@ -87,6 +91,18 @@ void DrawingArea::dropEvent(QDropEvent *event)
 void DrawingArea::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
+        // 如果已选中形状，检查是否点击了调整手柄
+        if (m_selectedShape) {
+            Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
+            if (handle != Shape::None) {
+                m_activeHandle = handle;
+                m_resizing = true;
+                m_dragStart = event->pos();
+                setCursor(Qt::SizeAllCursor); // 设置调整大小的光标
+                return;
+            }
+        }
+        
         // 查找点击的是哪个形状
         Shape *clickedShape = nullptr;
 
@@ -109,7 +125,7 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
             // 点击空白区域，取消选择
             m_selectedShape = nullptr;
         }
-
+        
         // 重绘以更新选中状态
         update();
     }
@@ -117,6 +133,16 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
 
 void DrawingArea::mouseMoveEvent(QMouseEvent *event)
 {
+    // 调整大小
+    if (m_resizing && m_selectedShape) {
+        QPoint delta = event->pos() - m_dragStart;
+        m_selectedShape->resize(m_activeHandle, delta);
+        m_dragStart = event->pos();
+        update();
+        return;
+    }
+    
+    // 移动形状
     if (m_dragging && m_selectedShape) {
         // 计算拖动偏移
         QPoint delta = event->pos() - m_dragStart;
@@ -133,8 +159,18 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
 
 void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton && m_dragging) {
-        m_dragging = false;
-        setCursor(Qt::ArrowCursor);
+    if (event->button() == Qt::LeftButton) {
+        // 结束调整大小
+        if (m_resizing) {
+            m_resizing = false;
+            m_activeHandle = Shape::None;
+            setCursor(Qt::ArrowCursor);
+        }
+        
+        // 结束拖动
+        if (m_dragging) {
+            m_dragging = false;
+            setCursor(Qt::ArrowCursor);
+        }
     }
 }

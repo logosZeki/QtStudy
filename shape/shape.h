@@ -36,9 +36,37 @@ public:
     
     virtual bool contains(const QPoint& point) const;
 
+    // 调整大小相关的枚举和方法
+    enum HandlePosition {
+        None = -1,
+        TopLeft = 0,
+        Top = 1,
+        TopRight = 2,
+        Right = 3,
+        BottomRight = 4,
+        Bottom = 5,
+        BottomLeft = 6,
+        Left = 7
+    };
+    
+    // 绘制调整大小的手柄
+    void drawResizeHandles(QPainter* painter) const;
+    
+    // 检测点击的是哪个手柄
+    HandlePosition hitHandle(const QPoint& point) const;
+    
+    // 获取手柄的矩形区域
+    QRect handleRect(HandlePosition position) const;
+    
+    // 调整大小
+    void resize(HandlePosition handle, const QPoint& offset);
+
 protected:
     QString m_type;
     QRect m_rect;
+    
+    // 手柄大小常量
+    static const int HANDLE_SIZE = 8;
 };
 
 // 矩形形状
@@ -81,7 +109,7 @@ public:
     
 private:
     QPolygon createPentagonPolygon() const;
-    int m_basis; // 存储基准值用于绘制
+
 };
 
 // 椭圆形形状
