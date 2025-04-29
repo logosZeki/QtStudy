@@ -87,6 +87,81 @@ void DrawingArea::dropEvent(QDropEvent *event)
     }
 }
 
+void DrawingArea::mouseMoveEvent(QMouseEvent *event)
+{
+    // 调整大小
+    if (m_resizing && m_selectedShape) {
+        QPoint delta = event->pos() - m_dragStart;
+        m_selectedShape->resize(m_activeHandle, delta);
+        m_dragStart = event->pos();
+        update();
+        return;
+    }
+    
+    // 移动形状
+    if (m_dragging && m_selectedShape) {
+        // 计算拖动偏移
+        QPoint delta = event->pos() - m_dragStart;
+
+        // 更新形状位置
+        QRect newRect = m_selectedShape->getRect();
+        newRect.moveTo(m_shapeStart + delta);
+        m_selectedShape->setRect(newRect);
+
+        // 重绘
+        update();
+        return;
+    }
+
+    // 更新鼠标光标样式
+    if (m_selectedShape) {
+        // 检查鼠标是否位于调整大小的手柄上
+        Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
+        
+        if (handle != Shape::None) {
+            // 根据手柄位置设置对应的光标样式
+            switch (handle) {
+                case Shape::TopLeft:
+                case Shape::BottomRight:
+                    setCursor(Qt::SizeFDiagCursor); // 斜向双向箭头 ↘↖
+                    break;
+                case Shape::TopRight:
+                case Shape::BottomLeft:
+                    setCursor(Qt::SizeBDiagCursor); // 斜向双向箭头 ↗↙
+                    break;
+                case Shape::Top:
+                case Shape::Bottom:
+                    setCursor(Qt::SizeVerCursor); // 垂直双向箭头 ↕
+                    break;
+                case Shape::Left:
+                case Shape::Right:
+                    setCursor(Qt::SizeHorCursor); // 水平双向箭头 ↔
+                    break;
+                default:
+                    setCursor(Qt::ArrowCursor);
+                    break;
+            }
+            return;
+        }
+        
+        // 检查鼠标是否在选中的形状内部
+        if (m_selectedShape->contains(event->pos())) {
+            setCursor(Qt::SizeAllCursor); // 四向箭头
+            return;
+        }
+    }
+    
+    // 检查鼠标是否位于任何形状上方
+    for (int i = m_shapes.size() - 1; i >= 0; --i) {
+        if (m_shapes[i]->contains(event->pos())) {
+            setCursor(Qt::SizeAllCursor); // 四向箭头
+            return;
+        }
+    }
+    
+    // 默认为标准光标
+    setCursor(Qt::ArrowCursor);
+}
 
 void DrawingArea::mousePressEvent(QMouseEvent *event)
 {
@@ -98,7 +173,7 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
                 m_activeHandle = handle;
                 m_resizing = true;
                 m_dragStart = event->pos();
-                setCursor(Qt::SizeAllCursor); // 设置调整大小的光标
+                // 光标已经在mouseMoveEvent中设置，这里不需要再设置
                 return;
             }
         }
@@ -131,32 +206,6 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
     }
 }
 
-void DrawingArea::mouseMoveEvent(QMouseEvent *event)
-{
-    // 调整大小
-    if (m_resizing && m_selectedShape) {
-        QPoint delta = event->pos() - m_dragStart;
-        m_selectedShape->resize(m_activeHandle, delta);
-        m_dragStart = event->pos();
-        update();
-        return;
-    }
-    
-    // 移动形状
-    if (m_dragging && m_selectedShape) {
-        // 计算拖动偏移
-        QPoint delta = event->pos() - m_dragStart;
-
-        // 更新形状位置
-        QRect newRect = m_selectedShape->getRect();
-        newRect.moveTo(m_shapeStart + delta);
-        m_selectedShape->setRect(newRect);
-
-        // 重绘
-        update();
-    }
-}
-
 void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
@@ -164,13 +213,17 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         if (m_resizing) {
             m_resizing = false;
             m_activeHandle = Shape::None;
-            setCursor(Qt::ArrowCursor);
+            // 光标会在下一次mouseMoveEvent中重新设置
         }
         
         // 结束拖动
         if (m_dragging) {
             m_dragging = false;
-            setCursor(Qt::ArrowCursor);
+            // 光标会在下一次mouseMoveEvent中重新设置
         }
+        
+        // 触发mouseMoveEvent来更新光标
+        QMouseEvent fakeEvent(QEvent::MouseMove, event->pos(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+        mouseMoveEvent(&fakeEvent);
     }
 }
