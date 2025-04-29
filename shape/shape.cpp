@@ -99,7 +99,7 @@ void CircleShape::registerShape()
 
 // PentagonShape实现
 PentagonShape::PentagonShape(const int& basis)
-    : Shape(ShapeTypes::Pentagon, basis), m_basis(basis)
+    : Shape(ShapeTypes::Pentagon, basis)
 {
     // 根据数学公式计算五边形的边界矩形
     double cos18 = cos(M_PI / 10); // cos(18°)
@@ -123,20 +123,32 @@ void PentagonShape::paint(QPainter* painter)
 
 QPolygon PentagonShape::createPentagonPolygon() const
 {
-    QPolygon polygon;
-    QPoint center = m_rect.center();
-    double cos36 = cos(M_PI / 5);  // cos(36°)
-    center.setY(center.y() + m_basis*(1-cos36)/2);// 调整Y坐标，使五边形底边与矩形底边对齐
-    int radius = m_basis; // 外接圆半径为basis
+    // 获取矩形的宽和高
+    int w = m_rect.width();
+    int h = m_rect.height();
     
     // 计算五边形的五个顶点
-    for (int i = 0; i < 5; ++i) {
-        // 从顶部开始，顺时针计算顶点，第一个点在正上方
-        double angle = (M_PI * 2 / 5) * i - M_PI / 2;
-        int x = center.x() + radius * cos(angle);
-        int y = center.y() + radius * sin(angle);
-        polygon << QPoint(x, y);
-    }
+    QPolygon polygon;
+    
+    // 按照新的公式计算五个点
+    double cos18 = cos(M_PI / 10); // cos(18°)
+    double sin36 = sin(M_PI / 5);  // sin(36°)
+    double cos36 = cos(M_PI / 5);  // cos(36°)
+    
+    // 点A - 左下
+    polygon << QPoint(m_rect.left() + ((cos18-sin36)/(2*cos18))*w, m_rect.top() + h);
+    
+    // 点B - 右下
+    polygon << QPoint(m_rect.left() + ((cos18+sin36)/(2*cos18))*w, m_rect.top() + h);
+    
+    // 点C - 右中
+    polygon << QPoint(m_rect.left() + w, m_rect.top() + (2*sin36*sin36)/(1+cos36)*h);
+    
+    // 点D - 顶点
+    polygon << QPoint(m_rect.left() + w/2, m_rect.top());
+    
+    // 点E - 左中
+    polygon << QPoint(m_rect.left(), m_rect.top() + (2*sin36*sin36)/(1+cos36)*h);
     
     return polygon;
 }
