@@ -29,7 +29,7 @@ void Shape::drawResizeHandles(QPainter* painter) const
     painter->setPen(QPen(Qt::blue, 1));
     painter->setBrush(QBrush(Qt::white));
     
-    // 绘制八个调整大小的手柄
+    // 绘制八个调整大小的手柄 (Draw eight resize handles)
     for (int i = 0; i < 8; i++) {
         HandlePosition pos = static_cast<HandlePosition>(i);
         painter->drawRect(handleRect(pos));
@@ -124,7 +124,7 @@ void Shape::resize(HandlePosition handle, const QPoint& offset)
         return;
     }
     
-    // 确保形状有最小尺寸
+    // 确保形状有最小尺寸 (Ensure shape has minimum size)
     const int MIN_SIZE = 20;
     if (newRect.width() < MIN_SIZE) {
         if (newRect.left() != m_rect.left()) {
@@ -142,7 +142,7 @@ void Shape::resize(HandlePosition handle, const QPoint& offset)
         }
     }
     
-    // 更新矩形
+    // 更新矩形 (Update rectangle)
     m_rect = newRect;
 }
 

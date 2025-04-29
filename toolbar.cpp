@@ -3,14 +3,14 @@
 #include <QMimeData>
 #include <QPainter>
 
-// ShapeItem实现
+// ShapeItem实现 (ShapeItem implementation)
 ShapeItem::ShapeItem(const QString& type, QWidget* parent)
     : QWidget(parent), m_type(type)
 {
-    // 设置固定大小
+    // 设置固定大小 (Set fixed size)
     setFixedHeight(70);
     
-    // 根据类型调整形状的大小和位置
+    // 根据类型调整形状的大小和位置 (Adjust shape size and position based on type)
     if (type == ShapeTypes::Rectangle || type == ShapeTypes::Ellipse) {
         m_shapeRect = QRect(15, 15, 70, 40);
     } else if (type == ShapeTypes::Circle) {
@@ -21,7 +21,7 @@ ShapeItem::ShapeItem(const QString& type, QWidget* parent)
         m_shapeRect = QRect(25, 10, 50, 50);
     }
     
-    // 允许鼠标追踪
+    // 允许鼠标追踪 (Allow mouse tracking)
     setMouseTracking(true);
 }
 
@@ -101,7 +101,7 @@ ToolBar::ToolBar(QWidget* parent)
     m_layout->setContentsMargins(0, 0, 0, 0);
     
     // 添加标题
-    m_titleLabel = new QLabel("形状工具箱", this);
+    m_titleLabel = new QLabel(tr("toolbar"), this);
     m_titleLabel->setAlignment(Qt::AlignCenter);
     m_titleLabel->setStyleSheet("background-color: #cccccc; font-weight: bold; padding: 5px;");
     m_layout->addWidget(m_titleLabel);

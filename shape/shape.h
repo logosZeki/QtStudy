@@ -32,7 +32,7 @@ public:
     QString type() const { return m_type; }
     
     // 返回显示名称（可以与类型不同）
-    virtual QString displayName() const { return m_type; }
+    virtual QString displayName() const { return QObject::tr(m_type.toUtf8().constData()); }
     
     virtual bool contains(const QPoint& point) const;
 
@@ -90,7 +90,7 @@ class RectangleShape : public Shape
 public:
     RectangleShape(const int& basis);
     void paint(QPainter* painter) override;
-    QString displayName() const override { return "矩形"; }
+    QString displayName() const override { return QObject::tr("Rectangle"); }
     
     // 向工厂注册
     static void registerShape();
@@ -104,7 +104,7 @@ public:
     void paint(QPainter* painter) override;
     bool contains(const QPoint& point) const override;
     // void setRect(const QRect& rect) override;
-    QString displayName() const override { return "圆形"; }
+    QString displayName() const override { return QObject::tr("Circle"); }
     QRect textRect() const override;
     
     // 向工厂注册
@@ -118,7 +118,7 @@ public:
     PentagonShape(const int& basis);
     void paint(QPainter* painter) override;
     bool contains(const QPoint& point) const override;
-    QString displayName() const override { return "五边形"; }
+    QString displayName() const override { return QObject::tr("Pentagon"); }
     QRect textRect() const override;
     
     // 向工厂注册
@@ -135,7 +135,7 @@ public:
     EllipseShape(const int& basis);
     void paint(QPainter* painter) override;
     bool contains(const QPoint& point) const override;
-    QString displayName() const override { return "椭圆形"; }
+    QString displayName() const override { return QObject::tr("Ellipse"); }
     QRect textRect() const override;
     
     // 向工厂注册

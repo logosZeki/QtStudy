@@ -9,10 +9,10 @@ DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
       m_activeHandle(Shape::None), m_resizing(false), m_textEditor(nullptr)
 {
-    // 设置接受拖放
+    // 设置接受拖放 (Set accept drops)
     setAcceptDrops(true);
 
-    // 设置背景色为白色
+    // 设置背景色为白色 (Set background color to white)
     QPalette pal = palette();
     pal.setColor(QPalette::Window, Qt::white);
     setAutoFillBackground(true);
@@ -22,7 +22,7 @@ DrawingArea::DrawingArea(QWidget *parent)
 
 DrawingArea::~DrawingArea()
 {
-    // 清理所有形状
+    // 清理所有形状 (Clean up all shapes)
     qDeleteAll(m_shapes);
     m_shapes.clear();
     
@@ -176,7 +176,7 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
 
 void DrawingArea::mousePressEvent(QMouseEvent *event)
 {
-    // 如果正在编辑文本，并且点击了编辑区域外，则结束编辑
+    // 如果正在编辑文本，并且点击了编辑区域外，则结束编辑 (If editing text and clicked outside the editor, finish editing)
     if (m_textEditor && m_textEditor->isVisible()) {
         QRect editorRect = m_textEditor->geometry();
         if (!editorRect.contains(event->pos())) {
@@ -250,12 +250,12 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
 
 void DrawingArea::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    // 检查是否双击了某个形状
+    // 检查是否双击了某个形状 (Check if double-clicked on a shape)
     if (m_textEditor && m_textEditor->isVisible()) {
-        return;  // 如果已经在编辑，忽略双击
+        return;  // 如果已经在编辑，忽略双击 (If already editing, ignore double-click)
     }
     
-    // 查找点击的形状
+    // 查找点击的形状 (Find clicked shape)
     Shape* clickedShape = nullptr;
     for (int i = m_shapes.size() - 1; i >= 0; i--) {
         if (m_shapes.at(i)->contains(event->pos())) {
