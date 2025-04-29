@@ -3,7 +3,7 @@
 
 // Shape基类
 Shape::Shape(const QString& type, const int& basis)
-    : m_type(type)
+    : m_type(type), m_editing(false)
 {
     // m_rect will be initialized in derived classes
 }
@@ -146,6 +146,50 @@ void Shape::resize(HandlePosition handle, const QPoint& offset)
     m_rect = newRect;
 }
 
+void Shape::setText(const QString& text)
+{
+    m_text = text;
+}
+
+QString Shape::text() const
+{
+    return m_text;
+}
+
+bool Shape::isEditing() const
+{
+    return m_editing;
+}
+
+void Shape::setEditing(bool editing)
+{
+    m_editing = editing;
+}
+
+void Shape::updateText(const QString& text)
+{
+    m_text = text;
+}
+
+void Shape::drawText(QPainter* painter) const
+{
+    if (m_text.isEmpty())
+        return;
+        
+    QRect rect = textRect();
+    painter->save();
+    painter->setPen(Qt::black);
+    painter->drawText(rect, Qt::AlignCenter | Qt::TextWordWrap, m_text);
+    painter->restore();
+}
+
+QRect Shape::textRect() const
+{
+    // 默认实现，子类可以重写以提供更合适的文本区域
+    int margin = qMin(m_rect.width(), m_rect.height()) / 10;
+    return m_rect.adjusted(margin, margin, -margin, -margin);
+}
+
 // RectangleShape实现
 RectangleShape::RectangleShape(const int& basis)
     : Shape(ShapeTypes::Rectangle, basis)
@@ -161,6 +205,9 @@ void RectangleShape::paint(QPainter* painter)
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
     painter->drawRect(m_rect);
+    
+    // 绘制文本
+    drawText(painter);
 }
 
 void RectangleShape::registerShape()
@@ -187,18 +234,24 @@ void CircleShape::paint(QPainter* painter)
     
     // 直接绘制圆形，不需要额外计算
     painter->drawEllipse(m_rect);
+    
+    // 绘制文本
+    drawText(painter);
 }
 
-// void CircleShape::setRect(const QRect& rect)
-// {
-//     // 确保圆形的边界矩形始终是正方形
-//     int side = qMin(rect.width(), rect.height());
-//     m_rect = QRect(
-//         rect.x() + (rect.width() - side) / 2,
-//         rect.y() + (rect.height() - side) / 2,
-//         side, side
-//     );
-// }
+QRect CircleShape::textRect() const
+{
+    // 为圆形提供合适的文本区域
+    int side = qMin(m_rect.width(), m_rect.height());
+    int margin = side / 4;  // 较大的边距，因为圆形有较小的有效区域
+    
+    return QRect(
+        m_rect.center().x() - side / 2 + margin,
+        m_rect.center().y() - side / 2 + margin,
+        side - 2 * margin,
+        side - 2 * margin
+    );
+}
 
 bool CircleShape::contains(const QPoint& point) const
 {
@@ -242,6 +295,9 @@ void PentagonShape::paint(QPainter* painter)
     // 创建五边形的点
     QPolygon polygon = createPentagonPolygon();
     painter->drawPolygon(polygon);
+    
+    // 绘制文本
+    drawText(painter);
 }
 
 QPolygon PentagonShape::createPentagonPolygon() const
@@ -276,6 +332,13 @@ QPolygon PentagonShape::createPentagonPolygon() const
     return polygon;
 }
 
+QRect PentagonShape::textRect() const
+{
+    // 为五边形提供合适的文本区域
+    int margin = qMin(m_rect.width(), m_rect.height()) / 4;
+    return m_rect.adjusted(margin, margin, -margin, -margin);
+}
+
 bool PentagonShape::contains(const QPoint& point) const
 {
     return createPentagonPolygon().containsPoint(point, Qt::OddEvenFill);
@@ -304,6 +367,17 @@ void EllipseShape::paint(QPainter* painter)
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
     painter->drawEllipse(m_rect);
+    
+    // 绘制文本
+    drawText(painter);
+}
+
+QRect EllipseShape::textRect() const
+{
+    // 为椭圆提供合适的文本区域
+    int marginX = m_rect.width() / 4;
+    int marginY = m_rect.height() / 4;
+    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
 }
 
 bool EllipseShape::contains(const QPoint& point) const

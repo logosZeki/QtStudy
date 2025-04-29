@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QVector>
 #include <QMouseEvent>
+#include <QLineEdit>
+#include <QTextEdit>
 #include "shape/shape.h"
 
 class DrawingArea : public QWidget
@@ -22,6 +24,14 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
+    
+private:
+    void createTextEditor();
+    void startTextEditing();
+    void finishTextEditing();
+    void cancelTextEditing();
     
 private:
     QVector<Shape*> m_shapes;
@@ -33,6 +43,9 @@ private:
     // 调整大小相关变量
     Shape::HandlePosition m_activeHandle;
     bool m_resizing;
+    
+    // 文本编辑相关
+    QTextEdit* m_textEditor;
 };
 
 #endif // DRAWINGAREA_H

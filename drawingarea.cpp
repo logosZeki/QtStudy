@@ -2,10 +2,12 @@
 #include <QPainter>
 #include <QMimeData>
 #include "shape/shapefactory.h"
+#include <QTextEdit>
+#include <QKeyEvent>
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
-      m_activeHandle(Shape::None), m_resizing(false)
+      m_activeHandle(Shape::None), m_resizing(false), m_textEditor(nullptr)
 {
     // 设置接受拖放
     setAcceptDrops(true);
@@ -23,6 +25,10 @@ DrawingArea::~DrawingArea()
     // 清理所有形状
     qDeleteAll(m_shapes);
     m_shapes.clear();
+    
+    if (m_textEditor) {
+        delete m_textEditor;
+    }
 }
 
 void DrawingArea::paintEvent(QPaintEvent *event)
@@ -170,6 +176,15 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
 
 void DrawingArea::mousePressEvent(QMouseEvent *event)
 {
+    // 如果正在编辑文本，并且点击了编辑区域外，则结束编辑
+    if (m_textEditor && m_textEditor->isVisible()) {
+        QRect editorRect = m_textEditor->geometry();
+        if (!editorRect.contains(event->pos())) {
+            finishTextEditing();
+        }
+        return;
+    }
+    
     if (event->button() == Qt::LeftButton) {
         // 如果已选中形状，检查是否点击了调整手柄
         if (m_selectedShape) {
@@ -231,4 +246,112 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         QMouseEvent fakeEvent(QEvent::MouseMove, event->pos(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
         mouseMoveEvent(&fakeEvent);
     }
+}
+
+void DrawingArea::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    // 检查是否双击了某个形状
+    if (m_textEditor && m_textEditor->isVisible()) {
+        return;  // 如果已经在编辑，忽略双击
+    }
+    
+    // 查找点击的形状
+    Shape* clickedShape = nullptr;
+    for (int i = m_shapes.size() - 1; i >= 0; i--) {
+        if (m_shapes.at(i)->contains(event->pos())) {
+            clickedShape = m_shapes.at(i);
+            break;
+        }
+    }
+    
+    if (clickedShape) {
+        m_selectedShape = clickedShape;
+        startTextEditing();
+        update();
+    }
+}
+
+void DrawingArea::createTextEditor()
+{
+    if (!m_textEditor) {
+        m_textEditor = new QTextEdit(this);
+        m_textEditor->setFrameStyle(QFrame::NoFrame);
+        m_textEditor->installEventFilter(this);
+        m_textEditor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_textEditor->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_textEditor->hide();
+    }
+}
+
+void DrawingArea::startTextEditing()
+{
+    if (!m_selectedShape) return;
+    
+    createTextEditor();
+    
+    // 设置文本编辑器的位置和大小
+    QRect textRect = m_selectedShape->textRect();
+    m_textEditor->setGeometry(textRect);
+    
+    // 设置文本编辑器的内容
+    m_textEditor->setPlainText(m_selectedShape->text());
+    
+    // 标记形状为编辑状态
+    m_selectedShape->setEditing(true);
+    
+    // 显示文本编辑器并设置焦点
+    m_textEditor->show();
+    m_textEditor->setFocus();
+}
+
+void DrawingArea::finishTextEditing()
+{
+    if (!m_textEditor || !m_selectedShape) return;
+    
+    // 更新形状的文本内容
+    m_selectedShape->setText(m_textEditor->toPlainText());
+    
+    // 结束编辑状态
+    m_selectedShape->setEditing(false);
+    m_textEditor->hide();
+    
+    // 更新绘图区域
+    update();
+}
+
+void DrawingArea::cancelTextEditing()
+{
+    if (!m_textEditor || !m_selectedShape) return;
+    
+    // 不更新文本，仅结束编辑状态
+    m_selectedShape->setEditing(false);
+    m_textEditor->hide();
+    
+    // 更新绘图区域
+    update();
+}
+
+bool DrawingArea::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_textEditor) {
+        if (event->type() == QEvent::KeyPress) {
+            QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+            if (keyEvent->key() == Qt::Key_Escape) {
+                // 按下ESC键取消编辑
+                cancelTextEditing();
+                return true;
+            } else if (keyEvent->key() == Qt::Key_Return && 
+                      (keyEvent->modifiers() & Qt::ControlModifier)) {
+                // 按下Ctrl+Enter完成编辑
+                finishTextEditing();
+                return true;
+            }
+        } else if (event->type() == QEvent::FocusOut) {
+            // 当文本编辑器失去焦点时完成编辑
+            finishTextEditing();
+            return true;
+        }
+    }
+    
+    return QWidget::eventFilter(watched, event);
 }

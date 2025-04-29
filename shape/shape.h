@@ -60,10 +60,25 @@ public:
     
     // 调整大小
     void resize(HandlePosition handle, const QPoint& offset);
+    
+    // 文本相关方法
+    void setText(const QString& text);
+    QString text() const;
+    bool isEditing() const;
+    void setEditing(bool editing);
+    void updateText(const QString& text);
+    
+    // 绘制文本
+    void drawText(QPainter* painter) const;
+    
+    // 获取文本位置
+    virtual QRect textRect() const;
 
 protected:
     QString m_type;
     QRect m_rect;
+    QString m_text;  // 存储形状中的文本
+    bool m_editing;  // 标记是否处于编辑状态
     
     // 手柄大小常量
     static const int HANDLE_SIZE = 8;
@@ -90,6 +105,7 @@ public:
     bool contains(const QPoint& point) const override;
     // void setRect(const QRect& rect) override;
     QString displayName() const override { return "圆形"; }
+    QRect textRect() const override;
     
     // 向工厂注册
     static void registerShape();
@@ -103,13 +119,13 @@ public:
     void paint(QPainter* painter) override;
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return "五边形"; }
+    QRect textRect() const override;
     
     // 向工厂注册
     static void registerShape();
     
 private:
     QPolygon createPentagonPolygon() const;
-
 };
 
 // 椭圆形形状
@@ -120,6 +136,7 @@ public:
     void paint(QPainter* painter) override;
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return "椭圆形"; }
+    QRect textRect() const override;
     
     // 向工厂注册
     static void registerShape();
