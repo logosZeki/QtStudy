@@ -4,8 +4,8 @@
 #include <QPainter>
 
 // ShapeItem实现
-ShapeItem::ShapeItem(const QString& type, const QString& displayName, QWidget* parent)
-    : QWidget(parent), m_type(type), m_displayName(displayName)
+ShapeItem::ShapeItem(const QString& type, QWidget* parent)
+    : QWidget(parent), m_type(type)
 {
     // 设置固定大小
     setFixedHeight(70);
@@ -61,8 +61,6 @@ void ShapeItem::paintEvent(QPaintEvent* event)
         painter.drawEllipse(m_shapeRect);
     }
 
-    // 绘制文字
-    painter.drawText(rect(), Qt::AlignBottom | Qt::AlignHCenter, m_displayName);
 }
 
 void ShapeItem::mousePressEvent(QMouseEvent* event)
@@ -109,10 +107,10 @@ ToolBar::ToolBar(QWidget* parent)
     m_layout->addWidget(m_titleLabel);
     
     // 添加形状项
-    m_layout->addWidget(new ShapeItem(ShapeTypes::Rectangle, "矩形", this));
-    m_layout->addWidget(new ShapeItem(ShapeTypes::Circle, "圆形", this));
-    m_layout->addWidget(new ShapeItem(ShapeTypes::Pentagon, "五边形", this));
-    m_layout->addWidget(new ShapeItem(ShapeTypes::Ellipse, "椭圆形", this));
+    m_layout->addWidget(new ShapeItem(ShapeTypes::Rectangle, this));
+    m_layout->addWidget(new ShapeItem(ShapeTypes::Circle, this));
+    m_layout->addWidget(new ShapeItem(ShapeTypes::Pentagon, this));
+    m_layout->addWidget(new ShapeItem(ShapeTypes::Ellipse, this));
     
     // 添加弹簧以占用剩余空间
     m_layout->addStretch();

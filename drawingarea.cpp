@@ -38,7 +38,7 @@ void DrawingArea::paintEvent(QPaintEvent *event)
         if (shape == m_selectedShape) {
             painter.setPen(QPen(Qt::blue, 2, Qt::DashLine));
             painter.setBrush(Qt::NoBrush);
-            painter.drawRect(shape->rect().adjusted(-2, -2, 2, 2));//扩大轮廓
+            painter.drawRect(shape->getRect().adjusted(-2, -2, 2, 2));//扩大轮廓
         }
     }
 }
@@ -69,7 +69,8 @@ void DrawingArea::dropEvent(QDropEvent *event)
         
         // 设置形状位置
         if (newShape) {
-            QRect shapeRect = newShape->rect();
+            //设置新创建形状在绘图区域中的位置
+            QRect shapeRect = newShape->getRect();
             shapeRect.moveCenter(event->pos());
             newShape->setRect(shapeRect);
             m_selectedShape = newShape; // 设置为当前选中形状
@@ -102,7 +103,7 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
             m_selectedShape = clickedShape;
             m_dragging = true;
             m_dragStart = event->pos();
-            m_shapeStart = m_selectedShape->rect().topLeft();
+            m_shapeStart = m_selectedShape->getRect().topLeft();
             setCursor(Qt::ClosedHandCursor);
         } else {
             // 点击空白区域，取消选择
@@ -121,7 +122,7 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
         QPoint delta = event->pos() - m_dragStart;
 
         // 更新形状位置
-        QRect newRect = m_selectedShape->rect();
+        QRect newRect = m_selectedShape->getRect();
         newRect.moveTo(m_shapeStart + delta);
         m_selectedShape->setRect(newRect);
 

@@ -66,16 +66,16 @@ void CircleShape::paint(QPainter* painter)
     painter->drawEllipse(m_rect);
 }
 
-void CircleShape::setRect(const QRect& rect)
-{
-    // 确保圆形的边界矩形始终是正方形
-    int side = qMin(rect.width(), rect.height());
-    m_rect = QRect(
-        rect.x() + (rect.width() - side) / 2,
-        rect.y() + (rect.height() - side) / 2,
-        side, side
-    );
-}
+// void CircleShape::setRect(const QRect& rect)
+// {
+//     // 确保圆形的边界矩形始终是正方形
+//     int side = qMin(rect.width(), rect.height());
+//     m_rect = QRect(
+//         rect.x() + (rect.width() - side) / 2,
+//         rect.y() + (rect.height() - side) / 2,
+//         side, side
+//     );
+// }
 
 bool CircleShape::contains(const QPoint& point) const
 {

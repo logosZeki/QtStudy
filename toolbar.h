@@ -14,7 +14,7 @@ class ShapeItem : public QWidget
     Q_OBJECT
 
 public:
-    ShapeItem(const QString& type, const QString& displayName, QWidget* parent = nullptr);
+    ShapeItem(const QString& type, QWidget* parent = nullptr);
 
     QString type() const { return m_type; }
 
@@ -25,7 +25,6 @@ protected:
 
 private:
     QString m_type;
-    QString m_displayName;
     QRect m_shapeRect;
 };
 

@@ -7,6 +7,14 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+// 常量定义形状类型
+namespace ShapeTypes {
+    const QString Rectangle = "Rectangle";
+    const QString Circle = "Circle";
+    const QString Pentagon = "Pentagon";
+    const QString Ellipse = "Ellipse";
+}
+
 // 基础形状类
 class Shape
 {
@@ -17,7 +25,7 @@ public:
     
     virtual void paint(QPainter* painter) = 0;
     
-    QRect rect() const { return m_rect; }
+    virtual QRect getRect() const { return m_rect; }
     virtual void setRect(const QRect& rect);
     
     // 返回形状类型标识符
@@ -52,7 +60,7 @@ public:
     CircleShape(const int& basis);
     void paint(QPainter* painter) override;
     bool contains(const QPoint& point) const override;
-    void setRect(const QRect& rect) override;
+    // void setRect(const QRect& rect) override;
     QString displayName() const override { return "圆形"; }
     
     // 向工厂注册
@@ -89,12 +97,5 @@ public:
     static void registerShape();
 };
 
-// 常量定义形状类型
-namespace ShapeTypes {
-    const QString Rectangle = "Rectangle";
-    const QString Circle = "Circle";
-    const QString Pentagon = "Pentagon";
-    const QString Ellipse = "Ellipse";
-}
 
 #endif // SHAPE_H
