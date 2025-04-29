@@ -14,6 +14,7 @@ DrawingArea::DrawingArea(QWidget *parent)
     QPalette pal = palette();
     pal.setColor(QPalette::Window, Qt::white);
     setAutoFillBackground(true);
+    setMouseTracking(true);
     setPalette(pal);
 }
 
@@ -37,9 +38,22 @@ void DrawingArea::paintEvent(QPaintEvent *event)
         
         // 如果是当前选中的形状，绘制一个选中框和调整大小的手柄
         if (shape == m_selectedShape) {
-            painter.setPen(QPen(Qt::blue, 2, Qt::DashLine));
+            // 临时禁用抗锯齿以获得更细的线条
+            painter.setRenderHint(QPainter::Antialiasing, false);
+            
+            QPen dashPen(Qt::blue, 0); // 使用0宽度的笔，会被渲染为设备支持的最细线条
+            QVector<qreal> dashes;
+            dashes << 2 << 2;
+            dashPen.setDashPattern(dashes);
+            dashPen.setStyle(Qt::CustomDashLine); // 确保使用自定义虚线样式
+            painter.setPen(dashPen);
             painter.setBrush(Qt::NoBrush);
-            painter.drawRect(shape->getRect().adjusted(-2, -2, 2, 2));//扩大轮廓
+            
+            // 只绘制一次矩形，避免双线效果
+            painter.drawRect(shape->getRect());
+            
+            // 重新启用抗锯齿以绘制手柄
+            painter.setRenderHint(QPainter::Antialiasing, true);
             
             // 绘制调整大小的手柄
             shape->drawResizeHandles(&painter);
@@ -114,8 +128,9 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
     }
 
     // 更新鼠标光标样式
+    
+    // 首先检查鼠标是否位于调整大小的手柄上（对于选中的形状）
     if (m_selectedShape) {
-        // 检查鼠标是否位于调整大小的手柄上
         Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
         
         if (handle != Shape::None) {
@@ -124,30 +139,20 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
                 case Shape::TopLeft:
                 case Shape::BottomRight:
                     setCursor(Qt::SizeFDiagCursor); // 斜向双向箭头 ↘↖
-                    break;
+                    return;
                 case Shape::TopRight:
                 case Shape::BottomLeft:
                     setCursor(Qt::SizeBDiagCursor); // 斜向双向箭头 ↗↙
-                    break;
+                    return;
                 case Shape::Top:
                 case Shape::Bottom:
                     setCursor(Qt::SizeVerCursor); // 垂直双向箭头 ↕
-                    break;
+                    return;
                 case Shape::Left:
                 case Shape::Right:
                     setCursor(Qt::SizeHorCursor); // 水平双向箭头 ↔
-                    break;
-                default:
-                    setCursor(Qt::ArrowCursor);
-                    break;
+                    return;
             }
-            return;
-        }
-        
-        // 检查鼠标是否在选中的形状内部
-        if (m_selectedShape->contains(event->pos())) {
-            setCursor(Qt::SizeAllCursor); // 四向箭头
-            return;
         }
     }
     
@@ -159,7 +164,7 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
         }
     }
     
-    // 默认为标准光标
+    // 如果鼠标不在任何形状或手柄上，设置为标准光标
     setCursor(Qt::ArrowCursor);
 }
 
