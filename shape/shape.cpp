@@ -255,14 +255,15 @@ QRect CircleShape::textRect() const
 
 bool CircleShape::contains(const QPoint& point) const
 {
-    // 计算点到圆心的距离，与半径比较
+    // 检查点是否在椭圆内
     QPoint center = m_rect.center();
-    int dx = point.x() - center.x();
-    int dy = point.y() - center.y();
-    int distanceSquared = dx * dx + dy * dy;
+    double a = m_rect.width() / 2.0;  // 半长轴
+    double b = m_rect.height() / 2.0; // 半短轴
     
-    int radius = qMin(m_rect.width(), m_rect.height()) / 2;
-    return distanceSquared <= radius * radius;
+    double normX = (point.x() - center.x()) / a;
+    double normY = (point.y() - center.y()) / b;
+    
+    return (normX * normX + normY * normY) <= 1.0;
 }
 
 void CircleShape::registerShape()
