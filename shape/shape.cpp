@@ -1,6 +1,7 @@
 #include "shape/shape.h"
 #include "shape/shapefactory.h"
 
+
 // Shape基类
 Shape::Shape(const QString& type, const int& basis)
     : m_type(type), m_editing(false)
@@ -169,6 +170,7 @@ void Shape::setEditing(bool editing)
 void Shape::updateText(const QString& text)
 {
     m_text = text;
+    m_text.remove(QRegularExpression("^\\n+")); // 去除开头的换行符
 }
 
 void Shape::drawText(QPainter* painter) const

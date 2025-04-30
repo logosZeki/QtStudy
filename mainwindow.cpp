@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_layout->addWidget(m_drawingArea);
 
     // 设置窗口标题和大小
-    setWindowTitle("简单流程图设计器");
+    setWindowTitle(tr("Simple flowchart Designer"));
     resize(800, 600);
 }
 

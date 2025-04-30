@@ -1,4 +1,4 @@
-#ifndef CUSTOMTEXTEDIT_H
+﻿#ifndef CUSTOMTEXTEDIT_H
 #define CUSTOMTEXTEDIT_H
 
 #include <QTextEdit>
