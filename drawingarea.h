@@ -5,8 +5,8 @@
 #include <QVector>
 #include <QMouseEvent>
 #include <QLineEdit>
-#include <QTextEdit>
 #include "shape/shape.h"
+#include "customtextedit.h"
 
 class DrawingArea : public QWidget
 {
@@ -45,7 +45,7 @@ private:
     bool m_resizing;
     
     // 文本编辑相关
-    QTextEdit* m_textEditor;
+    CustomTextEdit* m_textEditor;
 };
 
 #endif // DRAWINGAREA_H

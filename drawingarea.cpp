@@ -2,8 +2,8 @@
 #include <QPainter>
 #include <QMimeData>
 #include "shape/shapefactory.h"
-#include <QTextEdit>
 #include <QKeyEvent>
+#include "customtextedit.h"
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
@@ -274,11 +274,10 @@ void DrawingArea::mouseDoubleClickEvent(QMouseEvent *event)
 void DrawingArea::createTextEditor()
 {
     if (!m_textEditor) {
-        m_textEditor = new QTextEdit(this);
-        m_textEditor->setFrameStyle(QFrame::NoFrame);
+        m_textEditor = new CustomTextEdit(this);
+        m_textEditor->setFrameStyle(QFrame::Box);  // 设置边框样式为方框
+        m_textEditor->setStyleSheet("border: 1px solid black;");  // 设置黑色边框
         m_textEditor->installEventFilter(this);
-        m_textEditor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        m_textEditor->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         m_textEditor->hide();
     }
 }

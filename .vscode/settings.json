@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "*.cpp": "cpp",
-        "functional": "cpp",
-        "qdragenterevent": "cpp"
-    }
-}
