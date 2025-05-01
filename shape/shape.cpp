@@ -243,16 +243,10 @@ void CircleShape::paint(QPainter* painter)
 
 QRect CircleShape::textRect() const
 {
-    // 为圆形提供合适的文本区域
-    int side = qMin(m_rect.width(), m_rect.height());
-    int margin = side / 4;  // 较大的边距，因为圆形有较小的有效区域
-    
-    return QRect(
-        m_rect.center().x() - side / 2 + margin,
-        m_rect.center().y() - side / 2 + margin,
-        side - 2 * margin,
-        side - 2 * margin
-    );
+    // 为椭圆提供合适的文本区域
+    int marginX = m_rect.width() / 4;
+    int marginY = m_rect.height() / 4;
+    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
 }
 
 bool CircleShape::contains(const QPoint& point) const
