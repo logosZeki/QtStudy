@@ -15,8 +15,12 @@ protected:
     void showEvent(QShowEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     
+private slots:
+    void performCenterCursor();
+
 private:
     void centerCursor();
+    bool m_centerPending;
 };
 
 #endif // CUSTOMTEXTEDIT_H

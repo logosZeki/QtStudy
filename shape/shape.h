@@ -70,7 +70,7 @@ public:
     QString text() const;
     bool isEditing() const;
     void setEditing(bool editing);
-    void updateText(const QString& text);
+    //void updateText(const QString& text);
     
     // 绘制文本
     void drawText(QPainter* painter) const;

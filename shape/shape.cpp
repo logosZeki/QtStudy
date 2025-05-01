@@ -150,6 +150,7 @@ void Shape::resize(HandlePosition handle, const QPoint& offset)
 void Shape::setText(const QString& text)
 {
     m_text = text;
+    m_text.remove(QRegularExpression("^\\n+")); // 去除开头的换行符
 }
 
 QString Shape::text() const
@@ -167,11 +168,10 @@ void Shape::setEditing(bool editing)
     m_editing = editing;
 }
 
-void Shape::updateText(const QString& text)
-{
-    m_text = text;
-    m_text.remove(QRegularExpression("^\\n+")); // 去除开头的换行符
-}
+//void Shape::updateText(const QString& text)
+//{
+//    m_text = text;
+//}
 
 void Shape::drawText(QPainter* painter) const
 {
