@@ -1,3 +1,0 @@
-H:/Code/vs_C++/C++/build/KDevelop-Training/Example/StepByStepFlowChart/out/build/debug/CMakeFiles/CMakeScratch/TryCompile-5vwayp/CMakeFiles/cmTC_fbdf6.dir
-H:/Code/vs_C++/C++/build/KDevelop-Training/Example/StepByStepFlowChart/out/build/debug/CMakeFiles/CMakeScratch/TryCompile-5vwayp/CMakeFiles/edit_cache.dir
-H:/Code/vs_C++/C++/build/KDevelop-Training/Example/StepByStepFlowChart/out/build/debug/CMakeFiles/CMakeScratch/TryCompile-5vwayp/CMakeFiles/rebuild_cache.dir
