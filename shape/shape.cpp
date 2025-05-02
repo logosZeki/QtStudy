@@ -62,28 +62,28 @@ QRect Shape::handleRect(HandlePosition position) const
     
     // 根据位置计算手柄的中心点
     switch (position) {
-    case TopLeft:
+    case HandlePosition::TopLeft:
         center = m_rect.topLeft();
         break;
-    case Top:
+    case HandlePosition::Top:
         center = QPoint(m_rect.center().x(), m_rect.top());
         break;
-    case TopRight:
+    case HandlePosition::TopRight:
         center = m_rect.topRight();
         break;
-    case Right:
+    case HandlePosition::Right:
         center = QPoint(m_rect.right(), m_rect.center().y());
         break;
-    case BottomRight:
+    case HandlePosition::BottomRight:
         center = m_rect.bottomRight();
         break;
-    case Bottom:
+    case HandlePosition::Bottom:
         center = QPoint(m_rect.center().x(), m_rect.bottom());
         break;
-    case BottomLeft:
+    case HandlePosition::BottomLeft:
         center = m_rect.bottomLeft();
         break;
-    case Left:
+    case HandlePosition::Left:
         center = QPoint(m_rect.left(), m_rect.center().y());
         break;
     default:
@@ -101,28 +101,28 @@ void Shape::resize(HandlePosition handle, const QPoint& offset)
     
     // 根据不同的手柄位置调整矩形的不同部分
     switch (handle) {
-    case TopLeft:
+    case HandlePosition::TopLeft:
         newRect.setTopLeft(newRect.topLeft() + offset);
         break;
-    case Top:
+    case HandlePosition::Top:
         newRect.setTop(newRect.top() + offset.y());
         break;
-    case TopRight:
+    case HandlePosition::TopRight:
         newRect.setTopRight(newRect.topRight() + offset);
         break;
-    case Right:
+    case HandlePosition::Right:
         newRect.setRight(newRect.right() + offset.x());
         break;
-    case BottomRight:
+    case HandlePosition::BottomRight:
         newRect.setBottomRight(newRect.bottomRight() + offset);
         break;
-    case Bottom:
+    case HandlePosition::Bottom:
         newRect.setBottom(newRect.bottom() + offset.y());
         break;
-    case BottomLeft:
+    case HandlePosition::BottomLeft:
         newRect.setBottomLeft(newRect.bottomLeft() + offset);
         break;
-    case Left:
+    case HandlePosition::Left:
         newRect.setLeft(newRect.left() + offset.x());
         break;
     default:
@@ -195,6 +195,100 @@ QRect Shape::textRect() const
     int margin = qMin(m_rect.width(), m_rect.height()) / 10;
     return m_rect.adjusted(margin, margin, -margin, -margin);
 }
+
+
+
+// 连接点相关实现
+void Shape::drawConnectionPoints(QPainter* painter) const
+{
+    if (!m_hovered) {
+        return;
+    }
+    
+    // 如果连接点列表为空，创建它们
+    if (m_connectionPoints.isEmpty()) {
+        createConnectionPoints();
+    }
+    
+    painter->save();
+    
+    // 设置连接点样式
+    painter->setPen(Qt::blue);
+    painter->setBrush(Qt::white);
+    
+    // 绘制所有连接点
+    for (const ConnectionPoint* point : m_connectionPoints) {
+        QPoint pos = point->getPosition();
+        int halfSize = CONNECTION_POINT_SIZE / 2;
+        QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
+                       CONNECTION_POINT_SIZE, CONNECTION_POINT_SIZE);
+        painter->drawEllipse(pointRect);
+    }
+    
+    painter->restore();
+}
+
+QPoint Shape::getConnectionPoint(ConnectionPoint::Position position) const{
+    QRect rect = this->getRect();
+    //QPoint point = m_owner->getConnectionPoint(m_position);
+    switch (position) {
+    case ConnectionPoint::Top:
+        return QPoint(rect.center().x(), rect.top());
+    case ConnectionPoint::Right:
+        return QPoint(rect.right(), rect.center().y());
+    case ConnectionPoint::Bottom:
+        return QPoint(rect.center().x(), rect.bottom());
+    case ConnectionPoint::Left:
+        return QPoint(rect.left(), rect.center().y());
+    default:
+        return rect.center();
+    }
+}
+
+void Shape::createConnectionPoints() const
+{
+    // 清理旧的连接点（如果有）
+    qDeleteAll(m_connectionPoints);
+    m_connectionPoints.clear();
+    
+    // 创建四个标准连接点
+    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Top));
+    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Right));
+    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Bottom));
+    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Left));
+}
+
+QVector<ConnectionPoint*> Shape::getConnectionPoints()
+{
+    if (m_connectionPoints.isEmpty()) {
+        createConnectionPoints();
+    }
+    
+    return m_connectionPoints;
+}
+
+ConnectionPoint* Shape::hitConnectionPoint(const QPoint& point) const
+{
+    if (m_connectionPoints.isEmpty()) {
+        createConnectionPoints();
+    }
+    
+    // 检测点击的是哪个连接点
+    for (ConnectionPoint* cp : m_connectionPoints) {
+        QPoint pos = cp->getPosition();
+        int halfSize = CONNECTION_POINT_SIZE*3/4;//扩大检测范围
+        QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
+                        CONNECTION_POINT_SIZE*3/2, CONNECTION_POINT_SIZE*3/2);
+        
+        if (pointRect.contains(point)) {
+            return cp;
+        }
+    }
+    
+    return nullptr;
+}
+
+
 
 // RectangleShape实现
 RectangleShape::RectangleShape(const int& basis)
@@ -345,6 +439,33 @@ bool PentagonShape::contains(const QPoint& point) const
     return createPentagonPolygon().containsPoint(point, Qt::OddEvenFill);
 }
 
+QPoint PentagonShape::getConnectionPoint(ConnectionPoint::Position position) const{
+
+    QRect rect = this->getRect();
+    // 获取矩形的宽和高
+    int w = rect.width();
+    int h = rect.height();
+    // 按照新的公式计算五个点
+    double cos18 = cos(M_PI / 10); // cos(18°)
+    double sin36 = sin(M_PI / 5);  // sin(36°)
+    double cos36 = cos(M_PI / 5);  // cos(36°)
+    //QPoint point = m_owner->getConnectionPoint(m_position);
+    switch (position) {
+    case ConnectionPoint::Top:
+        return QPoint(m_rect.left() + w/2, m_rect.top());
+    case ConnectionPoint::Right:
+        return QPoint(m_rect.left() + w, m_rect.top() + (2*sin36*sin36)/(1+cos36)*h);
+    case ConnectionPoint::Bottom:
+        return QPoint(m_rect.left() + w/2, m_rect.top() + h);
+    case ConnectionPoint::Left:
+        return QPoint(m_rect.left(), m_rect.top() + (2*sin36*sin36)/(1+cos36)*h);
+    default:
+        return rect.center();
+    }
+}
+
+
+
 void PentagonShape::registerShape()
 {
     ShapeFactory::instance().registerShape(
@@ -402,75 +523,3 @@ void EllipseShape::registerShape()
     );
 }
 
-// 连接点相关实现
-void Shape::drawConnectionPoints(QPainter* painter) const
-{
-    if (!m_hovered) {
-        return;
-    }
-    
-    // 如果连接点列表为空，创建它们
-    if (m_connectionPoints.isEmpty()) {
-        createConnectionPoints();
-    }
-    
-    painter->save();
-    
-    // 设置连接点样式
-    painter->setPen(Qt::blue);
-    painter->setBrush(Qt::white);
-    
-    // 绘制所有连接点
-    for (const ConnectionPoint* point : m_connectionPoints) {
-        QPoint pos = point->getPosition();
-        int halfSize = CONNECTION_POINT_SIZE / 2;
-        QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
-                       CONNECTION_POINT_SIZE, CONNECTION_POINT_SIZE);
-        painter->drawEllipse(pointRect);
-    }
-    
-    painter->restore();
-}
-
-void Shape::createConnectionPoints() const
-{
-    // 清理旧的连接点（如果有）
-    qDeleteAll(m_connectionPoints);
-    m_connectionPoints.clear();
-    
-    // 创建四个标准连接点
-    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Top));
-    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Right));
-    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Bottom));
-    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Left));
-}
-
-QVector<ConnectionPoint*> Shape::getConnectionPoints()
-{
-    if (m_connectionPoints.isEmpty()) {
-        createConnectionPoints();
-    }
-    
-    return m_connectionPoints;
-}
-
-ConnectionPoint* Shape::hitConnectionPoint(const QPoint& point) const
-{
-    if (m_connectionPoints.isEmpty()) {
-        createConnectionPoints();
-    }
-    
-    // 检测点击的是哪个连接点
-    for (ConnectionPoint* cp : m_connectionPoints) {
-        QPoint pos = cp->getPosition();
-        int halfSize = CONNECTION_POINT_SIZE / 2;
-        QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
-                        CONNECTION_POINT_SIZE, CONNECTION_POINT_SIZE);
-        
-        if (pointRect.contains(point)) {
-            return cp;
-        }
-    }
-    
-    return nullptr;
-}

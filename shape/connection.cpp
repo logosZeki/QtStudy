@@ -1,4 +1,5 @@
-#include "connection.h"
+#include "shape/connection.h"
+#include "shape/shape.h"
 #include <cmath>
 
 // ConnectionPoint实现
@@ -13,20 +14,20 @@ QPoint ConnectionPoint::getPosition() const
         return QPoint(0, 0);//是什么坐标系里的0,0
     }
 
-    QRect rect = m_owner->getRect();
-    
-    switch (m_position) {
-    case Top:
-        return QPoint(rect.center().x(), rect.top());
-    case Right:
-        return QPoint(rect.right(), rect.center().y());
-    case Bottom:
-        return QPoint(rect.center().x(), rect.bottom());
-    case Left:
-        return QPoint(rect.left(), rect.center().y());
-    default:
-        return rect.center();
-    }
+    // QRect rect = m_owner->getRect();
+    QPoint point = m_owner->getConnectionPoint(m_position);
+    // switch (m_position) {
+    // case Top:
+    //     return QPoint(rect.center().x(), rect.top());
+    // case Right:
+    //     return QPoint(rect.right(), rect.center().y());
+    // case Bottom:
+    //     return QPoint(rect.center().x(), rect.bottom());
+    // case Left:
+    //     return QPoint(rect.left(), rect.center().y());
+    // default:
+    //     return rect.center();
+    // }
 }
 
 QString ConnectionPoint::positionToString(Position pos)

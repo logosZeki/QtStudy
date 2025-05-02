@@ -6,6 +6,8 @@
 #include <QString>
 #include <QRegularExpression> 
 #include <QVector>
+#include "shape/connection.h" 
+
 #define _USE_MATH_DEFINES
 #include <cmath>
 #ifndef M_PI
@@ -84,12 +86,15 @@ public:
 
     // 连接点相关方法
     void drawConnectionPoints(QPainter* painter) const;
+
+    virtual QPoint getConnectionPoint(ConnectionPoint::Position position) const;
+
     bool isHovered() const { return m_hovered; }
     void setHovered(bool hovered) { m_hovered = hovered; }
     
     // 获取所有可用的连接点
     virtual QVector<ConnectionPoint*> getConnectionPoints();
-    
+
     // 检测点击了哪个连接点（如果有）
     ConnectionPoint* hitConnectionPoint(const QPoint& point) const;
 
@@ -148,6 +153,8 @@ public:
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Pentagon"); }
     QRect textRect() const override;
+
+    virtual QPoint getConnectionPoint(ConnectionPoint::Position position) const;
     
     // 向工厂注册
     static void registerShape();

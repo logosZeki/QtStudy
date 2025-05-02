@@ -3,7 +3,9 @@
 
 #include <QPoint>
 #include <QPainter>
-#include "shape.h"
+
+// 前向声明
+class Shape;
 
 // 连接点类
 class ConnectionPoint
