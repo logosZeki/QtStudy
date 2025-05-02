@@ -1,4 +1,6 @@
 #include "mainwindow.h"
+#include "toolbar.h"
+#include "drawingarea.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

@@ -1,4 +1,4 @@
-﻿#include "customtextedit.h"
+﻿#include "chart/customtextedit.h"
 #include <QTextCursor>
 #include <QTextBlock>
 

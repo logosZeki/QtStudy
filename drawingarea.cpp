@@ -1,9 +1,11 @@
 #include "drawingarea.h"
 #include <QPainter>
 #include <QMimeData>
-#include "shape/shapefactory.h"
 #include <QKeyEvent>
-#include "customtextedit.h"
+#include "chart/shapefactory.h"
+#include "chart/customtextedit.h"
+#include "chart/shape.h"
+#include "chart/connection.h"
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),

@@ -1,5 +1,5 @@
-#include "shape/connection.h"
-#include "shape/shape.h"
+#include "chart/connection.h"
+#include "chart/shape.h"
 #include <cmath>
 
 // ConnectionPoint实现

@@ -1,4 +1,5 @@
-﻿#include "shape/shapefactory.h"
+﻿#include "chart/shapefactory.h"
+#include "chart/shape.h"
 
 ShapeFactory& ShapeFactory::instance() {
     static ShapeFactory instance;

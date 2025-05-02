@@ -1,6 +1,6 @@
-#include "shape/shape.h"
-#include "shape/shapefactory.h"
-#include "shape/connection.h"
+#include "chart/shape.h"
+#include "chart/shapefactory.h"
+#include "chart/connection.h"
 
 
 // Shape基类

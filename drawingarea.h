@@ -5,9 +5,13 @@
 #include <QVector>
 #include <QMouseEvent>
 #include <QLineEdit>
-#include "shape/shape.h"
-#include "shape/connection.h"
-#include "customtextedit.h"
+#include "chart/shape.h"
+
+// 添加前向声明
+class Shape;
+class Connection;
+class ConnectionPoint;
+class CustomTextEdit;
 
 class DrawingArea : public QWidget
 {

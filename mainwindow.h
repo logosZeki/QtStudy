@@ -3,8 +3,9 @@
 
 #include <QMainWindow>
 #include <QHBoxLayout>
-#include "toolbar.h"
-#include "drawingarea.h"
+
+class ToolBar;
+class DrawingArea;
 
 class MainWindow : public QMainWindow
 {

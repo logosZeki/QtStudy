@@ -1,6 +1,8 @@
 ﻿#include "mainwindow.h"
 #include <QApplication>
 #include <QTranslator>
+#include "chart/shape.h"
+
 
 int main(int argc, char *argv[])
 {

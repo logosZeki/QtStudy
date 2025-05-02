@@ -1,10 +1,11 @@
 #ifndef SHAPEFACTORY_H
 #define SHAPEFACTORY_H
 
-#include "shape/shape.h"
 #include <QString>
 #include <QMap>
 #include <functional>
+
+class Shape; // 前向声明
 
 class ShapeFactory {
 public:

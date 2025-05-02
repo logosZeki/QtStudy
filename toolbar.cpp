@@ -2,6 +2,7 @@
 #include <QDrag>
 #include <QMimeData>
 #include <QPainter>
+#include "chart/shape.h"
 
 // ShapeItem实现 (ShapeItem implementation)
 ShapeItem::ShapeItem(const QString& type, QWidget* parent)

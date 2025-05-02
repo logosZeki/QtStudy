@@ -11,7 +11,7 @@ class Shape;
 class ConnectionPoint
 {
 public:
-    enum Position {
+    enum  Position {
         Top,
         Right,
         Bottom,

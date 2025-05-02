@@ -6,7 +6,7 @@
 #include <QString>
 #include <QRegularExpression> 
 #include <QVector>
-#include "shape/connection.h" 
+#include "chart/connection.h" 
 
 #define _USE_MATH_DEFINES
 #include <cmath>
