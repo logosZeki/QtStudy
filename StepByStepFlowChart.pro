@@ -19,6 +19,7 @@ SOURCES += \
     drawingarea.cpp \
     main.cpp \
     mainwindow.cpp \
+    shape/connection.cpp \
     shape/shape.cpp \
     shape/shapefactory.cpp \
     toolbar.cpp
@@ -27,6 +28,7 @@ HEADERS += \
     customtextedit.h \
     drawingarea.h \
     mainwindow.h \
+    shape/connection.h \
     shape/shape.h \
     shape/shapefactory.h \
     toolbar.h

@@ -7,7 +7,8 @@
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
-      m_activeHandle(Shape::None), m_resizing(false), m_textEditor(nullptr)
+      m_activeHandle(Shape::None), m_resizing(false), m_textEditor(nullptr),
+      m_currentConnection(nullptr), m_hoveredShape(nullptr)
 {
     // 设置接受拖放 (Set accept drops)
     setAcceptDrops(true);
@@ -26,6 +27,10 @@ DrawingArea::~DrawingArea()
     qDeleteAll(m_shapes);
     m_shapes.clear();
     
+    // 清理所有连线
+    qDeleteAll(m_connections);
+    m_connections.clear();
+    
     if (m_textEditor) {
         delete m_textEditor;
     }
@@ -38,9 +43,22 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     
+    // 绘制所有连线
+    for (Connection *connection : m_connections) {
+        connection->paint(&painter);
+    }
+    
+    // 绘制正在创建的连线
+    if (m_currentConnection) {
+        m_currentConnection->paint(&painter);
+    }
+    
     // 绘制所有形状
     for (Shape *shape : m_shapes) {
         shape->paint(&painter);
+        
+        // 绘制连接点（当鼠标悬停时）
+        shape->drawConnectionPoints(&painter);
         
         // 如果是当前选中的形状，绘制一个选中框和调整大小的手柄
         if (shape == m_selectedShape) {
@@ -109,6 +127,36 @@ void DrawingArea::dropEvent(QDropEvent *event)
 
 void DrawingArea::mouseMoveEvent(QMouseEvent *event)
 {
+    // 更新正在创建的连线
+    if (m_currentConnection) {
+        m_currentConnection->setTemporaryEndPoint(event->pos());
+        
+        // 检测鼠标是否悬停在某个形状上（用于显示目标形状的连接点）
+        Shape* targetShape = nullptr;
+        for (int i = m_shapes.size() - 1; i >= 0; --i) {
+            if (m_shapes[i]->contains(event->pos())) {
+                targetShape = m_shapes[i];
+                break;
+            }
+        }
+        
+        // 更新悬停状态
+        if (m_hoveredShape != targetShape) {
+            if (m_hoveredShape) {
+                m_hoveredShape->setHovered(false);
+            }
+            
+            m_hoveredShape = targetShape;
+            
+            if (m_hoveredShape) {
+                m_hoveredShape->setHovered(true);
+            }
+        }
+        
+        update();
+        return;
+    }
+    
     // 调整大小
     if (m_resizing && m_selectedShape) {
         QPoint delta = event->pos() - m_dragStart;
@@ -133,7 +181,7 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-    // 更新鼠标光标样式
+    // 更新鼠标光标样式和形状悬停状态
     
     // 首先检查鼠标是否位于调整大小的手柄上（对于选中的形状）
     if (m_selectedShape) {
@@ -160,18 +208,45 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
                     return;
             }
         }
-    }
-    
-    // 检查鼠标是否位于任何形状上方
-    for (int i = m_shapes.size() - 1; i >= 0; --i) {
-        if (m_shapes[i]->contains(event->pos())) {
-            setCursor(Qt::SizeAllCursor); // 四向箭头
+        
+        // 检查是否点击了连接点
+        ConnectionPoint* cp = m_selectedShape->hitConnectionPoint(event->pos());
+        if (cp) {
+            setCursor(Qt::CrossCursor); // 十字光标表示可以开始连线
             return;
         }
     }
     
+    // 检查鼠标是否位于任何形状上方，并更新悬停状态
+    Shape* hoveredShape = nullptr;
+    
+    for (int i = m_shapes.size() - 1; i >= 0; --i) {
+        if (m_shapes[i]->contains(event->pos())) {
+            hoveredShape = m_shapes[i];
+            setCursor(Qt::SizeAllCursor); // 四向箭头
+            break;
+        }
+    }
+    
+    // 更新悬停状态
+    if (m_hoveredShape != hoveredShape) {
+        if (m_hoveredShape) {
+            m_hoveredShape->setHovered(false);
+        }
+        
+        m_hoveredShape = hoveredShape;
+        
+        if (m_hoveredShape) {
+            m_hoveredShape->setHovered(true);
+        }
+        
+        update(); // 重绘以更新连接点显示
+    }
+    
     // 如果鼠标不在任何形状或手柄上，设置为标准光标
-    setCursor(Qt::ArrowCursor);
+    if (!hoveredShape) {
+        setCursor(Qt::ArrowCursor);
+    }
 }
 
 void DrawingArea::mousePressEvent(QMouseEvent *event)
@@ -186,6 +261,15 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
     }
     
     if (event->button() == Qt::LeftButton) {
+        // 如果有一个形状被悬停且点击了连接点，开始创建连线
+        if (m_hoveredShape) {
+            ConnectionPoint* cp = m_hoveredShape->hitConnectionPoint(event->pos());
+            if (cp) {
+                startConnection(cp);
+                return;
+            }
+        }
+        
         // 如果已选中形状，检查是否点击了调整手柄
         if (m_selectedShape) {
             Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
@@ -196,55 +280,71 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
                 // 光标已经在mouseMoveEvent中设置，这里不需要再设置
                 return;
             }
-        }
-        
-        // 查找点击的是哪个形状
-        Shape *clickedShape = nullptr;
-
-        // 从后向前遍历，因为后添加的形状显示在上层
-        for (int i = m_shapes.size() - 1; i >= 0; --i) {
-            if (m_shapes[i]->contains(event->pos())) {
-                clickedShape = m_shapes[i];
-                break;
+            
+            // 检查是否点击了连接点
+            ConnectionPoint* cp = m_selectedShape->hitConnectionPoint(event->pos());
+            if (cp) {
+                startConnection(cp);
+                return;
             }
         }
-
-        if (clickedShape) {
-            // 选中形状，并准备拖动
-            m_selectedShape = clickedShape;
-            m_dragging = true;
-            m_dragStart = event->pos();
-            m_shapeStart = m_selectedShape->getRect().topLeft();
-            setCursor(Qt::ClosedHandCursor);
-        } else {
-            // 点击空白区域，取消选择
-            m_selectedShape = nullptr;
+        
+        // 检查是否点击了现有的形状
+        for (int i = m_shapes.size() - 1; i >= 0; --i) {
+            if (m_shapes[i]->contains(event->pos())) {
+                // 选中形状并准备拖动
+                m_selectedShape = m_shapes[i];
+                m_dragging = true;
+                m_dragStart = event->pos();
+                m_shapeStart = m_selectedShape->getRect().topLeft();
+                
+                // 将选中的形状移到最前面
+                if (i < m_shapes.size() - 1) {
+                    m_shapes.removeAt(i);
+                    m_shapes.append(m_selectedShape);
+                }
+                
+                update();
+                return;
+            }
         }
         
-        // 重绘以更新选中状态
+        // 如果点击空白区域，取消选中当前形状
+        m_selectedShape = nullptr;
         update();
     }
 }
 
 void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
-        // 结束调整大小
-        if (m_resizing) {
-            m_resizing = false;
-            m_activeHandle = Shape::None;
-            // 光标会在下一次mouseMoveEvent中重新设置
+    // 完成连接创建
+    if (m_currentConnection && event->button() == Qt::LeftButton) {
+        if (m_hoveredShape) {
+            // 寻找最近的连接点
+            ConnectionPoint* nearestPoint = findNearestConnectionPoint(m_hoveredShape, event->pos());
+            if (nearestPoint) {
+                completeConnection(nearestPoint);
+            } else {
+                cancelConnection();
+            }
+        } else {
+            cancelConnection();
         }
-        
-        // 结束拖动
-        if (m_dragging) {
-            m_dragging = false;
-            // 光标会在下一次mouseMoveEvent中重新设置
-        }
-        
-        // 触发mouseMoveEvent来更新光标
-        QMouseEvent fakeEvent(QEvent::MouseMove, event->pos(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
-        mouseMoveEvent(&fakeEvent);
+        update();
+        return;
+    }
+    
+    // 如果正在调整大小，结束调整
+    if (m_resizing) {
+        m_resizing = false;
+        m_activeHandle = Shape::None;
+        return;
+    }
+    
+    // 如果正在拖动，结束拖动
+    if (m_dragging) {
+        m_dragging = false;
+        return;
     }
 }
 
@@ -353,4 +453,90 @@ bool DrawingArea::eventFilter(QObject *watched, QEvent *event)
     }
     
     return QWidget::eventFilter(watched, event);
+}
+
+// 连线相关方法实现
+void DrawingArea::startConnection(ConnectionPoint* startPoint)
+{
+    // 创建新的连线
+    m_currentConnection = new Connection(startPoint);
+    
+    // 设置初始临时终点为鼠标位置
+    m_currentConnection->setTemporaryEndPoint(QCursor::pos());
+    
+    update();
+}
+
+void DrawingArea::completeConnection(ConnectionPoint* endPoint)
+{
+    if (!m_currentConnection) {
+        return;
+    }
+    
+    // 设置连线的终点
+    m_currentConnection->setEndPoint(endPoint);
+    
+    // 如果是完整的连线，添加到连线列表
+    if (m_currentConnection->isComplete()) {
+        m_connections.append(m_currentConnection);
+    } else {
+        delete m_currentConnection;
+    }
+    
+    m_currentConnection = nullptr;
+    
+    // 重置悬停状态
+    if (m_hoveredShape) {
+        m_hoveredShape->setHovered(false);
+        m_hoveredShape = nullptr;
+    }
+}
+
+void DrawingArea::cancelConnection()
+{
+    if (m_currentConnection) {
+        delete m_currentConnection;
+        m_currentConnection = nullptr;
+    }
+    
+    // 重置悬停状态
+    if (m_hoveredShape) {
+        m_hoveredShape->setHovered(false);
+        m_hoveredShape = nullptr;
+    }
+}
+
+ConnectionPoint* DrawingArea::findNearestConnectionPoint(Shape* shape, const QPoint& pos)
+{
+    if (!shape) {
+        return nullptr;
+    }
+    
+    QVector<ConnectionPoint*> points = shape->getConnectionPoints();
+    if (points.isEmpty()) {
+        return nullptr;
+    }
+    
+    // 查找最近的连接点
+    ConnectionPoint* nearest = nullptr;
+    double minDistance = std::numeric_limits<double>::max();
+    
+    for (ConnectionPoint* point : points) {
+        QPoint pointPos = point->getPosition();
+        double distance = std::sqrt(std::pow(pointPos.x() - pos.x(), 2) + 
+                                  std::pow(pointPos.y() - pos.y(), 2));
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearest = point;
+        }
+    }
+    
+    // 设置一个最大距离阈值，如果太远就不连接
+    const double MAX_DISTANCE = 50.0;
+    if (minDistance > MAX_DISTANCE) {
+        return nullptr;
+    }
+    
+    return nearest;
 }

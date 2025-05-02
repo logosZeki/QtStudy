@@ -1,16 +1,20 @@
 #include "shape/shape.h"
 #include "shape/shapefactory.h"
+#include "shape/connection.h"
 
 
 // Shape基类
 Shape::Shape(const QString& type, const int& basis)
-    : m_type(type), m_editing(false)
+    : m_type(type), m_editing(false), m_hovered(false)
 {
     // m_rect will be initialized in derived classes
 }
 
 Shape::~Shape()
 {
+    // 清理连接点
+    qDeleteAll(m_connectionPoints);
+    m_connectionPoints.clear();
 }
 
 void Shape::setRect(const QRect& rect)
@@ -396,4 +400,77 @@ void EllipseShape::registerShape()
         ShapeTypes::Ellipse,
         [](const int& basis) -> Shape* { return new EllipseShape(basis); }
     );
+}
+
+// 连接点相关实现
+void Shape::drawConnectionPoints(QPainter* painter) const
+{
+    if (!m_hovered) {
+        return;
+    }
+    
+    // 如果连接点列表为空，创建它们
+    if (m_connectionPoints.isEmpty()) {
+        createConnectionPoints();
+    }
+    
+    painter->save();
+    
+    // 设置连接点样式
+    painter->setPen(Qt::blue);
+    painter->setBrush(Qt::white);
+    
+    // 绘制所有连接点
+    for (const ConnectionPoint* point : m_connectionPoints) {
+        QPoint pos = point->getPosition();
+        int halfSize = CONNECTION_POINT_SIZE / 2;
+        QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
+                       CONNECTION_POINT_SIZE, CONNECTION_POINT_SIZE);
+        painter->drawEllipse(pointRect);
+    }
+    
+    painter->restore();
+}
+
+void Shape::createConnectionPoints() const
+{
+    // 清理旧的连接点（如果有）
+    qDeleteAll(m_connectionPoints);
+    m_connectionPoints.clear();
+    
+    // 创建四个标准连接点
+    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Top));
+    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Right));
+    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Bottom));
+    m_connectionPoints.append(new ConnectionPoint(const_cast<Shape*>(this), ConnectionPoint::Left));
+}
+
+QVector<ConnectionPoint*> Shape::getConnectionPoints()
+{
+    if (m_connectionPoints.isEmpty()) {
+        createConnectionPoints();
+    }
+    
+    return m_connectionPoints;
+}
+
+ConnectionPoint* Shape::hitConnectionPoint(const QPoint& point) const
+{
+    if (m_connectionPoints.isEmpty()) {
+        createConnectionPoints();
+    }
+    
+    // 检测点击的是哪个连接点
+    for (ConnectionPoint* cp : m_connectionPoints) {
+        QPoint pos = cp->getPosition();
+        int halfSize = CONNECTION_POINT_SIZE / 2;
+        QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
+                        CONNECTION_POINT_SIZE, CONNECTION_POINT_SIZE);
+        
+        if (pointRect.contains(point)) {
+            return cp;
+        }
+    }
+    
+    return nullptr;
 }

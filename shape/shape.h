@@ -5,11 +5,15 @@
 #include <QPainter>
 #include <QString>
 #include <QRegularExpression> 
+#include <QVector>
 #define _USE_MATH_DEFINES
 #include <cmath>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+// 前向声明
+class ConnectionPoint;
 
 // 常量定义形状类型
 namespace ShapeTypes {
@@ -78,14 +82,34 @@ public:
     // 获取文本位置
     virtual QRect textRect() const;
 
+    // 连接点相关方法
+    void drawConnectionPoints(QPainter* painter) const;
+    bool isHovered() const { return m_hovered; }
+    void setHovered(bool hovered) { m_hovered = hovered; }
+    
+    // 获取所有可用的连接点
+    virtual QVector<ConnectionPoint*> getConnectionPoints();
+    
+    // 检测点击了哪个连接点（如果有）
+    ConnectionPoint* hitConnectionPoint(const QPoint& point) const;
+
 protected:
     QString m_type;
     QRect m_rect;
     QString m_text;  // 存储形状中的文本
     bool m_editing;  // 标记是否处于编辑状态
+    bool m_hovered;  // 标记鼠标是否悬停在形状上
     
     // 手柄大小常量
     static const int HANDLE_SIZE = 8;
+    // 连接点大小常量
+    static const int CONNECTION_POINT_SIZE = 8;
+    
+    // 存储连接点
+    mutable QVector<ConnectionPoint*> m_connectionPoints;
+    
+    // 创建连接点（惰性初始化）
+    virtual void createConnectionPoints() const;
 };
 
 // 矩形形状

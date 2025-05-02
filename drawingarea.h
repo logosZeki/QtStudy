@@ -6,6 +6,7 @@
 #include <QMouseEvent>
 #include <QLineEdit>
 #include "shape/shape.h"
+#include "shape/connection.h"
 #include "customtextedit.h"
 
 class DrawingArea : public QWidget
@@ -33,6 +34,14 @@ private:
     void finishTextEditing();
     void cancelTextEditing();
     
+    // 流程图连线相关方法
+    void startConnection(ConnectionPoint* startPoint);
+    void completeConnection(ConnectionPoint* endPoint);
+    void cancelConnection();
+    
+    // 查找特定图形下最近的连接点
+    ConnectionPoint* findNearestConnectionPoint(Shape* shape, const QPoint& pos);
+    
 private:
     QVector<Shape*> m_shapes;
     Shape* m_selectedShape;
@@ -46,6 +55,11 @@ private:
     
     // 文本编辑相关
     CustomTextEdit* m_textEditor;
+    
+    // 连线相关变量
+    QVector<Connection*> m_connections;  // 所有连线
+    Connection* m_currentConnection;     // 正在创建的连线
+    Shape* m_hoveredShape;               // 鼠标悬停的形状
 };
 
 #endif // DRAWINGAREA_H

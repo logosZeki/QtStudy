@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)  #cmake�汾���3.10
 
-SET(CMAKE_TOOLCHAIN_FILE  "H:/Code/vs_C++/C++/build/thirdparty_install/vcpkg/scripts/buildsystems/vcpkg.cmake")
+#SET(CMAKE_TOOLCHAIN_FILE  "H:/Code/vs_C++/C++/build/thirdparty_install/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 # ��ȡ��ǰ��CMake�ļ�����Ŀ¼������·�� 
 get_filename_component(CURRENT_DIR_PATH "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE) 
