@@ -6,13 +6,13 @@
 #include <QString>
 #include <QRegularExpression> 
 #include <QVector>
-#include "chart/connection.h" 
-
 #define _USE_MATH_DEFINES
 #include <cmath>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+#include "chart/connection.h" //因为要用到ConnectionPoint里的枚举
 
 // 前向声明
 class ConnectionPoint;

@@ -5,7 +5,7 @@
 #include <QVector>
 #include <QMouseEvent>
 #include <QLineEdit>
-#include "chart/shape.h"
+#include "chart/shape.h" //因为要用到Shape里的枚举
 
 // 添加前向声明
 class Shape;
