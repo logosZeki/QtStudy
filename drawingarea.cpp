@@ -512,6 +512,12 @@ void DrawingArea::completeConnection(ConnectionPoint* endPoint)
         return;
     }
     
+    if(m_currentConnection->getStartPoint()->equalTo(endPoint)) {
+        // 如果起点和终点相同，则不创建连线
+        delete m_currentConnection;
+        m_currentConnection = nullptr;
+        return;
+    }
     // 设置连线的终点
     m_currentConnection->setEndPoint(endPoint);
     
