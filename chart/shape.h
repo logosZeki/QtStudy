@@ -89,21 +89,19 @@ public:
 
     virtual QPoint getConnectionPoint(ConnectionPoint::Position position) const;
 
-    bool isHovered() const { return m_hovered; }
-    void setHovered(bool hovered) { m_hovered = hovered; }
     
     // 获取所有可用的连接点
     virtual QVector<ConnectionPoint*> getConnectionPoints();
 
     // 检测点击了哪个连接点（如果有）
-    ConnectionPoint* hitConnectionPoint(const QPoint& point) const;
+    ConnectionPoint* hitConnectionPoint(const QPoint& point, bool isStart) const;
 
 protected:
     QString m_type;
     QRect m_rect;
     QString m_text;  // 存储形状中的文本
     bool m_editing;  // 标记是否处于编辑状态
-    bool m_hovered;  // 标记鼠标是否悬停在形状上
+
     
     // 手柄大小常量
     static const int HANDLE_SIZE = 8;

@@ -23,6 +23,8 @@ public:
     QPoint getPosition() const;
     Shape* getOwner() const { return m_owner; }
     Position getPositionType() const { return m_position; }
+
+    bool equalTo(const ConnectionPoint* other) const ;
     
     static QString positionToString(Position pos);
     static Position stringToPosition(const QString& str);

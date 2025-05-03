@@ -5,7 +5,7 @@
 
 // Shape基类
 Shape::Shape(const QString& type, const int& basis)
-    : m_type(type), m_editing(false), m_hovered(false)
+    : m_type(type), m_editing(false)
 {
     // m_rect will be initialized in derived classes
 }
@@ -201,9 +201,6 @@ QRect Shape::textRect() const
 // 连接点相关实现
 void Shape::drawConnectionPoints(QPainter* painter) const
 {
-    if (!m_hovered) {
-        return;
-    }
     
     // 如果连接点列表为空，创建它们
     if (m_connectionPoints.isEmpty()) {
@@ -267,23 +264,39 @@ QVector<ConnectionPoint*> Shape::getConnectionPoints()
     return m_connectionPoints;
 }
 
-ConnectionPoint* Shape::hitConnectionPoint(const QPoint& point) const
+ConnectionPoint* Shape::hitConnectionPoint(const QPoint& point,bool isStart) const
 {
     if (m_connectionPoints.isEmpty()) {
         createConnectionPoints();
     }
-    
-    // 检测点击的是哪个连接点
-    for (ConnectionPoint* cp : m_connectionPoints) {
-        QPoint pos = cp->getPosition();
-        int halfSize = CONNECTION_POINT_SIZE*3/4;//扩大检测范围
-        QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
-                        CONNECTION_POINT_SIZE*3/2, CONNECTION_POINT_SIZE*3/2);
-        
-        if (pointRect.contains(point)) {
-            return cp;
+    if(isStart){//起点判定范围小
+        // 检测点击的是哪个连接点
+        for (ConnectionPoint* cp : m_connectionPoints) {
+            QPoint pos = cp->getPosition();
+            int halfSize = CONNECTION_POINT_SIZE*3/4;
+            QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
+                            CONNECTION_POINT_SIZE*3/2, CONNECTION_POINT_SIZE*3/2);
+            
+            if (pointRect.contains(point)) {
+                return cp;
+            }
         }
+
+    }else{//终点判定范围大
+            // 检测点击的是哪个连接点
+        for (ConnectionPoint* cp : m_connectionPoints) {
+            QPoint pos = cp->getPosition();
+            int halfSize = CONNECTION_POINT_SIZE;
+            QRect pointRect(pos.x() - halfSize, pos.y() - halfSize, 
+                            CONNECTION_POINT_SIZE*2, CONNECTION_POINT_SIZE*2);
+            
+            if (pointRect.contains(point)) {
+                return cp;
+            }
+        }
+
     }
+    
     
     return nullptr;
 }
@@ -308,6 +321,8 @@ void RectangleShape::paint(QPainter* painter)
     
     // 绘制文本
     drawText(painter);
+    
+
 }
 
 void RectangleShape::registerShape()
@@ -337,6 +352,7 @@ void CircleShape::paint(QPainter* painter)
     
     // 绘制文本
     drawText(painter);
+
 }
 
 QRect CircleShape::textRect() const
@@ -393,6 +409,7 @@ void PentagonShape::paint(QPainter* painter)
     
     // 绘制文本
     drawText(painter);
+
 }
 
 QPolygon PentagonShape::createPentagonPolygon() const
@@ -492,6 +509,7 @@ void EllipseShape::paint(QPainter* painter)
     
     // 绘制文本
     drawText(painter);
+
 }
 
 QRect EllipseShape::textRect() const

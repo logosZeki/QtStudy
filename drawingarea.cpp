@@ -6,6 +6,7 @@
 #include "chart/customtextedit.h"
 #include "chart/shape.h"
 #include "chart/connection.h"
+#include "util/Utils.h"
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
@@ -57,10 +58,13 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     
     // 绘制所有形状
     for (Shape *shape : m_shapes) {
-        shape->paint(&painter);
+        shape->paint(&painter);//包括绘制文字和形状
         
         // 绘制连接点（当鼠标悬停时）
-        shape->drawConnectionPoints(&painter);
+        if(m_hoveredShape==shape){
+            shape->drawConnectionPoints(&painter);
+        }
+        
         
         // 如果是当前选中的形状，绘制一个选中框和调整大小的手柄
         if (shape == m_selectedShape) {
@@ -127,34 +131,79 @@ void DrawingArea::dropEvent(QDropEvent *event)
     }
 }
 
+void DrawingArea::updateCursor(QMouseEvent *event){
+    // 更新鼠标光标样式和形状悬停状态
+    // 首先检查鼠标是否位于调整大小的手柄上（对于选中的形状）
+    if (m_selectedShape) {
+        Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
+        
+        if (handle != Shape::None) {
+            // 根据手柄位置设置对应的光标样式
+            switch (handle) {
+                case Shape::TopLeft:
+                case Shape::BottomRight:
+                    setCursor(Qt::SizeFDiagCursor); // 斜向双向箭头 ↘↖
+                    return;
+                case Shape::TopRight:
+                case Shape::BottomLeft:
+                    setCursor(Qt::SizeBDiagCursor); // 斜向双向箭头 ↗↙
+                    return;
+                case Shape::Top:
+                case Shape::Bottom:
+                    setCursor(Qt::SizeVerCursor); // 垂直双向箭头 ↕
+                    return;
+                case Shape::Left:
+                case Shape::Right:
+                    setCursor(Qt::SizeHorCursor); // 水平双向箭头 ↔
+                    return;
+            }
+        }
+        
+    }
+
+
+    // 检查是否鼠标在连线的接点上
+    for (int i = m_shapes.size() - 1; i >= 0; --i) {
+        ConnectionPoint* cp = m_shapes[i]->hitConnectionPoint(event->pos(),true);
+        if (cp) {
+            // 创建自定义无箭头十字光标
+            QPixmap pixmap(32, 32);
+            pixmap.fill(Qt::transparent);
+            QPainter painter(&pixmap);
+            painter.setPen(QPen(Qt::black, 1));
+            // 画水平线
+            painter.drawLine(0, 16, 31, 16);
+            // 画垂直线
+            painter.drawLine(16, 0, 16, 31);
+            painter.end();
+
+            // 设置热点位置（十字交叉点）
+            QCursor customCursor(pixmap, 16, 16);
+            setCursor(customCursor);// 十字无箭头光标表示可以开始连线
+            return;
+        }
+    }
+
+
+}
 void DrawingArea::mouseMoveEvent(QMouseEvent *event)
 {
-    // 更新正在创建的连线
+    // 拉住拉线拖动时的操作
     if (m_currentConnection) {
         m_currentConnection->setTemporaryEndPoint(event->pos());
-        
-        // 检测鼠标是否悬停在某个形状上（用于显示目标形状的连接点）
-        Shape* targetShape = nullptr;
+        bool isOverShape = false;
         for (int i = m_shapes.size() - 1; i >= 0; --i) {
-            if (m_shapes[i]->contains(event->pos())) {
-                targetShape = m_shapes[i];
+            ConnectionPoint* cp=m_shapes[i]->hitConnectionPoint(event->pos(),false);
+            if(cp|| m_shapes[i]->contains(event->pos())){
+                m_hoveredShape = m_shapes[i];
+                setCursor(Qt::ArrowCursor); // 普通箭头
+                isOverShape=true;
                 break;
             }
         }
-        
-        // 更新悬停状态
-        if (m_hoveredShape != targetShape) {
-            if (m_hoveredShape) {
-                m_hoveredShape->setHovered(false);
-            }
-            
-            m_hoveredShape = targetShape;
-            
-            if (m_hoveredShape) {
-                m_hoveredShape->setHovered(true);
-            }
+        if(!isOverShape){
+            m_hoveredShape = nullptr;
         }
-        
         update();
         return;
     }
@@ -183,8 +232,9 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
+
+
     // 更新鼠标光标样式和形状悬停状态
-    
     // 首先检查鼠标是否位于调整大小的手柄上（对于选中的形状）
     if (m_selectedShape) {
         Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
@@ -209,46 +259,35 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
                     setCursor(Qt::SizeHorCursor); // 水平双向箭头 ↔
                     return;
             }
-        }
-        
-        // 检查是否点击了连接点
-        ConnectionPoint* cp = m_selectedShape->hitConnectionPoint(event->pos());
-        if (cp) {
-            setCursor(Qt::CrossCursor); // 十字光标表示可以开始连线
+        }   
+    }
+
+    // 检查鼠标是否位于任何形状上方，并更新悬停状态
+    // 1.鼠标位于拉线的圆点附近；2.鼠标位于某个形状上
+
+    for (int i = m_shapes.size() - 1; i >= 0; --i) {
+        ConnectionPoint* cp=m_shapes[i]->hitConnectionPoint(event->pos(),true);
+        if(cp&&m_selectedShape!=m_shapes[i]){
+            setCursor(Utils::getCrossCursor());// 十字无箭头光标表示可以开始连线
+            if(m_hoveredShape!=m_shapes[i]){
+                m_hoveredShape = m_shapes[i];
+                update(); // 重绘以更新连接点显示
+            }
+            return;
+        }else if(m_shapes[i]->contains(event->pos())){
+            if(m_hoveredShape!=m_shapes[i]){
+                m_hoveredShape = m_shapes[i];
+                update(); // 重绘以更新连接点显示
+            }
+            setCursor(Qt::SizeAllCursor); // 四向箭头
             return;
         }
     }
     
-    // 检查鼠标是否位于任何形状上方，并更新悬停状态
-    Shape* hoveredShape = nullptr;
-    
-    for (int i = m_shapes.size() - 1; i >= 0; --i) {
-        if (m_shapes[i]->contains(event->pos())) {
-            hoveredShape = m_shapes[i];
-            setCursor(Qt::SizeAllCursor); // 四向箭头
-            break;
-        }
-    }
-    
-    // 更新悬停状态
-    if (m_hoveredShape != hoveredShape) {
-        if (m_hoveredShape) {
-            m_hoveredShape->setHovered(false);
-        }
-        
-        m_hoveredShape = hoveredShape;
-        
-        if (m_hoveredShape) {
-            m_hoveredShape->setHovered(true);
-        }
-        
-        update(); // 重绘以更新连接点显示
-    }
-    
     // 如果鼠标不在任何形状或手柄上，设置为标准光标
-    if (!hoveredShape) {
+
         setCursor(Qt::ArrowCursor);
-    }
+    
 }
 
 void DrawingArea::mousePressEvent(QMouseEvent *event)
@@ -263,16 +302,9 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
     }
     
     if (event->button() == Qt::LeftButton) {
-        // 如果有一个形状被悬停且点击了连接点，开始创建连线
-        if (m_hoveredShape) {
-            ConnectionPoint* cp = m_hoveredShape->hitConnectionPoint(event->pos());
-            if (cp) {
-                startConnection(cp);
-                return;
-            }
-        }
+
         
-        // 如果已选中形状，检查是否点击了调整手柄
+        // 如果已选中形状，检查是否点击了调整尺寸手柄
         if (m_selectedShape) {
             Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
             if (handle != Shape::None) {
@@ -282,15 +314,18 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
                 // 光标已经在mouseMoveEvent中设置，这里不需要再设置
                 return;
             }
-            
             // 检查是否点击了连接点
-            ConnectionPoint* cp = m_selectedShape->hitConnectionPoint(event->pos());
+        }
+        //如果有一个形状被悬停且点击了连接点，开始创建连线,仅可以在未被选中的图形上创建连线
+        if (m_hoveredShape&&m_hoveredShape!=m_selectedShape){
+            ConnectionPoint* cp = m_hoveredShape->hitConnectionPoint(event->pos(),true);
             if (cp) {
                 startConnection(cp);
                 return;
             }
         }
         
+
         // 检查是否点击了现有的形状
         for (int i = m_shapes.size() - 1; i >= 0; --i) {
             if (m_shapes[i]->contains(event->pos())) {
@@ -310,6 +345,8 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
                 return;
             }
         }
+
+
         
         // 如果点击空白区域，取消选中当前形状
         m_selectedShape = nullptr;
@@ -486,10 +523,10 @@ void DrawingArea::completeConnection(ConnectionPoint* endPoint)
     }
     
     m_currentConnection = nullptr;
+    m_selectedShape=nullptr;
     
     // 重置悬停状态
     if (m_hoveredShape) {
-        m_hoveredShape->setHovered(false);
         m_hoveredShape = nullptr;
     }
 }
@@ -503,7 +540,6 @@ void DrawingArea::cancelConnection()
     
     // 重置悬停状态
     if (m_hoveredShape) {
-        m_hoveredShape->setHovered(false);
         m_hoveredShape = nullptr;
     }
 }

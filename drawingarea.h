@@ -45,6 +45,8 @@ private:
     
     // 查找特定图形下最近的连接点
     ConnectionPoint* findNearestConnectionPoint(Shape* shape, const QPoint& pos);
+
+    void updateCursor(QMouseEvent *event);
     
 private:
     QVector<Shape*> m_shapes;

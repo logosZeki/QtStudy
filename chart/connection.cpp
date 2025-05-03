@@ -29,7 +29,12 @@ QPoint ConnectionPoint::getPosition() const
     //     return rect.center();
     // }
 }
-
+bool ConnectionPoint::equalTo(const ConnectionPoint* other) const{
+    if (!other) {
+        return false;  // 如果 other 是 nullptr，直接返回 false
+    }
+    return (m_owner == other->m_owner) && (m_position == other->m_position);
+}
 QString ConnectionPoint::positionToString(Position pos)
 {
     switch (pos) {
