@@ -7,7 +7,7 @@ QCursor Utils::getCrossCursor(){
     QPixmap pixmap(32, 32);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
-    painter.setPen(QPen(Qt::black, 1));
+    painter.setPen(QPen(Qt::black, 2));
     // 画水平线
     painter.drawLine(0, 16, 31, 16);
     // 画垂直线

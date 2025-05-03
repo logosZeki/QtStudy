@@ -132,58 +132,6 @@ void DrawingArea::dropEvent(QDropEvent *event)
 }
 
 void DrawingArea::updateCursor(QMouseEvent *event){
-    // 更新鼠标光标样式和形状悬停状态
-    // 首先检查鼠标是否位于调整大小的手柄上（对于选中的形状）
-    if (m_selectedShape) {
-        Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
-        
-        if (handle != Shape::None) {
-            // 根据手柄位置设置对应的光标样式
-            switch (handle) {
-                case Shape::TopLeft:
-                case Shape::BottomRight:
-                    setCursor(Qt::SizeFDiagCursor); // 斜向双向箭头 ↘↖
-                    return;
-                case Shape::TopRight:
-                case Shape::BottomLeft:
-                    setCursor(Qt::SizeBDiagCursor); // 斜向双向箭头 ↗↙
-                    return;
-                case Shape::Top:
-                case Shape::Bottom:
-                    setCursor(Qt::SizeVerCursor); // 垂直双向箭头 ↕
-                    return;
-                case Shape::Left:
-                case Shape::Right:
-                    setCursor(Qt::SizeHorCursor); // 水平双向箭头 ↔
-                    return;
-            }
-        }
-        
-    }
-
-
-    // 检查是否鼠标在连线的接点上
-    for (int i = m_shapes.size() - 1; i >= 0; --i) {
-        ConnectionPoint* cp = m_shapes[i]->hitConnectionPoint(event->pos(),true);
-        if (cp) {
-            // 创建自定义无箭头十字光标
-            QPixmap pixmap(32, 32);
-            pixmap.fill(Qt::transparent);
-            QPainter painter(&pixmap);
-            painter.setPen(QPen(Qt::black, 1));
-            // 画水平线
-            painter.drawLine(0, 16, 31, 16);
-            // 画垂直线
-            painter.drawLine(16, 0, 16, 31);
-            painter.end();
-
-            // 设置热点位置（十字交叉点）
-            QCursor customCursor(pixmap, 16, 16);
-            setCursor(customCursor);// 十字无箭头光标表示可以开始连线
-            return;
-        }
-    }
-
 
 }
 void DrawingArea::mouseMoveEvent(QMouseEvent *event)
@@ -285,8 +233,7 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
     }
     
     // 如果鼠标不在任何形状或手柄上，设置为标准光标
-
-        setCursor(Qt::ArrowCursor);
+    setCursor(Qt::ArrowCursor);
     
 }
 
@@ -302,8 +249,6 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
     }
     
     if (event->button() == Qt::LeftButton) {
-
-        
         // 如果已选中形状，检查是否点击了调整尺寸手柄
         if (m_selectedShape) {
             Shape::HandlePosition handle = m_selectedShape->hitHandle(event->pos());
