@@ -262,7 +262,7 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
             // 检查是否点击了连接点
         }
         //如果有一个形状被悬停且点击了连接点，开始创建连线,仅可以在未被选中的图形上创建连线
-        if (m_hoveredShape&&m_hoveredShape!=m_selectedShape){
+        if (m_hoveredShape && m_hoveredShape!=m_selectedShape){
             ConnectionPoint* cp = m_hoveredShape->hitConnectionPoint(event->pos(),true);
             if (cp) {
                 startConnection(cp);
@@ -447,8 +447,8 @@ void DrawingArea::startConnection(ConnectionPoint* startPoint)
     // 创建新的连线
     m_currentConnection = new Connection(startPoint);
     
-    // 设置初始临时终点为鼠标位置
-    m_currentConnection->setTemporaryEndPoint(QCursor::pos());
+    // 设置初始临时终点为鼠标在绘图区域的位置，而不是屏幕坐标
+    m_currentConnection->setTemporaryEndPoint(mapFromGlobal(QCursor::pos()));
     
     update();
 }
