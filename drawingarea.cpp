@@ -361,11 +361,13 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         if (m_hoveredShape) {
             // 寻找最近的连接点
             ConnectionPoint* nearestPoint = findNearestConnectionPoint(m_hoveredShape, event->pos());
-            if (nearestPoint) {
+            //如果找到连接点且不是起点，完成连接
+            if (nearestPoint&&(!m_currentConnection->getStartPoint()->equalTo(nearestPoint))) {
                 completeConnection(nearestPoint);
             } else {
                 cancelConnection();
             }
+
         } else {
             cancelConnection();
         }
@@ -511,13 +513,8 @@ void DrawingArea::completeConnection(ConnectionPoint* endPoint)
     if (!m_currentConnection) {
         return;
     }
-    
-    if(m_currentConnection->getStartPoint()->equalTo(endPoint)) {
-        // 如果起点和终点相同，则不创建连线
-        delete m_currentConnection;
-        m_currentConnection = nullptr;
-        return;
-    }
+
+
     // 设置连线的终点
     m_currentConnection->setEndPoint(endPoint);
     
