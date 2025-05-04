@@ -316,13 +316,11 @@ RectangleShape::RectangleShape(const int& basis)
 void RectangleShape::paint(QPainter* painter)
 {
     painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
+    painter->setBrush(QBrush(Qt::white));
     painter->drawRect(m_rect);
     
     // 绘制文本
     drawText(painter);
-    
-
 }
 
 void RectangleShape::registerShape()
@@ -345,14 +343,13 @@ CircleShape::CircleShape(const int& basis)
 void CircleShape::paint(QPainter* painter)
 {
     painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
+    painter->setBrush(QBrush(Qt::white));
     
     // 直接绘制圆形，不需要额外计算
     painter->drawEllipse(m_rect);
     
     // 绘制文本
     drawText(painter);
-
 }
 
 QRect CircleShape::textRect() const
@@ -401,7 +398,7 @@ PentagonShape::PentagonShape(const int& basis)
 void PentagonShape::paint(QPainter* painter)
 {
     painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
+    painter->setBrush(QBrush(Qt::white));
     
     // 创建五边形的点
     QPolygon polygon = createPentagonPolygon();
@@ -409,7 +406,6 @@ void PentagonShape::paint(QPainter* painter)
     
     // 绘制文本
     drawText(painter);
-
 }
 
 QPolygon PentagonShape::createPentagonPolygon() const
@@ -504,12 +500,11 @@ EllipseShape::EllipseShape(const int& basis)
 void EllipseShape::paint(QPainter* painter)
 {
     painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(QColor(255, 255, 255, 128)));
+    painter->setBrush(QBrush(Qt::white));
     painter->drawEllipse(m_rect);
     
     // 绘制文本
     drawText(painter);
-
 }
 
 QRect EllipseShape::textRect() const

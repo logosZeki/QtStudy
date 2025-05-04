@@ -5,6 +5,9 @@
 #include <QVector>
 #include <QMouseEvent>
 #include <QLineEdit>
+#include <QMenu>
+#include <QAction>
+#include <QClipboard>
 #include "chart/shape.h" //因为要用到Shape里的枚举
 
 // 添加前向声明
@@ -31,6 +34,8 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
     
 private:
     void createTextEditor();
@@ -47,6 +52,24 @@ private:
     ConnectionPoint* findNearestConnectionPoint(Shape* shape, const QPoint& pos);
 
     void updateCursor(QMouseEvent *event);
+    
+    // 右键菜单相关方法
+    void createContextMenus();
+    void showShapeContextMenu(const QPoint &pos);
+    void showCanvasContextMenu(const QPoint &pos);
+    
+    // 图层管理相关方法
+    void moveShapeUp();
+    void moveShapeDown();
+    void moveShapeToTop();
+    void moveShapeToBottom();
+    
+    // 剪切板操作相关方法
+    void copySelectedShape();
+    void cutSelectedShape();
+    void pasteShape(const QPoint &pos = QPoint());
+    void deleteSelectedShape();
+    void selectAllShapes();
     
 private:
     QVector<Shape*> m_shapes;
@@ -66,6 +89,13 @@ private:
     QVector<Connection*> m_connections;  // 所有连线
     Connection* m_currentConnection;     // 正在创建的连线
     Shape* m_hoveredShape;               // 鼠标悬停的形状
+    
+    // 右键菜单
+    QMenu* m_shapeContextMenu;           // 图形右键菜单
+    QMenu* m_canvasContextMenu;          // 画布右键菜单
+    
+    // 剪切板数据
+    Shape* m_copiedShape;                // 复制的图形
 };
 
 #endif // DRAWINGAREA_H
