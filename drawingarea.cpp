@@ -72,21 +72,6 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     
-    // 绘制所有连线
-    for (Connection *connection : m_connections) {
-        // 当拖动端点时，不绘制被拖动的连接线，而是绘制预览
-        if (m_movingConnectionPoint && connection == m_selectedConnection) {
-            drawConnectionPreview(&painter, connection);
-        } else {
-            connection->paint(&painter);
-        }
-    }
-    
-    // 绘制正在创建的连线
-    if (m_currentConnection) {
-        m_currentConnection->paint(&painter);
-    }
-    
     // 绘制所有形状
     for (Shape *shape : m_shapes) {
         shape->paint(&painter);//包括绘制文字和形状
@@ -119,6 +104,21 @@ void DrawingArea::paintEvent(QPaintEvent *event)
             // 绘制调整大小的手柄
             shape->drawResizeHandles(&painter);
         }
+    }
+    
+    // 绘制所有连线 - 移到形状绘制之后，确保连接线始终显示在最上层
+    for (Connection *connection : m_connections) {
+        // 当拖动端点时，不绘制被拖动的连接线，而是绘制预览
+        if (m_movingConnectionPoint && connection == m_selectedConnection) {
+            drawConnectionPreview(&painter, connection);
+        } else {
+            connection->paint(&painter);
+        }
+    }
+    
+    // 绘制正在创建的连线
+    if (m_currentConnection) {
+        m_currentConnection->paint(&painter);
     }
 }
 
@@ -719,10 +719,6 @@ void DrawingArea::completeConnection(ConnectionPoint* endPoint)
             m_currentConnection = nullptr;
             m_selectedShape = nullptr;
             
-            // 重置悬停状态
-            if (m_hoveredShape) {
-                m_hoveredShape = nullptr;
-            }
             return;
         }
         ConnectionPoint* freeEndPoint = new ConnectionPoint(tempPos);
@@ -787,7 +783,7 @@ ConnectionPoint* DrawingArea::findNearestConnectionPoint(Shape* shape, const QPo
     }
     
     // 设置一个最大距离阈值，如果太远就不连接
-    const double MAX_DISTANCE = 20.0;
+    const double MAX_DISTANCE = Shape::CONNECTION_POINT_SIZE*1.2;
     if (minDistance > MAX_DISTANCE) {
         return nullptr;
     }

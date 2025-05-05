@@ -30,6 +30,7 @@ namespace ShapeTypes {
 class Shape
 {
 public:
+    static const int CONNECTION_POINT_SIZE = 8;
     // 类型标识符现在是字符串
     Shape(const QString& type, const int& basis);
     virtual ~Shape();
@@ -107,7 +108,7 @@ protected:
     // 手柄大小常量
     static const int HANDLE_SIZE = 8;
     // 连接点大小常量
-    static const int CONNECTION_POINT_SIZE = 8;
+    
     
     // 存储连接点
     mutable QVector<ConnectionPoint*> m_connectionPoints;
