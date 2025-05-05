@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPolygon>
-
+#include "chart/shape.h" // 包含shape.h获取ShapeTypes命名空间
 
 // 工具栏上的形状项
 class ShapeItem : public QWidget

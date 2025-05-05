@@ -13,6 +13,7 @@
 // 添加前向声明
 class Shape;
 class Connection;
+class ArrowLine;
 class ConnectionPoint;
 class CustomTextEdit;
 
@@ -45,11 +46,14 @@ private:
     
     // 流程图连线相关方法
     void startConnection(ConnectionPoint* startPoint);
-    void completeConnection(ConnectionPoint* endPoint);
+    void completeConnection(ConnectionPoint* endPoint = nullptr);
     void cancelConnection();
     
     // 查找特定图形下最近的连接点
     ConnectionPoint* findNearestConnectionPoint(Shape* shape, const QPoint& pos);
+
+    // 绘制连接线拖动预览
+    void drawConnectionPreview(QPainter* painter, Connection* connection);
 
     void updateCursor(QMouseEvent *event);
     
@@ -65,11 +69,16 @@ private:
     void moveShapeToBottom();
     
     // 剪切板操作相关方法
-    void copySelectedShape();
-    void cutSelectedShape();
-    void pasteShape(const QPoint &pos = QPoint());
-    void deleteSelectedShape();
-    void selectAllShapes();
+    void copySelectedShape();               // 复制选中的图形
+    void cutSelectedShape();                // 剪切选中的图形或连接线
+    void pasteShape(const QPoint &pos = QPoint());  // 粘贴图形
+    void deleteSelectedShape();             // 删除选中的图形或连接线
+    void selectAllShapes();                 // 全选图形
+    Shape* cloneShape(const Shape* sourceShape);  // 克隆图形
+    
+    // ArrowLine相关方法
+    void createArrowLine(const QPoint& startPoint, const QPoint& endPoint);
+    void selectConnection(Connection* connection);
     
 private:
     QVector<Shape*> m_shapes;
@@ -89,6 +98,8 @@ private:
     QVector<Connection*> m_connections;  // 所有连线
     Connection* m_currentConnection;     // 正在创建的连线
     Shape* m_hoveredShape;               // 鼠标悬停的形状
+    Connection* m_selectedConnection;    // 当前选中的连线
+    QPoint m_temporaryEndPoint;          // 临时端点位置
     
     // 右键菜单
     QMenu* m_shapeContextMenu;           // 图形右键菜单
@@ -96,6 +107,10 @@ private:
     
     // 剪切板数据
     Shape* m_copiedShape;                // 复制的图形
+    
+    bool m_movingConnectionPoint;          // 是否正在移动连接线端点
+    ConnectionPoint* m_activeConnectionPoint; // 当前活动的连接点
+    QPoint m_connectionDragPoint;          // 拖动连接线端点时的临时位置
 };
 
 #endif // DRAWINGAREA_H

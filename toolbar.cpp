@@ -18,6 +18,8 @@ ShapeItem::ShapeItem(const QString& type, QWidget* parent)
         m_shapeRect = QRect(25, 10, 50, 50);
     } else if (type == ShapeTypes::Pentagon) {
         m_shapeRect = QRect(25, 10, 50, 50);
+    } else if (type == ShapeTypes::ArrowLine) {
+        m_shapeRect = QRect(15, 35, 70, 1); // 为直线设置一个细长的矩形
     } else {
         m_shapeRect = QRect(25, 10, 50, 50);
     }
@@ -60,8 +62,25 @@ void ShapeItem::paintEvent(QPaintEvent* event)
         painter.drawPolygon(polygon);
     } else if (m_type == ShapeTypes::Ellipse) {
         painter.drawEllipse(m_shapeRect);
+    } else if (m_type == ShapeTypes::ArrowLine) {
+        // 绘制带箭头的直线
+        QPoint startPoint = m_shapeRect.topLeft();
+        QPoint endPoint = m_shapeRect.topRight();
+        
+        // 绘制直线
+        painter.setPen(QPen(Qt::black, 2));
+        painter.drawLine(startPoint, endPoint);
+        
+        // 绘制箭头
+        const int arrowSize = 8;
+        QPoint arrowP1 = endPoint - QPoint(arrowSize, arrowSize / 2);
+        QPoint arrowP2 = endPoint - QPoint(arrowSize, -arrowSize / 2);
+        
+        QPolygon arrow;
+        arrow << endPoint << arrowP1 << arrowP2;
+        painter.setBrush(Qt::black);
+        painter.drawPolygon(arrow);
     }
-
 }
 
 void ShapeItem::mousePressEvent(QMouseEvent* event)
@@ -74,11 +93,55 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
         mimeData->setText(m_type);
         drag->setMimeData(mimeData);
         
-        // 设置拖拽的图像
+        // 设置拖拽的图像为透明背景
         QPixmap pixmap(size());
-        pixmap.fill(Qt::transparent);
+        pixmap.fill(Qt::transparent); // 使用透明填充而不是背景色
         QPainter painter(&pixmap);
-        render(&painter);
+        painter.setRenderHint(QPainter::Antialiasing);
+        
+        // 绘制形状但不绘制背景
+        painter.setPen(QPen(Qt::black, 2));
+        painter.setBrush(QBrush(QColor(255, 255, 255)));
+        
+        if (m_type == ShapeTypes::Rectangle) {
+            painter.drawRect(m_shapeRect);
+        } else if (m_type == ShapeTypes::Circle) {
+            painter.drawEllipse(m_shapeRect);
+        } else if (m_type == ShapeTypes::Pentagon) {
+            QPolygon polygon;
+            int centerX = m_shapeRect.center().x();
+            int centerY = m_shapeRect.center().y();
+            int radius = qMin(m_shapeRect.width(), m_shapeRect.height()) / 2;
+            
+            for (int i = 0; i < 5; ++i) {
+                double angle = i * 2 * M_PI / 5 - M_PI / 2;
+                int x = centerX + radius * cos(angle);
+                int y = centerY + radius * sin(angle);
+                polygon << QPoint(x, y);
+            }
+            
+            painter.drawPolygon(polygon);
+        } else if (m_type == ShapeTypes::Ellipse) {
+            painter.drawEllipse(m_shapeRect);
+        } else if (m_type == ShapeTypes::ArrowLine) {
+            // 绘制带箭头的直线
+            QPoint startPoint = m_shapeRect.topLeft();
+            QPoint endPoint = m_shapeRect.topRight();
+            
+            // 绘制直线
+            painter.drawLine(startPoint, endPoint);
+            
+            // 绘制箭头
+            const int arrowSize = 8;
+            QPoint arrowP1 = endPoint - QPoint(arrowSize, arrowSize / 2);
+            QPoint arrowP2 = endPoint - QPoint(arrowSize, -arrowSize / 2);
+            
+            QPolygon arrow;
+            arrow << endPoint << arrowP1 << arrowP2;
+            painter.setBrush(Qt::black);
+            painter.drawPolygon(arrow);
+        }
+        
         drag->setPixmap(pixmap);
         drag->setHotSpot(event->pos());
         
@@ -112,6 +175,7 @@ ToolBar::ToolBar(QWidget* parent)
     m_layout->addWidget(new ShapeItem(ShapeTypes::Circle, this));
     m_layout->addWidget(new ShapeItem(ShapeTypes::Pentagon, this));
     m_layout->addWidget(new ShapeItem(ShapeTypes::Ellipse, this));
+    m_layout->addWidget(new ShapeItem(ShapeTypes::ArrowLine, this));
     
     // 添加弹簧以占用剩余空间
     m_layout->addStretch();

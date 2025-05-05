@@ -23,6 +23,7 @@ namespace ShapeTypes {
     const QString Circle = "Circle";
     const QString Pentagon = "Pentagon";
     const QString Ellipse = "Ellipse";
+    const QString ArrowLine = "ArrowLine"; // 新增带箭头直线类型
 }
 
 // 基础形状类
