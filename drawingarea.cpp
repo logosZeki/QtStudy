@@ -493,6 +493,8 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
 {
     // 完成连接创建
     if (m_currentConnection && event->button() == Qt::LeftButton) {
+
+
         if (m_hoveredShape) {
             // 寻找最近的连接点
             ConnectionPoint* nearestPoint = findNearestConnectionPoint(m_hoveredShape, event->pos());
@@ -707,9 +709,22 @@ void DrawingArea::completeConnection(ConnectionPoint* endPoint)
         // 常规情况：连接到某个图形的连接点
         m_currentConnection->setEndPoint(endPoint);
     } else {
-        // 新增功能：连接到空白区域
+        // 连接到空白区域
         // 创建一个自由位置的连接点
         QPoint tempPos = m_currentConnection->getEndPosition(); // 使用当前连接线的临时终点位置
+        //判断终点离起点的距离，太近就不连接
+        double distance = std::sqrt(std::pow(tempPos.x() - m_currentConnection->getStartPosition().x(), 2) + 
+                                  std::pow(tempPos.y() - m_currentConnection->getStartPosition().y(), 2));
+        if (distance < 20.0) {
+            m_currentConnection = nullptr;
+            m_selectedShape = nullptr;
+            
+            // 重置悬停状态
+            if (m_hoveredShape) {
+                m_hoveredShape = nullptr;
+            }
+            return;
+        }
         ConnectionPoint* freeEndPoint = new ConnectionPoint(tempPos);
         m_currentConnection->setEndPoint(freeEndPoint);
     }
@@ -772,7 +787,7 @@ ConnectionPoint* DrawingArea::findNearestConnectionPoint(Shape* shape, const QPo
     }
     
     // 设置一个最大距离阈值，如果太远就不连接
-    const double MAX_DISTANCE = 50.0;
+    const double MAX_DISTANCE = 20.0;
     if (minDistance > MAX_DISTANCE) {
         return nullptr;
     }
