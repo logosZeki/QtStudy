@@ -19,20 +19,22 @@ DrawingArea::DrawingArea(QWidget *parent)
       m_selectedConnection(nullptr), m_movingConnectionPoint(false), m_activeConnectionPoint(nullptr),
       m_connectionDragPoint(0, 0)
 {
-    // 设置接受拖放 (Set accept drops)
+    // 启用接收拖放 (Enable accepting drops)
     setAcceptDrops(true);
-
-    // 设置背景色为白色 (Set background color to white)
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, Qt::white);
-    setAutoFillBackground(true);
-    setMouseTracking(true);
-    setPalette(pal);
     
-    // 设置接收键盘焦点
+    // 启用鼠标追踪以便处理悬停事件 (Enable mouse tracking to handle hover events)
+    setMouseTracking(true);
+    
+    // 设置绘图区域背景色为白色，更符合现代UI风格
+    setStyleSheet("DrawingArea { background-color: white; }");
+    
+    // 设置焦点策略以捕获键盘事件 (Set focus policy to capture keyboard events)
     setFocusPolicy(Qt::StrongFocus);
     
-    // 创建右键菜单
+    // 创建文本编辑器 (Create text editor)
+    createTextEditor();
+    
+    // 创建右键菜单 (Create context menus)
     createContextMenus();
 }
 
@@ -782,11 +784,11 @@ ConnectionPoint* DrawingArea::findNearestConnectionPoint(Shape* shape, const QPo
         }
     }
     
-    // 设置一个最大距离阈值，如果太远就不连接
-    const double MAX_DISTANCE = Shape::CONNECTION_POINT_SIZE*1.2;
-    if (minDistance > MAX_DISTANCE) {
-        return nullptr;
-    }
+    // // 设置一个最大距离阈值，如果太远就不连接
+    // const double MAX_DISTANCE = Shape::CONNECTION_POINT_SIZE*1.2;
+    // if (minDistance > MAX_DISTANCE) {
+    //     return nullptr;
+    // }
     
     return nearest;
 }

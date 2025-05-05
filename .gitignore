@@ -38,6 +38,7 @@ Thumbs.db
 /out
 /.vs
 /.vscode
+/ReferencePage
 # qtcreator generated files
 *.pro.user*
 
