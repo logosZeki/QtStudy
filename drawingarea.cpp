@@ -11,6 +11,10 @@
 #include "chart/connection.h"
 #include "util/Utils.h"
 
+// 定义A4尺寸（像素）
+constexpr int A4_WIDTH = 1050;    // A4宽度为1050像素
+constexpr int A4_HEIGHT = 1500;   // A4高度为1500像素
+
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
       m_activeHandle(Shape::None), m_resizing(false), m_textEditor(nullptr),
@@ -25,6 +29,14 @@ DrawingArea::DrawingArea(QWidget *parent)
     // 启用鼠标追踪以便处理悬停事件 (Enable mouse tracking to handle hover events)
     setMouseTracking(true);
     
+    // 初始化页面设置相关变量
+    m_backgroundColor = Qt::white;
+    m_pageSize = QSize(A4_WIDTH, A4_HEIGHT);
+    m_showGrid = true;
+    m_gridColor = QColor(220, 220, 220);
+    m_gridSize = 20;
+    m_gridThickness = 1;
+    
     // 设置绘图区域背景色为白色，更符合现代UI风格
     setStyleSheet("DrawingArea { background-color: white; }");
     
@@ -36,6 +48,9 @@ DrawingArea::DrawingArea(QWidget *parent)
     
     // 创建右键菜单 (Create context menus)
     createContextMenus();
+    
+    // 设置固定大小为A4纸张大小
+    setMinimumSize(m_pageSize);
 }
 
 DrawingArea::~DrawingArea()
@@ -73,6 +88,12 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
+    
+    // 绘制背景
+    painter.fillRect(rect(), m_backgroundColor);
+    
+    // 绘制网格
+    drawGrid(&painter);
     
     // 绘制所有形状
     for (Shape *shape : m_shapes) {
@@ -152,6 +173,10 @@ void DrawingArea::dropEvent(QDropEvent *event)
             QPoint endPoint = center + QPoint(40, 0);
             createArrowLine(startPoint, endPoint);
             event->acceptProposedAction();
+            
+            // 检查是否需要自动扩展绘图区域
+            checkAndExpandDrawingArea();
+            
             return;
         }
         
@@ -169,6 +194,9 @@ void DrawingArea::dropEvent(QDropEvent *event)
             // 添加形状到列表
             m_shapes.append(newShape);
             update();
+            
+            // 检查是否需要自动扩展绘图区域
+            checkAndExpandDrawingArea();
         }
         
         event->acceptProposedAction();
@@ -495,8 +523,6 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
 {
     // 完成连接创建
     if (m_currentConnection && event->button() == Qt::LeftButton) {
-
-
         if (m_hoveredShape) {
             // 寻找最近的连接点
             ConnectionPoint* nearestPoint = findNearestConnectionPoint(m_hoveredShape, event->pos());
@@ -512,6 +538,10 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
             completeConnection(nullptr);
         }
         update();
+        
+        // 检查是否需要自动扩展绘图区域
+        checkAndExpandDrawingArea();
+        
         return;
     }
     
@@ -561,6 +591,10 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         m_connectionDragPoint = QPoint(0, 0);
         setCursor(Qt::ArrowCursor);
         update();
+        
+        // 检查是否需要自动扩展绘图区域
+        checkAndExpandDrawingArea();
+        
         return;
     }
     
@@ -568,12 +602,20 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
     if (m_resizing) {
         m_resizing = false;
         m_activeHandle = Shape::None;
+        
+        // 检查是否需要自动扩展绘图区域
+        checkAndExpandDrawingArea();
+        
         return;
     }
     
     // 如果正在拖动，结束拖动
     if (m_dragging) {
         m_dragging = false;
+        
+        // 检查是否需要自动扩展绘图区域
+        checkAndExpandDrawingArea();
+        
         return;
     }
 }
@@ -1196,4 +1238,141 @@ void DrawingArea::drawConnectionPreview(QPainter* painter, Connection* connectio
     
     // 使用共享绘制函数
     Connection::drawConnectionLine(painter, startPos, endPos, true, drawArrow);
+}
+
+// 绘制网格方法
+void DrawingArea::drawGrid(QPainter *painter)
+{
+    if (!m_showGrid) return;
+    
+    painter->save();
+    
+    QPen gridPen(m_gridColor, m_gridThickness);
+    painter->setPen(gridPen);
+    
+    // 绘制水平网格线
+    for (int y = 0; y <= height(); y += m_gridSize) {
+        painter->drawLine(0, y, width(), y);
+    }
+    
+    // 绘制垂直网格线
+    for (int x = 0; x <= width(); x += m_gridSize) {
+        painter->drawLine(x, 0, x, height());
+    }
+    
+    painter->restore();
+}
+
+// 页面设置相关方法
+void DrawingArea::setBackgroundColor(const QColor &color)
+{
+    m_backgroundColor = color;
+    update();
+}
+
+void DrawingArea::setPageSize(const QSize &size)
+{
+    m_pageSize = size;
+    setMinimumSize(m_pageSize); // 使用最小尺寸而不是固定尺寸
+    update();
+}
+
+void DrawingArea::setShowGrid(bool show)
+{
+    m_showGrid = show;
+    update();
+}
+
+void DrawingArea::setGridColor(const QColor &color)
+{
+    m_gridColor = color;
+    update();
+}
+
+void DrawingArea::setGridSize(int size)
+{
+    m_gridSize = size;
+    update();
+}
+
+void DrawingArea::setGridThickness(int thickness)
+{
+    m_gridThickness = thickness;
+    update();
+}
+
+QColor DrawingArea::getBackgroundColor() const
+{
+    return m_backgroundColor;
+}
+
+QSize DrawingArea::getPageSize() const
+{
+    return m_pageSize;
+}
+
+bool DrawingArea::getShowGrid() const
+{
+    return m_showGrid;
+}
+
+QColor DrawingArea::getGridColor() const
+{
+    return m_gridColor;
+}
+
+int DrawingArea::getGridSize() const
+{
+    return m_gridSize;
+}
+
+int DrawingArea::getGridThickness() const
+{
+    return m_gridThickness;
+}
+
+void DrawingArea::applyPageSettings()
+{
+    // 此方法将在MainWindow中连接到页面设置对话框的应用信号
+    update();
+}
+
+// 检查并自动扩展绘图区域
+void DrawingArea::checkAndExpandDrawingArea()
+{
+    // 初始化区域为当前大小
+    int maxRight = width();
+    int maxBottom = height();
+    
+    // 检查所有图形的边界
+    for (const Shape *shape : m_shapes) {
+        QRect rect = shape->getRect();
+        maxRight = qMax(maxRight, rect.right() + 20); // 添加20像素的边距
+        maxBottom = qMax(maxBottom, rect.bottom() + 20); // 添加20像素的边距
+    }
+    
+    // 检查所有连接线的边界
+    for (const Connection *connection : m_connections) {
+        // 检查起点和终点
+        QPoint startPos = connection->getStartPosition();
+        QPoint endPos = connection->getEndPosition();
+        
+        maxRight = qMax(maxRight, startPos.x() + 20);
+        maxRight = qMax(maxRight, endPos.x() + 20);
+        maxBottom = qMax(maxBottom, startPos.y() + 20);
+        maxBottom = qMax(maxBottom, endPos.y() + 20);
+    }
+    
+    // 如果需要，扩展绘图区域
+    if (maxRight > width() || maxBottom > height()) {
+        QSize newSize(qMax(width(), maxRight), qMax(height(), maxBottom));
+        
+        // 确保新尺寸不小于最小页面尺寸
+        newSize.setWidth(qMax(newSize.width(), m_pageSize.width()));
+        newSize.setHeight(qMax(newSize.height(), m_pageSize.height()));
+        
+        // 应用新尺寸
+        resize(newSize);
+        update();
+    }
 }

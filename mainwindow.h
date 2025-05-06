@@ -14,6 +14,7 @@
 
 class ToolBar;
 class DrawingArea;
+class PageSettingDialog;
 
 class MainWindow : public QMainWindow
 {
@@ -25,6 +26,8 @@ public:
 
 private slots:
     void onTabBarClicked(int index);
+    void showPageSettingDialog();
+    void applyPageSettings();
 
 private:
     void createTopToolbar();
@@ -52,6 +55,10 @@ private:
     
     // 导出工具栏 (对应"导出"选项卡)
     QToolBar *m_exportToolbar;
+    
+    // 页面设置对话框
+    PageSettingDialog *m_pageSettingDialog;
+    QPushButton *m_pageSettingButton;
 };
 
 #endif // MAINWINDOW_H

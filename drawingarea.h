@@ -25,6 +25,26 @@ public:
     DrawingArea(QWidget *parent = nullptr);
     ~DrawingArea();
     
+    // 页面设置相关方法
+    void setBackgroundColor(const QColor &color);
+    void setPageSize(const QSize &size);
+    void setShowGrid(bool show);
+    void setGridColor(const QColor &color);
+    void setGridSize(int size);
+    void setGridThickness(int thickness);
+    
+    // 获取当前页面设置
+    QColor getBackgroundColor() const;
+    QSize getPageSize() const;
+    bool getShowGrid() const;
+    QColor getGridColor() const;
+    int getGridSize() const;
+    int getGridThickness() const;
+    
+public slots:
+    // 应用页面设置
+    void applyPageSettings();
+    
 protected:
     void paintEvent(QPaintEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
@@ -80,6 +100,12 @@ private:
     void createArrowLine(const QPoint& startPoint, const QPoint& endPoint);
     void selectConnection(Connection* connection);
     
+    // 绘制网格
+    void drawGrid(QPainter *painter);
+    
+    // 检查并自动扩展绘图区域
+    void checkAndExpandDrawingArea();
+    
 private:
     QVector<Shape*> m_shapes;
     Shape* m_selectedShape;
@@ -111,6 +137,14 @@ private:
     bool m_movingConnectionPoint;          // 是否正在移动连接线端点
     ConnectionPoint* m_activeConnectionPoint; // 当前活动的连接点
     QPoint m_connectionDragPoint;          // 拖动连接线端点时的临时位置
+    
+    // 页面设置相关变量
+    QColor m_backgroundColor;              // 页面背景颜色
+    QSize m_pageSize;                      // 页面尺寸
+    bool m_showGrid;                       // 是否显示网格
+    QColor m_gridColor;                    // 网格颜色
+    int m_gridSize;                        // 网格大小
+    int m_gridThickness;                   // 网格线条粗细
 };
 
 #endif // DRAWINGAREA_H

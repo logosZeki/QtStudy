@@ -1,12 +1,14 @@
 #include "mainwindow.h"
 #include "toolbar.h"
 #include "drawingarea.h"
+#include "pagesettingdialog.h"
 #include <QAction>
 #include <QStyle>
 #include <QIcon>
+#include <QScrollArea>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), m_pageSettingDialog(nullptr)
 {
     setupUi();
     
@@ -17,6 +19,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    if (m_pageSettingDialog) {
+        delete m_pageSettingDialog;
+    }
 }
 
 void MainWindow::setupUi()
@@ -52,13 +57,22 @@ void MainWindow::setupUi()
     m_toolBar = new ToolBar(this);
     m_drawingArea = new DrawingArea(this);
 
+    // 创建滚动区域来容纳绘图区域
+    QScrollArea *scrollArea = new QScrollArea();
+    scrollArea->setWidget(m_drawingArea);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setStyleSheet("QScrollArea { border: none; background-color: #f0f0f0; }");
+
     // 设置工具栏固定宽度
     m_toolBar->setFixedWidth(220);
     m_toolBar->setStyleSheet("QWidget { background-color: white; border-right: 1px solid #e0e0e0; }");
 
     // 添加到布局
     m_contentLayout->addWidget(m_toolBar);
-    m_contentLayout->addWidget(m_drawingArea);
+    m_contentLayout->addWidget(scrollArea, 1);
 }
 
 void MainWindow::createTopToolbar()
@@ -217,15 +231,14 @@ void MainWindow::createMainToolbar()
     lineTypeCombo->setFixedWidth(90);
     m_mainToolbar->addWidget(lineTypeCombo);
 
-    QPushButton* pageSetting = new QPushButton();
-    pageSetting->setText(tr("page setting"));
+    // 添加页面设置按钮
+    m_pageSettingButton = new QPushButton(tr("Page Setting"));
+    m_pageSettingButton->setToolTip(tr("页面设置"));
+    m_pageSettingButton->setFixedWidth(110);
+    m_mainToolbar->addWidget(m_pageSettingButton);
 
-    m_mainToolbar->addWidget(pageSetting);
-
-        // // 添加常用格式按钮 - 使用纯文本代替不存在的图标
-        // QAction* boldAction = m_mainToolbar->addAction(tr("B"));
-        // boldAction->setToolTip(tr("加粗"));
-        // boldAction->setFont(QFont("Arial", 9, QFont::Bold));
+    // 连接页面设置按钮的点击信号
+    connect(m_pageSettingButton, &QPushButton::clicked, this, &MainWindow::showPageSettingDialog);
 }
 
 void MainWindow::createArrangeToolbar()
@@ -250,13 +263,15 @@ void MainWindow::createArrangeToolbar()
     
     m_arrangeToolbar->addSeparator();
     
-    QAction* distributeHorizontalAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_MediaSeekForward), tr("水平分布"));
-    QAction* distributeVerticalAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_MediaSeekForward), tr("垂直分布"));
+    QAction* distributeHorizontalAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_MediaSeekBackward), tr("水平分布"));
+    QAction* distributeVerticalAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_MediaSeekBackward), tr("垂直分布"));
     
     m_arrangeToolbar->addSeparator();
     
-    QAction* bringToFrontAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogToParent), tr("置于顶层"));
-    QAction* sendToBackAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogBack), tr("置于底层"));
+    QAction* bringToFrontAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("置于顶层"));
+    QAction* sendToBackAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("置于底层"));
+    QAction* bringForwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("上移一层"));
+    QAction* sendBackwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("下移一层"));
 }
 
 void MainWindow::createExportToolbar()
@@ -269,22 +284,43 @@ void MainWindow::createExportToolbar()
     m_mainLayout->addWidget(m_exportToolbar);
     
     // 添加导出工具栏的按钮和控件
-    QAction* exportPngAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("导出为PNG"));
-    QAction* exportJpgAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("导出为JPG"));
-    QAction* exportPdfAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("导出为PDF"));
-    QAction* exportSvgAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("导出为SVG"));
-    
-    m_exportToolbar->addSeparator();
-    
-    QComboBox* qualityCombo = new QComboBox();
-    qualityCombo->addItem(tr("高质量"));
-    qualityCombo->addItem(tr("中等质量"));
-    qualityCombo->addItem(tr("低质量"));
-    qualityCombo->setFixedWidth(100);
-    m_exportToolbar->addWidget(qualityCombo);
+    QAction* exportAsPngAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("导出为PNG"));
+    QAction* exportAsJpgAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("导出为JPG"));
+    QAction* exportAsPdfAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("导出为PDF"));
     
     m_exportToolbar->addSeparator();
     
     QAction* printAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("打印"));
-    QAction* previewAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("打印预览"));
+}
+
+void MainWindow::showPageSettingDialog()
+{
+    // 如果对话框不存在，则创建
+    if (!m_pageSettingDialog) {
+        m_pageSettingDialog = new PageSettingDialog(this);
+        
+        // 连接应用信号到相应的槽
+        connect(m_pageSettingDialog, &PageSettingDialog::settingsApplied, 
+                this, &MainWindow::applyPageSettings);
+    }
+    
+    // 设置对话框的初始值为绘图区域当前的设置
+    m_pageSettingDialog->setModal(true);
+    m_pageSettingDialog->exec();
+}
+
+void MainWindow::applyPageSettings()
+{
+    if (!m_pageSettingDialog || !m_drawingArea) return;
+    
+    // 从对话框获取设置并应用到绘图区域
+    m_drawingArea->setBackgroundColor(m_pageSettingDialog->getBackgroundColor());
+    m_drawingArea->setPageSize(m_pageSettingDialog->getPageSize());
+    m_drawingArea->setShowGrid(m_pageSettingDialog->getShowGrid());
+    m_drawingArea->setGridColor(m_pageSettingDialog->getGridColor());
+    m_drawingArea->setGridSize(m_pageSettingDialog->getGridSize());
+    m_drawingArea->setGridThickness(m_pageSettingDialog->getGridThickness());
+    
+    // 应用设置后更新绘图区域
+    m_drawingArea->applyPageSettings();
 }

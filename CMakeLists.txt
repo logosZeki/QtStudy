@@ -24,8 +24,21 @@ find_package(Qt5 COMPONENTS Core Widgets Gui REQUIRED)
 
 file(GLOB UI_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.ui")
 file(GLOB RCC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*qrc")
-file(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h" "${CMAKE_CURRENT_BINARY_DIR}/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/chart/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/util/*.h"  )
-file(GLOB CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/chart/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/util/*.cpp" )
+file(GLOB HEADER_FILES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h" 
+    "${CMAKE_CURRENT_BINARY_DIR}/*.h" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/chart/*.h" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/util/*.h"
+)
+file(GLOB CPP_FILES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/chart/*.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/util/*.cpp" 
+)
+
+# 显式添加页面设置对话框文件
+list(APPEND HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/pagesettingdialog.h")
+list(APPEND CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/pagesettingdialog.cpp")
 
 qt5_wrap_ui(UI_HEADERS ${UI_FILES})
 

@@ -15,23 +15,27 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    customtextedit.cpp \
+    chart/customtextedit.cpp \
+    chart/connection.cpp \
+    chart/shape.cpp \
+    chart/shapefactory.cpp \
     drawingarea.cpp \
     main.cpp \
     mainwindow.cpp \
-    shape/connection.cpp \
-    shape/shape.cpp \
-    shape/shapefactory.cpp \
-    toolbar.cpp
+    pagesettingdialog.cpp \
+    toolbar.cpp \
+    util/Utils.cpp
 
 HEADERS += \
-    customtextedit.h \
+    chart/customtextedit.h \
+    chart/connection.h \
+    chart/shape.h \
+    chart/shapefactory.h \
     drawingarea.h \
     mainwindow.h \
-    shape/connection.h \
-    shape/shape.h \
-    shape/shapefactory.h \
-    toolbar.h
+    pagesettingdialog.h \
+    toolbar.h \
+    util/Utils.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
