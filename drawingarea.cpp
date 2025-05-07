@@ -181,7 +181,7 @@ void DrawingArea::dropEvent(QDropEvent *event)
         }
         
         // 使用工厂创建其他形状对象
-        int basis = 55; // 基准值设为55
+        int basis = 85; // 基准值设为85
         Shape *newShape = ShapeFactory::instance().createShape(type, basis);
         
         // 设置形状位置

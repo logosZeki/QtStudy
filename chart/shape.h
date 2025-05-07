@@ -266,6 +266,9 @@ public:
     
     // 向工厂注册
     static void registerShape();
+private:
+    QPainterPath createCloudPath();
+    QPainterPath cloudPath;
 };
 
 #endif // SHAPE_H

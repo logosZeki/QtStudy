@@ -1,0 +1,82 @@
+#ifndef CLOUDWIDGET_H
+#define CLOUDWIDGET_H
+
+#include <QWidget>
+#include <QPainterPath>
+#include <QRectF>
+#include <QResizeEvent> // 需要包含 QResizeEvent
+
+class CloudWidget : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit CloudWidget(QWidget *parent = nullptr);
+protected:
+
+private:
+
+    // 核心函数：根据给定的 QRectF 创建云朵路径
+    QPainterPath createCloudPath();
+
+    QRect m_rect;
+
+
+    QPainterPath cloudPath; // 当前要绘制的云朵路径 (已缩放和平移)
+
+};
+
+#endif // CLOUDWIDGET_H
+
+QPainterPath CloudWidget::createCloudPathInRect() {
+
+    targetRect=m_rect;
+    QPointF pointA(30, 110);
+    QPainterPath prototypeCloudPath;
+    prototypeCloudPath.moveTo(pointA);
+    // 底部三个凸起
+    prototypeCloudPath.cubicTo(QPointF(40, 130), QPointF(65, 130), QPointF(75, 108));
+    prototypeCloudPath.cubicTo(QPointF(85, 130), QPointF(115, 130), QPointF(125, 108));
+    QPointF endOfBottom(170, 105);
+    prototypeCloudPath.cubicTo(QPointF(135, 130), QPointF(160, 130), endOfBottom);
+    // 右侧、顶部和左侧的凸起
+    prototypeCloudPath.cubicTo(QPointF(200, 100), QPointF(200, 65), QPointF(175, 45));
+    prototypeCloudPath.cubicTo(QPointF(180, 15), QPointF(140, 10), QPointF(110, 30));
+    prototypeCloudPath.cubicTo(QPointF(80, 5), QPointF(40, 15), QPointF(35, 45));
+    prototypeCloudPath.cubicTo(QPointF(0, 55), QPointF(0, 90), pointA);
+    prototypeCloudPath.closeSubpath();
+
+
+    if (m_rect.width() <= 0 || m_rect.height() <= 0) {
+        // targetRect 无效 (例如，窗口过小)
+        return QPainterPath(); // 返回空路径
+    }
+    prototypeCloudBoundingRect =cloudPath.boundingRect();
+    qreal protoX = prototypeCloudBoundingRect.left();
+    qreal protoY = prototypeCloudBoundingRect.top();
+    qreal protoWidth = prototypeCloudBoundingRect.width();
+    qreal protoHeight = prototypeCloudBoundingRect.height();
+
+    qreal scaleX = targetRect.width() / protoWidth;
+    qreal scaleY = targetRect.height() / protoHeight;
+
+    // 计算变换矩阵的平移分量 (dx, dy)
+    // 使得原型路径的 (protoX, protoY) 点在缩放后映射到 targetRect.left() 和 targetRect.top()
+    qreal final_dx = targetRect.left() - protoX * scaleX;
+    qreal final_dy = targetRect.top() - protoY * scaleY;
+
+    // 创建变换矩阵
+    // x' = scaleX * x + final_dx
+    // y' = scaleY * y + final_dy
+    // Qt 的 QTransform(m11, m12, m21, m22, dx, dy) 构造函数中：
+    // x' = m11*x + m21*y + dx
+    // y' = m12*x + m22*y + dy
+    QTransform transform(scaleX,   // m11
+                         0,        // m12 (x 对 y' 的贡献)
+                         0,        // m21 (y 对 x' 的贡献)
+                         scaleY,   // m22
+                         final_dx, // dx
+                         final_dy  // dy
+                         );
+
+    return transform.map(prototypeCloudPath);
+}

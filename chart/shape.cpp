@@ -389,8 +389,8 @@ PentagonShape::PentagonShape(const int& basis)
     double cos18 = cos(M_PI / 10); // cos(18°)
     double cos36 = cos(M_PI / 5);  // cos(36°)
     
-    int width = 2 * basis * cos18;
-    int height = basis * (1 + cos36);
+    int width = 2 * (basis*0.8) * cos18;
+    int height = (basis*0.8) * (1 + cos36);
     
     m_rect = QRect(0, 0, width, height);
 }
@@ -856,6 +856,7 @@ CloudShape::CloudShape(const int& basis)
     int width = basis * 1.5;
     int height = basis;
     m_rect = QRect(0, 0, width, height);
+    cloudPath= createCloudPath();
 }
 
 void CloudShape::paint(QPainter* painter)
@@ -864,36 +865,13 @@ void CloudShape::paint(QPainter* painter)
     painter->setBrush(QBrush(Qt::white));
     
     // 绘制云朵形状
-    QPainterPath path;
+    cloudPath= createCloudPath();
     
-    // 获取矩形的宽和高
-    int w = m_rect.width();
-    int h = m_rect.height();
-    
-    // 圆的半径
-    int r1 = h * 0.4;  // 大圆
-    int r2 = h * 0.3;  // 中圆
-    int r3 = h * 0.25; // 小圆
-    
-    // 画云朵的左部
-    path.addEllipse(m_rect.left() + r1*0.25, m_rect.top() + r1*0.5, r1, r1);
-    
-    // 画云朵的中上部
-    path.addEllipse(m_rect.left() + w*0.4, m_rect.top() + r2*0.1, r2, r2);
-    
-    // 画云朵的右部
-    path.addEllipse(m_rect.right() - r1*1.25, m_rect.top() + r1*0.5, r1, r1);
-    
-    // 画云朵的右下部
-    path.addEllipse(m_rect.left() + w*0.7, m_rect.top() + h*0.5, r3, r3);
-    
-    // 画云朵的左下部
-    path.addEllipse(m_rect.left() + w*0.2, m_rect.top() + h*0.5, r3, r3);
-    
-    painter->drawPath(path);
+    painter->drawPath(cloudPath);
     
     // 绘制文本
     drawText(painter);
+
 }
 
 QRect CloudShape::textRect() const
@@ -907,7 +885,7 @@ QRect CloudShape::textRect() const
 bool CloudShape::contains(const QPoint& point) const
 {
     // 简化云朵的形状判断，使用外接矩形
-    return m_rect.contains(point);
+    return cloudPath.contains(QPointF(point));
 }
 
 QPoint CloudShape::getConnectionPoint(ConnectionPoint::Position position) const
@@ -936,3 +914,51 @@ void CloudShape::registerShape()
     );
 }
 
+
+
+QPainterPath CloudShape::createCloudPath() {
+
+    QRectF targetRect(m_rect);
+    QPointF pointA(30, 110);
+    QPainterPath prototypeCloudPath;
+    prototypeCloudPath.moveTo(pointA);
+    // 底部三个凸起
+    prototypeCloudPath.cubicTo(QPointF(40, 130), QPointF(65, 130), QPointF(75, 108));
+    prototypeCloudPath.cubicTo(QPointF(85, 130), QPointF(115, 130), QPointF(125, 108));
+    QPointF endOfBottom(170, 105);
+    prototypeCloudPath.cubicTo(QPointF(135, 130), QPointF(160, 130), endOfBottom);
+    // 右侧、顶部和左侧的凸起
+    prototypeCloudPath.cubicTo(QPointF(200, 100), QPointF(200, 65), QPointF(175, 45));
+    prototypeCloudPath.cubicTo(QPointF(180, 15), QPointF(140, 10), QPointF(110, 30));
+    prototypeCloudPath.cubicTo(QPointF(80, 5), QPointF(40, 15), QPointF(35, 45));
+    prototypeCloudPath.cubicTo(QPointF(0, 55), QPointF(0, 90), pointA);
+    prototypeCloudPath.closeSubpath();
+
+
+    if (m_rect.width() <= 0 || m_rect.height() <= 0) {
+        // targetRect 无效 (例如，窗口过小)
+        return QPainterPath(); // 返回空路径
+    }
+    QRectF prototypeCloudBoundingRect =prototypeCloudPath.boundingRect();
+    qreal protoX = prototypeCloudBoundingRect.left();
+    qreal protoY = prototypeCloudBoundingRect.top();
+    qreal protoWidth = prototypeCloudBoundingRect.width();
+    qreal protoHeight = prototypeCloudBoundingRect.height();
+
+    qreal scaleX = targetRect.width() / protoWidth;
+    qreal scaleY = targetRect.height() / protoHeight;
+
+    // 计算变换矩阵的平移分量 (dx, dy)
+    // 使得原型路径的 (protoX, protoY) 点在缩放后映射到 targetRect.left() 和 targetRect.top()
+    qreal final_dx = targetRect.left() - protoX * scaleX;
+    qreal final_dy = targetRect.top() - protoY * scaleY;
+
+    QTransform transform(scaleX,   // m11
+                         0,        // m12 (x 对 y' 的贡献)
+                         0,        // m21 (y 对 x' 的贡献)
+                         scaleY,   // m22
+                         final_dx, // dx
+                         final_dy  // dy
+                         );
+    return transform.map(prototypeCloudPath);
+}
