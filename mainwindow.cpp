@@ -196,9 +196,25 @@ void MainWindow::createMainToolbar()
     underlineAction->setFont(underlineFont);
     
     m_mainToolbar->addSeparator();
+
+
     
-    // 添加对齐方式按钮 - 使用确定存在的图标
-    QAction* alignLeftAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogListView), tr("左对齐"));
+    // 添加字体颜色按钮 - 使用确定存在的图标
+    //QAction* alignAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogListView), tr("左对齐"));
+    // 添加页面设置按钮
+    QPushButton* fontColorButton = new QPushButton(tr("字体颜色"));
+    fontColorButton->setToolTip(tr("字体颜色"));
+    fontColorButton->setFixedWidth(100);
+    m_mainToolbar->addWidget(fontColorButton);
+    m_mainToolbar->addSeparator();
+
+    // 添加对齐设置
+    QComboBox* alignCombo = new QComboBox();
+    alignCombo->addItem(tr("居中对齐"));
+    alignCombo->addItem(tr("左对齐"));
+    alignCombo->addItem(tr("右对齐"));
+    alignCombo->setFixedWidth(90);
+    m_mainToolbar->addWidget(alignCombo);
     
     m_mainToolbar->addSeparator();
     
@@ -250,28 +266,16 @@ void MainWindow::createArrangeToolbar()
     m_arrangeToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
     m_mainLayout->addWidget(m_arrangeToolbar);
     
-    // 添加排列工具栏的按钮和控件
-    QAction* alignLeftAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowLeft), tr("左对齐"));
-    QAction* alignCenterAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_MediaSeekBackward), tr("居中对齐"));
-    QAction* alignRightAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowRight), tr("右对齐"));
-    
-    m_arrangeToolbar->addSeparator();
-    
-    QAction* alignTopAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowUp), tr("顶部对齐"));
-    QAction* alignMiddleAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_MediaSeekBackward), tr("中部对齐"));
-    QAction* alignBottomAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowDown), tr("底部对齐"));
-    
-    m_arrangeToolbar->addSeparator();
-    
-    QAction* distributeHorizontalAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_MediaSeekBackward), tr("水平分布"));
-    QAction* distributeVerticalAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_MediaSeekBackward), tr("垂直分布"));
-    
-    m_arrangeToolbar->addSeparator();
+
     
     QAction* bringToFrontAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("置于顶层"));
+    m_arrangeToolbar->addSeparator();
     QAction* sendToBackAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("置于底层"));
+    m_arrangeToolbar->addSeparator();
     QAction* bringForwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("上移一层"));
+    m_arrangeToolbar->addSeparator();
     QAction* sendBackwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("下移一层"));
+    m_arrangeToolbar->addSeparator();
 }
 
 void MainWindow::createExportToolbar()
