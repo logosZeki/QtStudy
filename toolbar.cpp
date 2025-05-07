@@ -15,7 +15,10 @@ ShapeItem::ShapeItem(const QString& type, QWidget* parent)
     setFixedSize(40, 40);
     
     // 根据类型调整形状的大小和位置 (Adjust shape size and position based on type)
-    if (type == ShapeTypes::Rectangle || type == ShapeTypes::Ellipse) {
+    if (type == ShapeTypes::Rectangle || type == ShapeTypes::Ellipse || 
+        type == ShapeTypes::RoundedRectangle || type == ShapeTypes::Diamond ||
+        type == ShapeTypes::Hexagon || type == ShapeTypes::Octagon || 
+        type == ShapeTypes::Cloud) {
         m_shapeRect = QRect(8, 8, 24, 24);
     } else if (type == ShapeTypes::Circle) {
         m_shapeRect = QRect(8, 8, 24, 24);
@@ -38,6 +41,16 @@ ShapeItem::ShapeItem(const QString& type, QWidget* parent)
         setToolTip(tr("椭圆"));
     } else if (type == ShapeTypes::ArrowLine) {
         setToolTip(tr("箭头线"));
+    } else if (type == ShapeTypes::RoundedRectangle) {
+        setToolTip(tr("圆角矩形"));
+    } else if (type == ShapeTypes::Diamond) {
+        setToolTip(tr("菱形"));
+    } else if (type == ShapeTypes::Hexagon) {
+        setToolTip(tr("六边形"));
+    } else if (type == ShapeTypes::Octagon) {
+        setToolTip(tr("八边形"));
+    } else if (type == ShapeTypes::Cloud) {
+        setToolTip(tr("云朵形"));
     }
     
     // 允许鼠标追踪 (Allow mouse tracking)
@@ -101,6 +114,80 @@ void ShapeItem::paintEvent(QPaintEvent* event)
         arrow << endPoint << arrowP1 << arrowP2;
         painter.setBrush(Qt::black);
         painter.drawPolygon(arrow);
+    } else if (m_type == ShapeTypes::RoundedRectangle) {
+        // 绘制圆角矩形
+        int radius = m_shapeRect.height() / 6;
+        painter.drawRoundedRect(m_shapeRect, radius, radius);
+    } else if (m_type == ShapeTypes::Diamond) {
+        // 绘制菱形
+        QPolygon polygon;
+        int w = m_shapeRect.width();
+        int h = m_shapeRect.height();
+        
+        polygon << QPoint(m_shapeRect.left() + w/2, m_shapeRect.top());
+        polygon << QPoint(m_shapeRect.right(), m_shapeRect.top() + h/2);
+        polygon << QPoint(m_shapeRect.left() + w/2, m_shapeRect.bottom());
+        polygon << QPoint(m_shapeRect.left(), m_shapeRect.top() + h/2);
+        
+        painter.drawPolygon(polygon);
+    } else if (m_type == ShapeTypes::Hexagon) {
+        // 绘制六边形
+        QPolygon polygon;
+        int w = m_shapeRect.width();
+        int h = m_shapeRect.height();
+        
+        polygon << QPoint(m_shapeRect.left() + w/4, m_shapeRect.top());
+        polygon << QPoint(m_shapeRect.left() + 3*w/4, m_shapeRect.top());
+        polygon << QPoint(m_shapeRect.right(), m_shapeRect.top() + h/2);
+        polygon << QPoint(m_shapeRect.left() + 3*w/4, m_shapeRect.bottom());
+        polygon << QPoint(m_shapeRect.left() + w/4, m_shapeRect.bottom());
+        polygon << QPoint(m_shapeRect.left(), m_shapeRect.top() + h/2);
+        
+        painter.drawPolygon(polygon);
+    } else if (m_type == ShapeTypes::Octagon) {
+        // 绘制八边形
+        QPolygon polygon;
+        int w = m_shapeRect.width();
+        int h = m_shapeRect.height();
+        int offset = w / 4;
+        
+        polygon << QPoint(m_shapeRect.left() + offset, m_shapeRect.top());
+        polygon << QPoint(m_shapeRect.right() - offset, m_shapeRect.top());
+        polygon << QPoint(m_shapeRect.right(), m_shapeRect.top() + offset);
+        polygon << QPoint(m_shapeRect.right(), m_shapeRect.bottom() - offset);
+        polygon << QPoint(m_shapeRect.right() - offset, m_shapeRect.bottom());
+        polygon << QPoint(m_shapeRect.left() + offset, m_shapeRect.bottom());
+        polygon << QPoint(m_shapeRect.left(), m_shapeRect.bottom() - offset);
+        polygon << QPoint(m_shapeRect.left(), m_shapeRect.top() + offset);
+        
+        painter.drawPolygon(polygon);
+    } else if (m_type == ShapeTypes::Cloud) {
+        // 绘制云朵形
+        QPainterPath path;
+        int w = m_shapeRect.width();
+        int h = m_shapeRect.height();
+        
+        // 圆的半径
+        int r1 = h * 0.4;  // 大圆
+        int r2 = h * 0.3;  // 中圆
+        int r3 = h * 0.25; // 小圆
+        
+        // 画云朵的左部
+        path.addEllipse(m_shapeRect.left() + r1*0.25, m_shapeRect.top() + r1*0.5, r1, r1);
+        
+        // 画云朵的中上部
+        path.addEllipse(m_shapeRect.left() + w*0.4, m_shapeRect.top() + r2*0.1, r2, r2);
+        
+        // 画云朵的右部
+        path.addEllipse(m_shapeRect.right() - r1*1.25, m_shapeRect.top() + r1*0.5, r1, r1);
+        
+        // 画云朵的右下部
+        path.addEllipse(m_shapeRect.left() + w*0.7, m_shapeRect.top() + h*0.5, r3, r3);
+        
+        // 画云朵的左下部
+        path.addEllipse(m_shapeRect.left() + w*0.2, m_shapeRect.top() + h*0.5, r3, r3);
+        
+        painter.drawPath(path);
     }
 }
 
@@ -161,6 +248,80 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
             arrow << endPoint << arrowP1 << arrowP2;
             painter.setBrush(Qt::black);
             painter.drawPolygon(arrow);
+        } else if (m_type == ShapeTypes::RoundedRectangle) {
+            // 绘制圆角矩形
+            int radius = m_shapeRect.height() / 6;
+            painter.drawRoundedRect(m_shapeRect, radius, radius);
+        } else if (m_type == ShapeTypes::Diamond) {
+            // 绘制菱形
+            QPolygon polygon;
+            int w = m_shapeRect.width();
+            int h = m_shapeRect.height();
+            
+            polygon << QPoint(m_shapeRect.left() + w/2, m_shapeRect.top());
+            polygon << QPoint(m_shapeRect.right(), m_shapeRect.top() + h/2);
+            polygon << QPoint(m_shapeRect.left() + w/2, m_shapeRect.bottom());
+            polygon << QPoint(m_shapeRect.left(), m_shapeRect.top() + h/2);
+            
+            painter.drawPolygon(polygon);
+        } else if (m_type == ShapeTypes::Hexagon) {
+            // 绘制六边形
+            QPolygon polygon;
+            int w = m_shapeRect.width();
+            int h = m_shapeRect.height();
+            
+            polygon << QPoint(m_shapeRect.left() + w/4, m_shapeRect.top());
+            polygon << QPoint(m_shapeRect.left() + 3*w/4, m_shapeRect.top());
+            polygon << QPoint(m_shapeRect.right(), m_shapeRect.top() + h/2);
+            polygon << QPoint(m_shapeRect.left() + 3*w/4, m_shapeRect.bottom());
+            polygon << QPoint(m_shapeRect.left() + w/4, m_shapeRect.bottom());
+            polygon << QPoint(m_shapeRect.left(), m_shapeRect.top() + h/2);
+            
+            painter.drawPolygon(polygon);
+        } else if (m_type == ShapeTypes::Octagon) {
+            // 绘制八边形
+            QPolygon polygon;
+            int w = m_shapeRect.width();
+            int h = m_shapeRect.height();
+            int offset = w / 4;
+            
+            polygon << QPoint(m_shapeRect.left() + offset, m_shapeRect.top());
+            polygon << QPoint(m_shapeRect.right() - offset, m_shapeRect.top());
+            polygon << QPoint(m_shapeRect.right(), m_shapeRect.top() + offset);
+            polygon << QPoint(m_shapeRect.right(), m_shapeRect.bottom() - offset);
+            polygon << QPoint(m_shapeRect.right() - offset, m_shapeRect.bottom());
+            polygon << QPoint(m_shapeRect.left() + offset, m_shapeRect.bottom());
+            polygon << QPoint(m_shapeRect.left(), m_shapeRect.bottom() - offset);
+            polygon << QPoint(m_shapeRect.left(), m_shapeRect.top() + offset);
+            
+            painter.drawPolygon(polygon);
+        } else if (m_type == ShapeTypes::Cloud) {
+            // 绘制云朵形
+            QPainterPath path;
+            int w = m_shapeRect.width();
+            int h = m_shapeRect.height();
+            
+            // 圆的半径
+            int r1 = h * 0.4;  // 大圆
+            int r2 = h * 0.3;  // 中圆
+            int r3 = h * 0.25; // 小圆
+            
+            // 画云朵的左部
+            path.addEllipse(m_shapeRect.left() + r1*0.25, m_shapeRect.top() + r1*0.5, r1, r1);
+            
+            // 画云朵的中上部
+            path.addEllipse(m_shapeRect.left() + w*0.4, m_shapeRect.top() + r2*0.1, r2, r2);
+            
+            // 画云朵的右部
+            path.addEllipse(m_shapeRect.right() - r1*1.25, m_shapeRect.top() + r1*0.5, r1, r1);
+            
+            // 画云朵的右下部
+            path.addEllipse(m_shapeRect.left() + w*0.7, m_shapeRect.top() + h*0.5, r3, r3);
+            
+            // 画云朵的左下部
+            path.addEllipse(m_shapeRect.left() + w*0.2, m_shapeRect.top() + h*0.5, r3, r3);
+            
+            painter.drawPath(path);
         }
         
         drag->setPixmap(pixmap);
@@ -277,6 +438,12 @@ void ToolBar::createGraphicsLibTab()
     basicCategory->addShape(ShapeTypes::Ellipse);
     basicCategory->addShape(ShapeTypes::Pentagon);
     basicCategory->addShape(ShapeTypes::ArrowLine);
+    // 添加新的图形
+    basicCategory->addShape(ShapeTypes::RoundedRectangle);
+    basicCategory->addShape(ShapeTypes::Diamond);
+    basicCategory->addShape(ShapeTypes::Hexagon);
+    basicCategory->addShape(ShapeTypes::Octagon);
+    basicCategory->addShape(ShapeTypes::Cloud);
     layout->addWidget(basicCategory);
     
     // 创建Flowchart流程图类别
@@ -285,12 +452,17 @@ void ToolBar::createGraphicsLibTab()
     flowchartCategory->addShape(ShapeTypes::Pentagon);
     flowchartCategory->addShape(ShapeTypes::Ellipse);
     flowchartCategory->addShape(ShapeTypes::ArrowLine);
+    // 添加新的流程图图形
+    flowchartCategory->addShape(ShapeTypes::RoundedRectangle);
+    flowchartCategory->addShape(ShapeTypes::Diamond);
     layout->addWidget(flowchartCategory);
     
     // 创建UML类图类别
     ShapeCategory* umlCategory = new ShapeCategory(tr("UML 类图"), m_libraryWidget);
     umlCategory->addShape(ShapeTypes::Rectangle);
     umlCategory->addShape(ShapeTypes::ArrowLine);
+    // 添加新的UML图形
+    umlCategory->addShape(ShapeTypes::Cloud);
     layout->addWidget(umlCategory);
     
     // 添加弹簧占用剩余空间

@@ -28,6 +28,13 @@ int main(int argc, char *argv[])
     CircleShape::registerShape();
     PentagonShape::registerShape();
     EllipseShape::registerShape();
+    
+    // 注册新增加的图形类型
+    RoundedRectangleShape::registerShape();
+    DiamondShape::registerShape();
+    HexagonShape::registerShape();
+    OctagonShape::registerShape();
+    CloudShape::registerShape();
 
     return a.exec();
 }

@@ -24,6 +24,12 @@ namespace ShapeTypes {
     const QString Pentagon = "Pentagon";
     const QString Ellipse = "Ellipse";
     const QString ArrowLine = "ArrowLine"; // 新增带箭头直线类型
+    // 新增形状类型
+    const QString RoundedRectangle = "RoundedRectangle";
+    const QString Diamond = "Diamond";
+    const QString Hexagon = "Hexagon";
+    const QString Octagon = "Octagon";
+    const QString Cloud = "Cloud";
 }
 
 // 基础形状类
@@ -177,5 +183,89 @@ public:
     static void registerShape();
 };
 
+// 圆角矩形形状
+class RoundedRectangleShape : public Shape
+{
+public:
+    RoundedRectangleShape(const int& basis);
+    void paint(QPainter* painter) override;
+    //bool contains(const QPoint& point) const override;
+    QString displayName() const override { return QObject::tr("Rounded Rectangle"); }
+    
+    // 向工厂注册
+    static void registerShape();
+    
+private:
+    int m_radius; // 圆角半径
+};
+
+// 菱形形状
+class DiamondShape : public Shape
+{
+public:
+    DiamondShape(const int& basis);
+    void paint(QPainter* painter) override;
+    bool contains(const QPoint& point) const override;
+    QString displayName() const override { return QObject::tr("Diamond"); }
+    QRect textRect() const override;
+    QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
+    
+    // 向工厂注册
+    static void registerShape();
+    
+private:
+    QPolygon createDiamondPolygon() const;
+};
+
+// 六边形形状
+class HexagonShape : public Shape
+{
+public:
+    HexagonShape(const int& basis);
+    void paint(QPainter* painter) override;
+    bool contains(const QPoint& point) const override;
+    QString displayName() const override { return QObject::tr("Hexagon"); }
+    QRect textRect() const override;
+    QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
+    
+    // 向工厂注册
+    static void registerShape();
+    
+private:
+    QPolygon createHexagonPolygon() const;
+};
+
+// 八边形形状
+class OctagonShape : public Shape
+{
+public:
+    OctagonShape(const int& basis);
+    void paint(QPainter* painter) override;
+    bool contains(const QPoint& point) const override;
+    QString displayName() const override { return QObject::tr("Octagon"); }
+    QRect textRect() const override;
+    QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
+    
+    // 向工厂注册
+    static void registerShape();
+    
+private:
+    QPolygon createOctagonPolygon() const;
+};
+
+// 云朵形状
+class CloudShape : public Shape
+{
+public:
+    CloudShape(const int& basis);
+    void paint(QPainter* painter) override;
+    bool contains(const QPoint& point) const override;
+    QString displayName() const override { return QObject::tr("Cloud"); }
+    QRect textRect() const override;
+    QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
+    
+    // 向工厂注册
+    static void registerShape();
+};
 
 #endif // SHAPE_H

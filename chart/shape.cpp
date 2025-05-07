@@ -536,3 +536,403 @@ void EllipseShape::registerShape()
     );
 }
 
+// 圆角矩形实现
+RoundedRectangleShape::RoundedRectangleShape(const int& basis)
+    : Shape(ShapeTypes::RoundedRectangle, basis)
+{
+    // 长宽比为98:55，basis为宽
+    int width = basis * 98 / 55;
+    int height = basis;
+    m_rect = QRect(0, 0, width, height);
+    
+    // 圆角半径为矩形高度的1/6
+    m_radius = height / 6;
+}
+
+void RoundedRectangleShape::paint(QPainter* painter)
+{
+    painter->setPen(QPen(Qt::black, 2));
+    painter->setBrush(QBrush(Qt::white));
+    painter->drawRoundedRect(m_rect, m_radius, m_radius);
+    
+    // 绘制文本
+    drawText(painter);
+}
+
+void RoundedRectangleShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::RoundedRectangle,
+        [](const int& basis) -> Shape* { return new RoundedRectangleShape(basis); }
+    );
+}
+
+// 菱形实现
+DiamondShape::DiamondShape(const int& basis)
+    : Shape(ShapeTypes::Diamond, basis)
+{
+    // 设定菱形的宽高
+    int width = basis * 1.5;
+    int height = basis;
+    m_rect = QRect(0, 0, width, height);
+}
+
+void DiamondShape::paint(QPainter* painter)
+{
+    painter->setPen(QPen(Qt::black, 2));
+    painter->setBrush(QBrush(Qt::white));
+    
+    // 创建菱形的点
+    QPolygon polygon = createDiamondPolygon();
+    painter->drawPolygon(polygon);
+    
+    // 绘制文本
+    drawText(painter);
+}
+
+QPolygon DiamondShape::createDiamondPolygon() const
+{
+    // 获取矩形的宽和高
+    int w = m_rect.width();
+    int h = m_rect.height();
+    
+    // 计算菱形的四个顶点
+    QPolygon polygon;
+    
+    // 上中点
+    polygon << QPoint(m_rect.left() + w/2, m_rect.top());
+    
+    // 右中点
+    polygon << QPoint(m_rect.right(), m_rect.top() + h/2);
+    
+    // 下中点
+    polygon << QPoint(m_rect.left() + w/2, m_rect.bottom());
+    
+    // 左中点
+    polygon << QPoint(m_rect.left(), m_rect.top() + h/2);
+    
+    return polygon;
+}
+
+QRect DiamondShape::textRect() const
+{
+    // 为菱形提供合适的文本区域
+    int marginX = m_rect.width() / 4;
+    int marginY = m_rect.height() / 4;
+    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
+}
+
+bool DiamondShape::contains(const QPoint& point) const
+{
+    return createDiamondPolygon().containsPoint(point, Qt::OddEvenFill);
+}
+
+QPoint DiamondShape::getConnectionPoint(ConnectionPoint::Position position) const
+{
+    QRect rect = this->getRect();
+    
+    switch (position) {
+    case ConnectionPoint::Top:
+        return QPoint(rect.center().x(), rect.top());
+    case ConnectionPoint::Right:
+        return QPoint(rect.right(), rect.center().y());
+    case ConnectionPoint::Bottom:
+        return QPoint(rect.center().x(), rect.bottom());
+    case ConnectionPoint::Left:
+        return QPoint(rect.left(), rect.center().y());
+    default:
+        return rect.center();
+    }
+}
+
+void DiamondShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::Diamond,
+        [](const int& basis) -> Shape* { return new DiamondShape(basis); }
+    );
+}
+
+// 六边形实现
+HexagonShape::HexagonShape(const int& basis)
+    : Shape(ShapeTypes::Hexagon, basis)
+{
+    // 设定六边形的宽高
+    double h = basis;
+    double w = h * 1.1547; // 近似值，等于h*2/sqrt(3)
+    m_rect = QRect(0, 0, w, h);
+}
+
+void HexagonShape::paint(QPainter* painter)
+{
+    painter->setPen(QPen(Qt::black, 2));
+    painter->setBrush(QBrush(Qt::white));
+    
+    // 创建六边形的点
+    QPolygon polygon = createHexagonPolygon();
+    painter->drawPolygon(polygon);
+    
+    // 绘制文本
+    drawText(painter);
+}
+
+QPolygon HexagonShape::createHexagonPolygon() const
+{
+    // 获取矩形的宽和高
+    int w = m_rect.width();
+    int h = m_rect.height();
+    
+    // 计算六边形的六个顶点
+    QPolygon polygon;
+    
+    // 上左点
+    polygon << QPoint(m_rect.left() + w/4, m_rect.top());
+    
+    // 上右点
+    polygon << QPoint(m_rect.left() + 3*w/4, m_rect.top());
+    
+    // 右点
+    polygon << QPoint(m_rect.right(), m_rect.top() + h/2);
+    
+    // 下右点
+    polygon << QPoint(m_rect.left() + 3*w/4, m_rect.bottom());
+    
+    // 下左点
+    polygon << QPoint(m_rect.left() + w/4, m_rect.bottom());
+    
+    // 左点
+    polygon << QPoint(m_rect.left(), m_rect.top() + h/2);
+    
+    return polygon;
+}
+
+QRect HexagonShape::textRect() const
+{
+    // 为六边形提供合适的文本区域
+    int marginX = m_rect.width() / 4;
+    int marginY = m_rect.height() / 4;
+    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
+}
+
+bool HexagonShape::contains(const QPoint& point) const
+{
+    return createHexagonPolygon().containsPoint(point, Qt::OddEvenFill);
+}
+
+QPoint HexagonShape::getConnectionPoint(ConnectionPoint::Position position) const
+{
+    QRect rect = this->getRect();
+    int w = rect.width();
+    int h = rect.height();
+    
+    switch (position) {
+    case ConnectionPoint::Top:
+        return QPoint(rect.left() + w/2, rect.top());
+    case ConnectionPoint::Right:
+        return QPoint(rect.right(), rect.top() + h/2);
+    case ConnectionPoint::Bottom:
+        return QPoint(rect.left() + w/2, rect.bottom());
+    case ConnectionPoint::Left:
+        return QPoint(rect.left(), rect.top() + h/2);
+    default:
+        return rect.center();
+    }
+}
+
+void HexagonShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::Hexagon,
+        [](const int& basis) -> Shape* { return new HexagonShape(basis); }
+    );
+}
+
+// 八边形实现
+OctagonShape::OctagonShape(const int& basis)
+    : Shape(ShapeTypes::Octagon, basis)
+{
+    // 设定八边形的宽高
+    int size = basis * 1.2;
+    m_rect = QRect(0, 0, size, size);
+}
+
+void OctagonShape::paint(QPainter* painter)
+{
+    painter->setPen(QPen(Qt::black, 2));
+    painter->setBrush(QBrush(Qt::white));
+    
+    // 创建八边形的点
+    QPolygon polygon = createOctagonPolygon();
+    painter->drawPolygon(polygon);
+    
+    // 绘制文本
+    drawText(painter);
+}
+
+QPolygon OctagonShape::createOctagonPolygon() const
+{
+    // 获取矩形的宽和高
+    int w = m_rect.width();
+    int h = m_rect.height();
+    
+    // 计算八边形的八个顶点
+    QPolygon polygon;
+    int wOffset = w / 4; // 缩进量
+    int HOffset = h / 4; // 缩进量
+    
+    // 上左
+    polygon << QPoint(m_rect.left() + wOffset, m_rect.top());
+    
+    // 上右
+    polygon << QPoint(m_rect.right() - wOffset, m_rect.top());
+    
+    // 右上
+    polygon << QPoint(m_rect.right(), m_rect.top() + HOffset);
+    
+    // 右下
+    polygon << QPoint(m_rect.right(), m_rect.bottom() - HOffset);
+    
+    // 下右
+    polygon << QPoint(m_rect.right() - wOffset, m_rect.bottom());
+    
+    // 下左
+    polygon << QPoint(m_rect.left() + wOffset, m_rect.bottom());
+    
+    // 左下
+    polygon << QPoint(m_rect.left(), m_rect.bottom() - HOffset);
+    
+    // 左上
+    polygon << QPoint(m_rect.left(), m_rect.top() + HOffset);
+    
+    return polygon;
+}
+
+QRect OctagonShape::textRect() const
+{
+    // 为八边形提供合适的文本区域
+    int margin = m_rect.width() / 4;
+    return m_rect.adjusted(margin, margin, -margin, -margin);
+}
+
+bool OctagonShape::contains(const QPoint& point) const
+{
+    return createOctagonPolygon().containsPoint(point, Qt::OddEvenFill);
+}
+
+QPoint OctagonShape::getConnectionPoint(ConnectionPoint::Position position) const
+{
+    QRect rect = this->getRect();
+    int w = rect.width();
+    int h = rect.height();
+    int offset = w / 4;
+    
+    switch (position) {
+    case ConnectionPoint::Top:
+        return QPoint(rect.left() + w/2, rect.top());
+    case ConnectionPoint::Right:
+        return QPoint(rect.right(), rect.top() + h/2);
+    case ConnectionPoint::Bottom:
+        return QPoint(rect.left() + w/2, rect.bottom());
+    case ConnectionPoint::Left:
+        return QPoint(rect.left(), rect.top() + h/2);
+    default:
+        return rect.center();
+    }
+}
+
+void OctagonShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::Octagon,
+        [](const int& basis) -> Shape* { return new OctagonShape(basis); }
+    );
+}
+
+// 云朵形状实现
+CloudShape::CloudShape(const int& basis)
+    : Shape(ShapeTypes::Cloud, basis)
+{
+    // 设定云朵的宽高
+    int width = basis * 1.5;
+    int height = basis;
+    m_rect = QRect(0, 0, width, height);
+}
+
+void CloudShape::paint(QPainter* painter)
+{
+    painter->setPen(QPen(Qt::black, 2));
+    painter->setBrush(QBrush(Qt::white));
+    
+    // 绘制云朵形状
+    QPainterPath path;
+    
+    // 获取矩形的宽和高
+    int w = m_rect.width();
+    int h = m_rect.height();
+    
+    // 圆的半径
+    int r1 = h * 0.4;  // 大圆
+    int r2 = h * 0.3;  // 中圆
+    int r3 = h * 0.25; // 小圆
+    
+    // 画云朵的左部
+    path.addEllipse(m_rect.left() + r1*0.25, m_rect.top() + r1*0.5, r1, r1);
+    
+    // 画云朵的中上部
+    path.addEllipse(m_rect.left() + w*0.4, m_rect.top() + r2*0.1, r2, r2);
+    
+    // 画云朵的右部
+    path.addEllipse(m_rect.right() - r1*1.25, m_rect.top() + r1*0.5, r1, r1);
+    
+    // 画云朵的右下部
+    path.addEllipse(m_rect.left() + w*0.7, m_rect.top() + h*0.5, r3, r3);
+    
+    // 画云朵的左下部
+    path.addEllipse(m_rect.left() + w*0.2, m_rect.top() + h*0.5, r3, r3);
+    
+    painter->drawPath(path);
+    
+    // 绘制文本
+    drawText(painter);
+}
+
+QRect CloudShape::textRect() const
+{
+    // 为云朵提供合适的文本区域
+    int marginX = m_rect.width() / 5;
+    int marginY = m_rect.height() / 5;
+    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
+}
+
+bool CloudShape::contains(const QPoint& point) const
+{
+    // 简化云朵的形状判断，使用外接矩形
+    return m_rect.contains(point);
+}
+
+QPoint CloudShape::getConnectionPoint(ConnectionPoint::Position position) const
+{
+    QRect rect = this->getRect();
+    
+    switch (position) {
+    case ConnectionPoint::Top:
+        return QPoint(rect.center().x(), rect.top() + rect.height()*0.2);
+    case ConnectionPoint::Right:
+        return QPoint(rect.right() - rect.width()*0.1, rect.center().y());
+    case ConnectionPoint::Bottom:
+        return QPoint(rect.center().x(), rect.bottom() - rect.height()*0.2);
+    case ConnectionPoint::Left:
+        return QPoint(rect.left() + rect.width()*0.1, rect.center().y());
+    default:
+        return rect.center();
+    }
+}
+
+void CloudShape::registerShape()
+{
+    ShapeFactory::instance().registerShape(
+        ShapeTypes::Cloud,
+        [](const int& basis) -> Shape* { return new CloudShape(basis); }
+    );
+}
+
