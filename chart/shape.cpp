@@ -227,7 +227,6 @@ void Shape::drawConnectionPoints(QPainter* painter) const
 
 QPoint Shape::getConnectionPoint(ConnectionPoint::Position position) const{
     QRect rect = this->getRect();
-    //QPoint point = m_owner->getConnectionPoint(m_position);
     switch (position) {
     case ConnectionPoint::Top:
         return QPoint(rect.center().x(), rect.top());
@@ -890,22 +889,67 @@ bool CloudShape::contains(const QPoint& point) const
 
 QPoint CloudShape::getConnectionPoint(ConnectionPoint::Position position) const
 {
-    QRect rect = this->getRect();
-    
+
+    QPointF topmost, bottommost, leftmost, rightmost;
+    findExtremePointsOnPath(cloudPath, topmost, bottommost, 
+                                      leftmost, rightmost, 
+                                      60);
     switch (position) {
     case ConnectionPoint::Top:
-        return QPoint(rect.center().x(), rect.top() + rect.height()*0.2);
+        return topmost.toPoint();
     case ConnectionPoint::Right:
-        return QPoint(rect.right() - rect.width()*0.1, rect.center().y());
+        return rightmost.toPoint();
     case ConnectionPoint::Bottom:
-        return QPoint(rect.center().x(), rect.bottom() - rect.height()*0.2);
+        return bottommost.toPoint();
     case ConnectionPoint::Left:
-        return QPoint(rect.left() + rect.width()*0.1, rect.center().y());
+        return leftmost.toPoint();
     default:
-        return rect.center();
+        return m_rect.center();
     }
 }
+// 辅助函数，通过采样找到路径上的极值点,numberOfSamples采样点数量，越高越精确，但计算量越大
+void CloudShape::findExtremePointsOnPath(
+    const QPainterPath& path, 
+    QPointF& outTopmost, 
+    QPointF& outBottommost, 
+    QPointF& outLeftmost, 
+    QPointF& outRightmost,
+    int numberOfSamples ) const
+{
+    if (path.isEmpty()) {
+        qWarning() << "Path is empty, cannot find extreme points.";
+        outTopmost = outBottommost = outLeftmost = outRightmost = QPointF(); // 返回无效点
+        return;
+    }
 
+    // 使用路径的第一个点进行初始化
+    outTopmost    = path.pointAtPercent(0.0);
+    outBottommost = path.pointAtPercent(0.0);
+    outLeftmost   = path.pointAtPercent(0.0);
+    outRightmost  = path.pointAtPercent(0.0);
+
+    if (numberOfSamples < 2) {
+        numberOfSamples = 2; // 至少需要两个样本点
+    }
+
+    for (int i = 0; i <= numberOfSamples; ++i) { // 从0开始确保覆盖起点和终点
+        qreal percent = static_cast<qreal>(i) / static_cast<qreal>(numberOfSamples);
+        QPointF currentPoint = path.pointAtPercent(percent);
+
+        if (currentPoint.y() < outTopmost.y()) {
+            outTopmost = currentPoint;
+        }
+        if (currentPoint.y() > outBottommost.y()) {
+            outBottommost = currentPoint;
+        }
+        if (currentPoint.x() < outLeftmost.x()) {
+            outLeftmost = currentPoint;
+        }
+        if (currentPoint.x() > outRightmost.x()) {
+            outRightmost = currentPoint;
+        }
+    }
+}
 void CloudShape::registerShape()
 {
     ShapeFactory::instance().registerShape(
@@ -924,7 +968,7 @@ QPainterPath CloudShape::createCloudPath() {
     prototypeCloudPath.moveTo(pointA);
     // 底部三个凸起
     prototypeCloudPath.cubicTo(QPointF(40, 130), QPointF(65, 130), QPointF(75, 108));
-    prototypeCloudPath.cubicTo(QPointF(85, 130), QPointF(115, 130), QPointF(125, 108));
+    prototypeCloudPath.cubicTo(QPointF(85, 130), QPointF(115, 140), QPointF(125, 108));
     QPointF endOfBottom(170, 105);
     prototypeCloudPath.cubicTo(QPointF(135, 130), QPointF(160, 130), endOfBottom);
     // 右侧、顶部和左侧的凸起

@@ -6,6 +6,7 @@
 #include <QString>
 #include <QRegularExpression> 
 #include <QVector>
+#include <QDebug>
 #define _USE_MATH_DEFINES
 #include <cmath>
 #ifndef M_PI
@@ -263,7 +264,13 @@ public:
     QString displayName() const override { return QObject::tr("Cloud"); }
     QRect textRect() const override;
     QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
-    
+    void findExtremePointsOnPath(
+        const QPainterPath& path, 
+        QPointF& outTopmost, 
+        QPointF& outBottommost, 
+        QPointF& outLeftmost, 
+        QPointF& outRightmost,
+        int numberOfSamples = 2000) const;
     // 向工厂注册
     static void registerShape();
 private:
