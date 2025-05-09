@@ -4,6 +4,7 @@
 #include <QKeyEvent>
 #include <QApplication>
 #include <QContextMenuEvent>
+#include <QScrollArea>
 #include <algorithm>  // 添加此行以使用std::swap
 #include "chart/shapefactory.h"
 #include "chart/customtextedit.h"
@@ -21,7 +22,7 @@ DrawingArea::DrawingArea(QWidget *parent)
       m_currentConnection(nullptr), m_hoveredShape(nullptr),
       m_shapeContextMenu(nullptr), m_canvasContextMenu(nullptr), m_copiedShape(nullptr),
       m_selectedConnection(nullptr), m_movingConnectionPoint(false), m_activeConnectionPoint(nullptr),
-      m_connectionDragPoint(0, 0), m_scale(1.0), m_isPanning(false)
+      m_connectionDragPoint(0, 0), m_scale(1.0), m_isPanning(false), m_viewOffset(0, 0)
 {
     // 启用接收拖放 (Enable accepting drops)
     setAcceptDrops(true);
@@ -98,8 +99,11 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     painter.scale(m_scale, m_scale);
     painter.translate(-center);
     
+    // 应用视图偏移
+    painter.translate(-m_viewOffset);
+    
     // 绘制背景
-    painter.fillRect(rect(), m_backgroundColor);
+    painter.fillRect(rect().translated(m_viewOffset), m_backgroundColor);
     
     // 绘制网格
     drawGrid(&painter);
@@ -1412,38 +1416,23 @@ void DrawingArea::checkAndExpandDrawingArea()
     }
 }
 
+
+
+
 void DrawingArea::setScale(qreal scale)
 {
-    // 限制缩放范围在0.1到5倍之间
-    m_scale = qBound(0.1, scale, 5.0);
+    // 限制缩放范围在0.25到5倍之间
+    m_scale = qBound(MIN_SCALE, scale, MAX_SCALE);
     update();
 }
 
-void DrawingArea::zoomIn()
+void DrawingArea::zoomInOrOut(const qreal& factor)
 {
-    setScale(m_scale * 1.2);  // 放大20%
+    setScale(m_scale * factor);  
 }
-
-void DrawingArea::zoomOut()
-{
-    setScale(m_scale / 1.2);  // 缩小20%
-}
-
-void DrawingArea::resetZoom()
-{
-    setScale(1.0);
-}
-
-void DrawingArea::pan(const QPoint& delta)
-{
-    // 实现平移逻辑
-    // 这里需要根据实际需求实现
-    update();
-}
-
 void DrawingArea::wheelEvent(QWheelEvent *event)
 {
-    // 检查是否按住Ctrl键
+    // 检查是否按住Ctrl键 - 进行缩放
     if (event->modifiers() & Qt::ControlModifier) {
         // 获取鼠标位置
         QPoint mousePos = event->position().toPoint();
@@ -1455,44 +1444,79 @@ void DrawingArea::wheelEvent(QWheelEvent *event)
         } else {
             factor = 1.0 / 1.2;  // 缩小
         }
-        
-        // 计算新的缩放比例
-        qreal newScale = m_scale * factor;
-        
-        // 限制缩放范围
-        newScale = qBound(0.1, newScale, 5.0);
-        
-        // 如果缩放比例没有变化，直接返回
-        if (newScale == m_scale) {
-            return;
+
+        if(factor == 1.0) return;
+        else{
+            zoomInOrOut(factor);
         }
         
-        // 更新缩放比例
-        m_scale = newScale;
         
         // 重绘
         update();
         
         // 接受事件
         event->accept();
+    } 
+    // 检查是否按住Shift键 - 进行平移
+    else if (event->modifiers() & Qt::ShiftModifier) {
+        // 计算平移距离，使用滚轮垂直移动来水平滚动
+        int delta = event->angleDelta().y();
+        
+        // 水平方向的滚动距离
+        QPoint scrollDelta;
+        
+        // 如果有水平滚动，则使用水平滚动；否则默认使用垂直滚动作为水平移动
+        if (event->angleDelta().x() != 0) {
+            scrollDelta.setX(event->angleDelta().x() / 8);
+        } else {
+            scrollDelta.setX(delta / 3); // 调整滚动速度
+        }
+        
+        // 尝试获取父滚动条并调整滚动位置
+        QScrollBar* hBar = findParentScrollBar();
+        if (hBar) {
+            hBar->setValue(hBar->value() - scrollDelta.x());
+        } else {
+            // 如果没有找到滚动条，直接移动绘图区域的视图
+            m_viewOffset.setX(m_viewOffset.x() - scrollDelta.x());
+            update();
+        }
+        
+        // 接受事件
+        event->accept();
     } else {
-        // 如果没有按住Ctrl键，让父类处理滚轮事件
+        // 如果没有按修饰键，让父类处理滚轮事件
         QWidget::wheelEvent(event);
     }
 }
 
+QScrollBar* DrawingArea::findParentScrollBar() const
+{
+    // 遍历父窗口层次，查找QScrollArea
+    QWidget* parent = this->parentWidget();
+    while (parent) {
+        QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parent);
+        if (scrollArea) {
+            return scrollArea->horizontalScrollBar();
+        }
+        parent = parent->parentWidget();
+    }
+    
+    return nullptr;
+}
+
 QPoint DrawingArea::mapToScene(const QPoint& viewPoint) const
 {
-    // 将视图坐标转换为场景坐标
+    // 将视图坐标转换为场景坐标，考虑偏移和缩放
     QPoint center(width() / 2, height() / 2);
-    QPointF scenePoint = (viewPoint - center) / m_scale + center;
+    QPointF scenePoint = (viewPoint - center) / m_scale + center + m_viewOffset;
     return scenePoint.toPoint();
 }
 
 QPoint DrawingArea::mapFromScene(const QPoint& scenePoint) const
 {
-    // 将场景坐标转换为视图坐标
+    // 将场景坐标转换为视图坐标，考虑偏移和缩放
     QPoint center(width() / 2, height() / 2);
-    QPointF viewPoint = (scenePoint - center) * m_scale + center;
+    QPointF viewPoint = ((scenePoint - m_viewOffset) - center) * m_scale + center;
     return viewPoint.toPoint();
 }

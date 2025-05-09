@@ -8,6 +8,7 @@
 #include <QMenu>
 #include <QAction>
 #include <QClipboard>
+#include <QScrollBar>
 #include "chart/shape.h" //因为要用到Shape里的枚举
 
 // 添加前向声明
@@ -44,10 +45,9 @@ public:
     // 缩放相关方法
     void setScale(qreal scale);
     qreal getScale() const { return m_scale; }
-    void zoomIn();                    // 放大
-    void zoomOut();                   // 缩小
-    void resetZoom();                 // 重置缩放
-    void pan(const QPoint& delta);    // 平移视图
+    void zoomInOrOut(const qreal& factor);                    // 放大或缩小
+    // void resetZoom();                 // 重置缩放
+    // void pan(const QPoint& delta);    // 平移视图
     
     // 坐标转换方法
     //视图坐标系：用户在屏幕上看到和交互的坐标
@@ -121,6 +121,9 @@ private:
     // 检查并自动扩展绘图区域
     void checkAndExpandDrawingArea();
     
+    // 获取滚动视图的滚动条
+    QScrollBar* findParentScrollBar() const;
+    
 private:
     QVector<Shape*> m_shapes;
     Shape* m_selectedShape;
@@ -129,9 +132,14 @@ private:
     QPoint m_shapeStart;
     
     // 缩放相关变量
+    qreal MAX_SCALE = 5.0;               // 最大缩放比例
+    qreal MIN_SCALE = 0.25;             // 最小缩放比例
     qreal m_scale;                    // 当前缩放比例
     QPoint m_lastMousePos;            // 上次鼠标位置
     bool m_isPanning;                 // 是否正在平移
+    
+    // 滚动偏移相关变量
+    QPoint m_viewOffset;              // 视图偏移量
     
     // 调整大小相关变量
     Shape::HandlePosition m_activeHandle;
