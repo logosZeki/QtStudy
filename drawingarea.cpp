@@ -84,6 +84,8 @@ DrawingArea::~DrawingArea()
 
 void DrawingArea::paintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event);
+    
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     
@@ -96,30 +98,57 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     painter.scale(m_scale, m_scale);
     painter.translate(-center);
     
+    // 绘制背景
+    painter.fillRect(rect(), m_backgroundColor);
+    
     // 绘制网格
     drawGrid(&painter);
     
     // 绘制所有形状
-    for (Shape* shape : m_shapes) {
-        shape->paint(&painter);
+    for (Shape *shape : m_shapes) {
+        shape->paint(&painter);//包括绘制文字和形状
         
-        // 如果形状被选中，绘制调整大小的手柄
-        if (shape == m_selectedShape) {
-            shape->drawResizeHandles(&painter);
-        }
-        
-        // 如果形状被选中或鼠标悬停，绘制连接点
-        if (shape == m_selectedShape || shape == m_hoveredShape) {
+        // 绘制连接点（当鼠标悬停时）
+        if(m_hoveredShape==shape){
             shape->drawConnectionPoints(&painter);
         }
+        
+        
+        // 如果是当前选中的形状，绘制一个选中框和调整大小的手柄
+        if (shape == m_selectedShape) {
+            // 临时禁用抗锯齿以获得更细的线条
+            painter.setRenderHint(QPainter::Antialiasing, false);
+            
+            QPen dashPen(Qt::blue, 0); // 使用0宽度的笔，会被渲染为设备支持的最细线条
+            QVector<qreal> dashes;
+            dashes << 2 << 2;
+            dashPen.setDashPattern(dashes);
+            dashPen.setStyle(Qt::CustomDashLine); // 确保使用自定义虚线样式
+            painter.setPen(dashPen);
+            painter.setBrush(Qt::NoBrush);
+            
+            // 只绘制一次矩形，避免双线效果
+            painter.drawRect(shape->getRect());
+            
+            // 重新启用抗锯齿以绘制手柄
+            painter.setRenderHint(QPainter::Antialiasing, true);
+            
+            // 绘制调整大小的手柄
+            shape->drawResizeHandles(&painter);
+        }
     }
     
-    // 绘制所有连接线
-    for (Connection* conn : m_connections) {
-        conn->paint(&painter);
+    // 绘制所有连线 - 移到形状绘制之后，确保连接线始终显示在最上层
+    for (Connection *connection : m_connections) {
+        // 当拖动端点时，不绘制被拖动的连接线，而是绘制预览
+        if (m_movingConnectionPoint && connection == m_selectedConnection) {
+            drawConnectionPreview(&painter, connection);
+        } else {
+            connection->paint(&painter);
+        }
     }
     
-    // 绘制当前正在创建的连接线
+    // 绘制正在创建的连线
     if (m_currentConnection) {
         m_currentConnection->paint(&painter);
     }
@@ -189,21 +218,209 @@ void DrawingArea::dropEvent(QDropEvent *event)
 void DrawingArea::updateCursor(QMouseEvent *event){
 
 }
-
-QPoint DrawingArea::mapToScene(const QPoint& viewPoint) const
+void DrawingArea::mouseMoveEvent(QMouseEvent *event)
 {
-    // 将视图坐标转换为场景坐标
-    QPoint center(width() / 2, height() / 2);
-    QPointF scenePoint = (viewPoint - center) / m_scale + center;
-    return scenePoint.toPoint();
-}
-
-QPoint DrawingArea::mapFromScene(const QPoint& scenePoint) const
-{
-    // 将场景坐标转换为视图坐标
-    QPoint center(width() / 2, height() / 2);
-    QPointF viewPoint = (scenePoint - center) * m_scale + center;
-    return viewPoint.toPoint();
+    // 将鼠标坐标转换为场景坐标
+    QPoint scenePos = mapToScene(event->pos());
+    
+    // 更新鼠标位置
+    m_lastMousePos = event->pos();
+    
+    // 拉住拉线拖动时的操作
+    if (m_currentConnection) {
+        m_temporaryEndPoint = scenePos;
+        m_currentConnection->setTemporaryEndPoint(scenePos);
+        bool isOverShape = false;
+        for (int i = m_shapes.size() - 1; i >= 0; --i) {
+            ConnectionPoint* cp = m_shapes[i]->hitConnectionPoint(scenePos, false);
+            if(cp || m_shapes[i]->contains(scenePos)) {
+                m_hoveredShape = m_shapes[i];
+                setCursor(Qt::ArrowCursor); // 普通箭头
+                isOverShape = true;
+                break;
+            }
+        }
+        if(!isOverShape) {
+            m_hoveredShape = nullptr;
+        }
+        update();
+        return;
+    }
+    
+    // 移动连接线端点
+    if (m_movingConnectionPoint && m_activeConnectionPoint) {
+        // 更新拖动预览点
+        m_connectionDragPoint = scenePos;
+        
+        // 检查是否悬停在某个形状上
+        bool isOverShape = false;
+        for (int i = m_shapes.size() - 1; i >= 0; --i) {
+            ConnectionPoint* cp = m_shapes[i]->hitConnectionPoint(scenePos, false);
+            if (cp) {
+                // 悬停在连接点上，准备重新连接
+                m_hoveredShape = m_shapes[i];
+                setCursor(Qt::CrossCursor);
+                isOverShape = true;
+                break;
+            } else if (m_shapes[i]->contains(scenePos)) {
+                // 悬停在形状上，但不在连接点上
+                m_hoveredShape = m_shapes[i];
+                setCursor(Qt::ArrowCursor);
+                isOverShape = true;
+                break;
+            }
+        }
+        
+        if (!isOverShape) {
+            // 不在任何形状上，直接移动到鼠标位置
+            if (m_activeConnectionPoint->getOwner() == nullptr) {
+                m_activeConnectionPoint->setPosition(scenePos);
+            }
+            m_hoveredShape = nullptr;
+        }
+        
+        update();
+        return;
+    }
+    
+    // 调整大小
+    if (m_resizing && m_selectedShape) {
+        QPoint delta = event->pos() - m_dragStart;
+        // 将delta转换为场景坐标
+        QPoint sceneDelta = mapToScene(delta) - mapToScene(QPoint(0, 0));
+        m_selectedShape->resize(m_activeHandle, sceneDelta);
+        m_dragStart = event->pos();
+        update();
+        return;
+    }
+    
+    // 移动形状或整条线
+    if (m_dragging) {
+        // 计算拖动偏移
+        QPoint delta = event->pos() - m_dragStart;
+        // 将delta转换为场景坐标
+        QPoint sceneDelta = mapToScene(delta) - mapToScene(QPoint(0, 0));
+        
+        if (m_selectedShape) {
+            // 移动形状
+            QRect newRect = m_selectedShape->getRect();
+            newRect.moveTo(m_shapeStart + sceneDelta);
+            m_selectedShape->setRect(newRect);
+        } else if (m_selectedConnection) {
+            // 移动整条线
+            Connection* conn = m_selectedConnection;
+            if (conn->getStartPoint() && conn->getEndPoint() && 
+                conn->getStartPoint()->getOwner() == nullptr && 
+                conn->getEndPoint()->getOwner() == nullptr) {
+                
+                // 获取当前端点位置
+                QPoint startPos = conn->getStartPosition();
+                QPoint endPos = conn->getEndPosition();
+                
+                // 计算新位置
+                QPoint newStartPos = startPos + sceneDelta;
+                QPoint newEndPos = endPos + sceneDelta;
+                
+                // 更新端点位置
+                conn->getStartPoint()->setPosition(newStartPos);
+                conn->getEndPoint()->setPosition(newEndPos);
+                
+                // 更新拖动起点
+                m_dragStart = event->pos();
+            }
+        }
+        
+        update();
+        return;
+    }
+    
+    // 检查鼠标是否位于连接线端点附近
+    for (int i = m_connections.size() - 1; i >= 0; --i) {
+        Connection* conn = m_connections[i];
+        
+        // 检查端点是否可以拖动（不在形状连接点附近）
+        if (conn->isNearStartPoint(scenePos, 20)) {
+            if (conn->getStartPoint()->getOwner() == nullptr || 
+                !conn->getStartPoint()->getOwner()->hitConnectionPoint(scenePos, true)) {
+                setCursor(Qt::SizeAllCursor); // 四向箭头
+                return;
+            }
+        } else if (conn->isNearEndPoint(scenePos, 20)) {
+            if (conn->getEndPoint()->getOwner() == nullptr || 
+                !conn->getEndPoint()->getOwner()->hitConnectionPoint(scenePos, true)) {
+                setCursor(Qt::SizeAllCursor); // 四向箭头
+                return;
+            }
+        } else if (conn->contains(scenePos)) {
+            // 在线条上
+            if (conn->getStartPoint()->getOwner() == nullptr && 
+                conn->getEndPoint()->getOwner() == nullptr) {
+                // 独立线条可以拖动整条线
+                setCursor(Qt::SizeAllCursor);
+            } else {
+                // 普通线条只能选中
+                setCursor(Qt::PointingHandCursor);
+            }
+            return;
+        }
+    }
+    
+    // 更新鼠标光标样式和形状悬停状态
+    // 首先检查鼠标是否位于调整大小的手柄上（对于选中的形状）
+    if (m_selectedShape) {
+        Shape::HandlePosition handle = m_selectedShape->hitHandle(scenePos);
+        
+        if (handle != Shape::None) {
+            // 根据手柄位置设置对应的光标样式
+            switch (handle) {
+                case Shape::TopLeft:
+                case Shape::BottomRight:
+                    setCursor(Qt::SizeFDiagCursor); // 斜向双向箭头 ↘↖
+                    return;
+                case Shape::TopRight:
+                case Shape::BottomLeft:
+                    setCursor(Qt::SizeBDiagCursor); // 斜向双向箭头 ↗↙
+                    return;
+                case Shape::Top:
+                case Shape::Bottom:
+                    setCursor(Qt::SizeVerCursor); // 垂直双向箭头 ↕
+                    return;
+                case Shape::Left:
+                case Shape::Right:
+                    setCursor(Qt::SizeHorCursor); // 水平双向箭头 ↔
+                    return;
+            }
+        }   
+    }
+    
+    // 检查鼠标是否位于任何形状上方，并更新悬停状态
+    for (int i = m_shapes.size() - 1; i >= 0; --i) {
+        ConnectionPoint* cp = m_shapes[i]->hitConnectionPoint(scenePos, true);
+        if (cp && m_selectedShape != m_shapes[i]) {
+            setCursor(Utils::getCrossCursor()); // 十字无箭头光标表示可以开始连线
+            if (m_hoveredShape != m_shapes[i]) {
+                m_hoveredShape = m_shapes[i];
+                update(); // 重绘以更新连接点显示
+            }
+            return;
+        } else if (m_shapes[i]->contains(scenePos)) {
+            if (m_hoveredShape != m_shapes[i]) {
+                m_hoveredShape = m_shapes[i];
+                update(); // 重绘以更新连接点显示
+            }
+            setCursor(Qt::SizeAllCursor); // 四向箭头
+            return;
+        }
+    }
+    
+    // 如果鼠标不在任何形状或手柄上，设置为标准光标
+    setCursor(Qt::ArrowCursor);
+    
+    // 如果之前有悬停的形状，现在鼠标已经移出，需要清除悬停状态
+    if (m_hoveredShape) {
+        m_hoveredShape = nullptr;
+        update();
+    }
 }
 
 void DrawingArea::mousePressEvent(QMouseEvent *event)
@@ -233,57 +450,108 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
             }
         }
         
-        // 检查是否点击了形状
-        bool shapeClicked = false;
-        for (int i = m_shapes.size() - 1; i >= 0; --i) {
-            if (m_shapes[i]->contains(scenePos)) {
-                m_selectedShape = m_shapes[i];
-                m_selectedConnection = nullptr;
-                shapeClicked = true;
-                
-                // 检查是否点击了调整大小的手柄
-                Shape::HandlePosition handle = m_selectedShape->hitHandle(scenePos);
-                if (handle != Shape::None) {
-                    m_resizing = true;
-                    m_activeHandle = handle;
+        // 然后检查是否点击了线条端点
+        for (int i = m_connections.size() - 1; i >= 0; --i) {
+            Connection* conn = m_connections[i];
+            if (conn->isNearStartPoint(scenePos, 20)) {
+                // 如果端点离连接点足够远，才可以拖动端点
+                if (conn->getStartPoint()->getOwner() == nullptr || 
+                    !conn->getStartPoint()->getOwner()->hitConnectionPoint(scenePos, true)) {
+                    // 选中连接线
+                    selectConnection(conn);
+                    m_movingConnectionPoint = true;
+                    m_activeConnectionPoint = conn->getStartPoint();
                     m_dragStart = event->pos();
+                    m_connectionDragPoint = scenePos;
+                    setCursor(Qt::SizeAllCursor); // 四向箭头
                     return;
                 }
+            } else if (conn->isNearEndPoint(scenePos, 20)) {
+                // 如果端点离连接点足够远，才可以拖动端点
+                if (conn->getEndPoint()->getOwner() == nullptr || 
+                    !conn->getEndPoint()->getOwner()->hitConnectionPoint(scenePos, true)) {
+                    // 选中连接线
+                    selectConnection(conn);
+                    m_movingConnectionPoint = true;
+                    m_activeConnectionPoint = conn->getEndPoint();
+                    m_dragStart = event->pos();
+                    m_connectionDragPoint = scenePos;
+                    setCursor(Qt::SizeAllCursor); // 四向箭头
+                    return;
+                }
+            } else if (conn->contains(scenePos)) {
+                // 点击了线条中间
+                // 检查是否是独立的线条（两端都未连接到图形）
+                bool isIndependentLine = 
+                    (conn->getStartPoint()->getOwner() == nullptr && 
+                     conn->getEndPoint()->getOwner() == nullptr);
                 
-                // 开始拖动
-                m_dragging = true;
+                selectConnection(conn);
+                
+                if (isIndependentLine) {
+                    // 准备拖动整条线
+                    m_dragging = true;
+                    m_dragStart = event->pos();
+                }
+                return;
+            }
+        }
+    
+        // 然后检查是否点击了形状的调整手柄
+        if (m_selectedShape) {
+            Shape::HandlePosition handle = m_selectedShape->hitHandle(scenePos);
+            if (handle != Shape::None) {
+                m_activeHandle = handle;
+                m_resizing = true;
                 m_dragStart = event->pos();
-                m_shapeStart = m_selectedShape->getRect().topLeft();
                 return;
             }
         }
         
-        // 如果没有点击形状，检查是否点击了连接线
-        if (!shapeClicked) {
-            for (Connection* conn : m_connections) {
-                if (conn->contains(scenePos)) {
-                    selectConnection(conn);
-                    m_dragging = true;
-                    m_dragStart = event->pos();
-                    return;
+        // 检查是否点击了现有的形状
+        for (int i = m_shapes.size() - 1; i >= 0; --i) {
+            if (m_shapes[i]->contains(scenePos)) {
+                // 取消当前选中的连接线
+                if (m_selectedConnection) {
+                    m_selectedConnection->setSelected(false);
+                    m_selectedConnection = nullptr;
                 }
+                
+                // 选中形状并准备拖动
+                m_selectedShape = m_shapes[i];
+                m_dragging = true;
+                m_dragStart = event->pos();
+                m_shapeStart = m_selectedShape->getRect().topLeft();
+                
+                update();
+                return;
             }
         }
         
-        // 如果点击了空白区域，取消选择
-        m_selectedShape = nullptr;
-        m_selectedConnection = nullptr;
-        update();
+        // 如果点击空白区域，取消选中当前形状和连接线
+        if (m_selectedShape) {
+            m_selectedShape = nullptr;
+            update();
+        }
+        
+        if (m_selectedConnection) {
+            m_selectedConnection->setSelected(false);
+            m_selectedConnection = nullptr;
+            update();
+        }
     }
 }
 
 void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
 {
+    // 将鼠标坐标转换为场景坐标
+    QPoint scenePos = mapToScene(event->pos());
+    
     // 完成连接创建
     if (m_currentConnection && event->button() == Qt::LeftButton) {
         if (m_hoveredShape) {
             // 寻找最近的连接点
-            ConnectionPoint* nearestPoint = findNearestConnectionPoint(m_hoveredShape, event->pos());
+            ConnectionPoint* nearestPoint = findNearestConnectionPoint(m_hoveredShape, scenePos);
             // 如果找到连接点且不是起点，完成连接
             if (nearestPoint && (!m_currentConnection->getStartPoint()->equalTo(nearestPoint))) {
                 completeConnection(nearestPoint);
@@ -307,7 +575,7 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
     if (m_movingConnectionPoint && event->button() == Qt::LeftButton) {
         if (m_hoveredShape) {
             // 尝试连接到悬停形状的连接点
-            ConnectionPoint* nearestPoint = findNearestConnectionPoint(m_hoveredShape, event->pos());
+            ConnectionPoint* nearestPoint = findNearestConnectionPoint(m_hoveredShape, scenePos);
             if (nearestPoint) {
                 // 检查是否是同一个连接线的另一个端点
                 Connection* conn = m_selectedConnection;
@@ -331,7 +599,7 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
             }
         } else {
             // 悬停在空白区域，创建一个自由位置的连接点
-            ConnectionPoint* freePoint = new ConnectionPoint(event->pos());
+            ConnectionPoint* freePoint = new ConnectionPoint(scenePos);
             
             // 更新连接线端点
             Connection* conn = m_selectedConnection;
@@ -385,10 +653,13 @@ void DrawingArea::mouseDoubleClickEvent(QMouseEvent *event)
         return;  // 如果已经在编辑，忽略双击 (If already editing, ignore double-click)
     }
     
+    // 将鼠标坐标转换为场景坐标
+    QPoint scenePos = mapToScene(event->pos());
+    
     // 查找点击的形状 (Find clicked shape)
     Shape* clickedShape = nullptr;
     for (int i = m_shapes.size() - 1; i >= 0; i--) {
-        if (m_shapes.at(i)->contains(event->pos())) {
+        if (m_shapes.at(i)->contains(scenePos)) {
             clickedShape = m_shapes.at(i);
             break;
         }
@@ -494,7 +765,7 @@ void DrawingArea::startConnection(ConnectionPoint* startPoint)
     m_currentConnection = new Connection(startPoint);
     
     // 设置初始临时终点为鼠标在绘图区域的位置，而不是屏幕坐标
-    QPoint cursorPos = mapFromGlobal(QCursor::pos());
+    QPoint cursorPos = mapToScene(mapFromGlobal(QCursor::pos()));
     m_temporaryEndPoint = cursorPos;
     m_currentConnection->setTemporaryEndPoint(cursorPos);
     
@@ -600,11 +871,14 @@ void DrawingArea::contextMenuEvent(QContextMenuEvent *event)
         return;
     }
     
+    // 将事件坐标转换为场景坐标
+    QPoint scenePos = mapToScene(event->pos());
+    
     // 检查是否在图形上点击
     bool onShape = false;
     
     for (int i = m_shapes.size() - 1; i >= 0; --i) {
-        if (m_shapes[i]->contains(event->pos())) {
+        if (m_shapes[i]->contains(scenePos)) {
             m_selectedShape = m_shapes[i];
             onShape = true;
             update();
@@ -1204,204 +1478,18 @@ void DrawingArea::wheelEvent(QWheelEvent *event)
     }
 }
 
-void DrawingArea::mouseMoveEvent(QMouseEvent *event)
+QPoint DrawingArea::mapToScene(const QPoint& viewPoint) const
 {
-    // 将鼠标坐标转换为场景坐标
-    QPoint scenePos = mapToScene(event->pos());
-    
-    // 更新鼠标位置
-    m_lastMousePos = event->pos();
-    
-    // 拉住拉线拖动时的操作
-    if (m_currentConnection) {
-        m_temporaryEndPoint = scenePos;
-        m_currentConnection->setTemporaryEndPoint(scenePos);
-        bool isOverShape = false;
-        for (int i = m_shapes.size() - 1; i >= 0; --i) {
-            ConnectionPoint* cp = m_shapes[i]->hitConnectionPoint(scenePos, false);
-            if(cp || m_shapes[i]->contains(scenePos)) {
-                m_hoveredShape = m_shapes[i];
-                setCursor(Qt::ArrowCursor);
-                isOverShape = true;
-                break;
-            }
-        }
-        if(!isOverShape) {
-            m_hoveredShape = nullptr;
-        }
-        update();
-        return;
-    }
-    
-    // 移动连接线端点
-    if (m_movingConnectionPoint && m_activeConnectionPoint) {
-        // 更新拖动预览点
-        m_connectionDragPoint = scenePos;
-        
-        // 检查是否悬停在某个形状上
-        bool isOverShape = false;
-        for (int i = m_shapes.size() - 1; i >= 0; --i) {
-            ConnectionPoint* cp = m_shapes[i]->hitConnectionPoint(scenePos, false);
-            if (cp) {
-                m_hoveredShape = m_shapes[i];
-                setCursor(Qt::CrossCursor);
-                isOverShape = true;
-                break;
-            } else if (m_shapes[i]->contains(scenePos)) {
-                m_hoveredShape = m_shapes[i];
-                setCursor(Qt::ArrowCursor);
-                isOverShape = true;
-                break;
-            }
-        }
-        
-        if (!isOverShape) {
-            if (m_activeConnectionPoint->getOwner() == nullptr) {
-                m_activeConnectionPoint->setPosition(scenePos);
-            }
-            m_hoveredShape = nullptr;
-        }
-        
-        update();
-        return;
-    }
-    
-    // 调整大小
-    if (m_resizing && m_selectedShape) {
-        QPoint delta = event->pos() - m_dragStart;
-        // 将delta转换为场景坐标
-        QPoint sceneDelta = mapToScene(delta) - mapToScene(QPoint(0, 0));
-        m_selectedShape->resize(m_activeHandle, sceneDelta);
-        m_dragStart = event->pos();
-        update();
-        return;
-    }
-    
-    // 移动形状或整条线
-    if (m_dragging) {
-        // 计算拖动偏移
-        QPoint delta = event->pos() - m_dragStart;
-        // 将delta转换为场景坐标
-        QPoint sceneDelta = mapToScene(delta) - mapToScene(QPoint(0, 0));
-        
-        if (m_selectedShape) {
-            // 移动形状
-            QRect newRect = m_selectedShape->getRect();
-            newRect.moveTo(m_shapeStart + sceneDelta);
-            m_selectedShape->setRect(newRect);
-        } else if (m_selectedConnection) {
-            // 移动整条线
-            Connection* conn = m_selectedConnection;
-            if (conn->getStartPoint() && conn->getEndPoint() && 
-                conn->getStartPoint()->getOwner() == nullptr && 
-                conn->getEndPoint()->getOwner() == nullptr) {
-                
-                // 获取当前端点位置
-                QPoint startPos = conn->getStartPosition();
-                QPoint endPos = conn->getEndPosition();
-                
-                // 计算新位置
-                QPoint newStartPos = startPos + sceneDelta;
-                QPoint newEndPos = endPos + sceneDelta;
-                
-                // 更新端点位置
-                conn->getStartPoint()->setPosition(newStartPos);
-                conn->getEndPoint()->setPosition(newEndPos);
-                
-                // 更新拖动起点
-                m_dragStart = event->pos();
-            }
-        }
-        
-        update();
-        return;
-    }
-    
-    // 检查鼠标是否位于连接线端点附近
-    for (int i = m_connections.size() - 1; i >= 0; --i) {
-        Connection* conn = m_connections[i];
-        
-        // 检查端点是否可以拖动（不在形状连接点附近）
-        if (conn->isNearStartPoint(scenePos, 20)) {
-            if (conn->getStartPoint()->getOwner() == nullptr || 
-                !conn->getStartPoint()->getOwner()->hitConnectionPoint(scenePos, true)) {
-                setCursor(Qt::SizeAllCursor);
-                return;
-            }
-        } else if (conn->isNearEndPoint(scenePos, 20)) {
-            if (conn->getEndPoint()->getOwner() == nullptr || 
-                !conn->getEndPoint()->getOwner()->hitConnectionPoint(scenePos, true)) {
-                setCursor(Qt::SizeAllCursor);
-                return;
-            }
-        } else if (conn->contains(scenePos)) {
-            // 在线条上
-            if (conn->getStartPoint()->getOwner() == nullptr && 
-                conn->getEndPoint()->getOwner() == nullptr) {
-                // 独立线条可以拖动整条线
-                setCursor(Qt::SizeAllCursor);
-            } else {
-                // 普通线条只能选中
-                setCursor(Qt::PointingHandCursor);
-            }
-            return;
-        }
-    }
-    
-    // 更新鼠标光标样式和形状悬停状态
-    // 首先检查鼠标是否位于调整大小的手柄上（对于选中的形状）
-    if (m_selectedShape) {
-        Shape::HandlePosition handle = m_selectedShape->hitHandle(scenePos);
-        
-        if (handle != Shape::None) {
-            // 根据手柄位置设置对应的光标样式
-            switch (handle) {
-                case Shape::TopLeft:
-                case Shape::BottomRight:
-                    setCursor(Qt::SizeFDiagCursor);
-                    return;
-                case Shape::TopRight:
-                case Shape::BottomLeft:
-                    setCursor(Qt::SizeBDiagCursor);
-                    return;
-                case Shape::Top:
-                case Shape::Bottom:
-                    setCursor(Qt::SizeVerCursor);
-                    return;
-                case Shape::Left:
-                case Shape::Right:
-                    setCursor(Qt::SizeHorCursor);
-                    return;
-            }
-        }   
-    }
-    
-    // 检查鼠标是否位于任何形状上方，并更新悬停状态
-    for (int i = m_shapes.size() - 1; i >= 0; --i) {
-        ConnectionPoint* cp = m_shapes[i]->hitConnectionPoint(scenePos, true);
-        if (cp && m_selectedShape != m_shapes[i]) {
-            setCursor(Utils::getCrossCursor());
-            if (m_hoveredShape != m_shapes[i]) {
-                m_hoveredShape = m_shapes[i];
-                update();
-            }
-            return;
-        } else if (m_shapes[i]->contains(scenePos)) {
-            if (m_hoveredShape != m_shapes[i]) {
-                m_hoveredShape = m_shapes[i];
-                update();
-            }
-            setCursor(Qt::SizeAllCursor);
-            return;
-        }
-    }
-    
-    // 如果鼠标不在任何形状或手柄上，设置为标准光标
-    setCursor(Qt::ArrowCursor);
-    
-    // 如果之前有悬停的形状，现在鼠标已经移出，需要清除悬停状态
-    if (m_hoveredShape) {
-        m_hoveredShape = nullptr;
-        update();
-    }
+    // 将视图坐标转换为场景坐标
+    QPoint center(width() / 2, height() / 2);
+    QPointF scenePoint = (viewPoint - center) / m_scale + center;
+    return scenePoint.toPoint();
+}
+
+QPoint DrawingArea::mapFromScene(const QPoint& scenePoint) const
+{
+    // 将场景坐标转换为视图坐标
+    QPoint center(width() / 2, height() / 2);
+    QPointF viewPoint = (scenePoint - center) * m_scale + center;
+    return viewPoint.toPoint();
 }
