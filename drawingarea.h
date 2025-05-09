@@ -50,6 +50,8 @@ public:
     void pan(const QPoint& delta);    // 平移视图
     
     // 坐标转换方法
+    //视图坐标系：用户在屏幕上看到和交互的坐标
+    // 场景坐标系：实际存储图形和连线的物理坐标
     QPoint mapToScene(const QPoint& viewPoint) const;    // 将视图坐标转换为场景坐标
     QPoint mapFromScene(const QPoint& scenePoint) const; // 将场景坐标转换为视图坐标
     
