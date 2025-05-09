@@ -177,10 +177,13 @@ void DrawingArea::dropEvent(QDropEvent *event)
         // 获取形状类型
         QString type = event->mimeData()->text();
         
+        // 将拖放位置从视图坐标转换为场景坐标
+        QPoint scenePos = mapToScene(event->pos());
+        
         // 处理ArrowLine类型
         if (type == ShapeTypes::ArrowLine) {
             // 创建初始位置相同的临时直线，之后用户可以调整端点
-            QPoint center = event->pos();
+            QPoint center = scenePos;
             QPoint startPoint = center - QPoint(40, 0);
             QPoint endPoint = center + QPoint(40, 0);
             createArrowLine(startPoint, endPoint);
@@ -200,7 +203,7 @@ void DrawingArea::dropEvent(QDropEvent *event)
         if (newShape) {
             //设置新创建形状在绘图区域中的位置
             QRect shapeRect = newShape->getRect();
-            shapeRect.moveCenter(event->pos());
+            shapeRect.moveCenter(scenePos);
             newShape->setRect(shapeRect);
             m_selectedShape = newShape; // 设置为当前选中形状
             // 添加形状到列表
