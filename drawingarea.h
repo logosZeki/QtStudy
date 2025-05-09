@@ -46,8 +46,6 @@ public:
     void setScale(qreal scale);
     qreal getScale() const { return m_scale; }
     void zoomInOrOut(const qreal& factor);                    // 放大或缩小
-    // void resetZoom();                 // 重置缩放
-    // void pan(const QPoint& delta);    // 平移视图
     
     // 坐标转换方法
     //视图坐标系：用户在屏幕上看到和交互的坐标
@@ -118,8 +116,6 @@ private:
     // 绘制网格
     void drawGrid(QPainter *painter);
     
-    // 检查并自动扩展绘图区域
-    void checkAndExpandDrawingArea();
     
     // 获取滚动视图的滚动条
     QScrollBar* findParentScrollBar() const;

@@ -98,6 +98,7 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     painter.translate(center);
     painter.scale(m_scale, m_scale);
     painter.translate(-center);
+    // painter.translate(-center.x() / m_scale, -center.y() / m_scale);
     
     // 应用视图偏移
     painter.translate(-m_viewOffset);
@@ -193,8 +194,6 @@ void DrawingArea::dropEvent(QDropEvent *event)
             createArrowLine(startPoint, endPoint);
             event->acceptProposedAction();
             
-            // 检查是否需要自动扩展绘图区域
-            checkAndExpandDrawingArea();
             
             return;
         }
@@ -213,9 +212,7 @@ void DrawingArea::dropEvent(QDropEvent *event)
             // 添加形状到列表
             m_shapes.append(newShape);
             update();
-            
-            // 检查是否需要自动扩展绘图区域
-            checkAndExpandDrawingArea();
+
         }
         
         event->acceptProposedAction();
@@ -572,8 +569,7 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         }
         update();
         
-        // 检查是否需要自动扩展绘图区域
-        checkAndExpandDrawingArea();
+
         
         return;
     }
@@ -625,8 +621,7 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         setCursor(Qt::ArrowCursor);
         update();
         
-        // 检查是否需要自动扩展绘图区域
-        checkAndExpandDrawingArea();
+
         
         return;
     }
@@ -635,9 +630,7 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
     if (m_resizing) {
         m_resizing = false;
         m_activeHandle = Shape::None;
-        
-        // 检查是否需要自动扩展绘图区域
-        checkAndExpandDrawingArea();
+
         
         return;
     }
@@ -645,9 +638,8 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
     // 如果正在拖动，结束拖动
     if (m_dragging) {
         m_dragging = false;
-        
-        // 检查是否需要自动扩展绘图区域
-        checkAndExpandDrawingArea();
+
+
         
         return;
     }
@@ -1377,44 +1369,7 @@ void DrawingArea::applyPageSettings()
 }
 
 // 检查并自动扩展绘图区域
-void DrawingArea::checkAndExpandDrawingArea()
-{
-    // 初始化区域为当前大小
-    int maxRight = width();
-    int maxBottom = height();
-    
-    // 检查所有图形的边界
-    for (const Shape *shape : m_shapes) {
-        QRect rect = shape->getRect();
-        maxRight = qMax(maxRight, rect.right() + 20); // 添加20像素的边距
-        maxBottom = qMax(maxBottom, rect.bottom() + 20); // 添加20像素的边距
-    }
-    
-    // 检查所有连接线的边界
-    for (const Connection *connection : m_connections) {
-        // 检查起点和终点
-        QPoint startPos = connection->getStartPosition();
-        QPoint endPos = connection->getEndPosition();
-        
-        maxRight = qMax(maxRight, startPos.x() + 20);
-        maxRight = qMax(maxRight, endPos.x() + 20);
-        maxBottom = qMax(maxBottom, startPos.y() + 20);
-        maxBottom = qMax(maxBottom, endPos.y() + 20);
-    }
-    
-    // 如果需要，扩展绘图区域
-    if (maxRight > width() || maxBottom > height()) {
-        QSize newSize(qMax(width(), maxRight), qMax(height(), maxBottom));
-        
-        // 确保新尺寸不小于最小页面尺寸
-        newSize.setWidth(qMax(newSize.width(), m_pageSize.width()));
-        newSize.setHeight(qMax(newSize.height(), m_pageSize.height()));
-        
-        // 应用新尺寸
-        resize(newSize);
-        update();
-    }
-}
+
 
 
 
