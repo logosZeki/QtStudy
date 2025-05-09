@@ -41,6 +41,18 @@ public:
     int getGridSize() const;
     int getGridThickness() const;
     
+    // 缩放相关方法
+    void setScale(qreal scale);
+    qreal getScale() const { return m_scale; }
+    void zoomIn();                    // 放大
+    void zoomOut();                   // 缩小
+    void resetZoom();                 // 重置缩放
+    void pan(const QPoint& delta);    // 平移视图
+    
+    // 坐标转换方法
+    QPoint mapToScene(const QPoint& viewPoint) const;    // 将视图坐标转换为场景坐标
+    QPoint mapFromScene(const QPoint& scenePoint) const; // 将场景坐标转换为视图坐标
+    
 public slots:
     // 应用页面设置
     void applyPageSettings();
@@ -57,6 +69,7 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;  // 处理鼠标滚轮事件
     
 private:
     void createTextEditor();
@@ -112,6 +125,11 @@ private:
     bool m_dragging;
     QPoint m_dragStart;
     QPoint m_shapeStart;
+    
+    // 缩放相关变量
+    qreal m_scale;                    // 当前缩放比例
+    QPoint m_lastMousePos;            // 上次鼠标位置
+    bool m_isPanning;                 // 是否正在平移
     
     // 调整大小相关变量
     Shape::HandlePosition m_activeHandle;
