@@ -1423,7 +1423,7 @@ void DrawingArea::setScale(qreal scale)
 {
     // 限制缩放范围在0.25到5倍之间
     m_scale = qBound(MIN_SCALE, scale, MAX_SCALE);
-    update();
+
 }
 
 void DrawingArea::zoomInOrOut(const qreal& factor)
