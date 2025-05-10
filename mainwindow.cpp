@@ -52,11 +52,11 @@ void MainWindow::setupUi()
     // 创建各个选项卡对应的工具栏
     createMainToolbar();       // 开始
     createArrangeToolbar();    // 排列
-    createExportToolbar();     // 导出
+    createExportAndImportToolbar();     // 导出和导入
     
     // 默认只显示"开始"选项卡对应的工具栏
     m_arrangeToolbar->hide();
-    m_exportToolbar->hide();
+    m_exportAndImportToolbar->hide();
 
     // 创建内容区域水平布局
     m_contentLayout = new QHBoxLayout();
@@ -121,7 +121,7 @@ void MainWindow::createTopToolbar()
     m_tabBar = new QTabBar(this);
     m_tabBar->addTab(tr("开始"));
     m_tabBar->addTab(tr("排列"));
-    m_tabBar->addTab(tr("导出"));
+    m_tabBar->addTab(tr("导出和导入"));
     m_tabBar->setExpanding(false);
     m_tabBar->setDocumentMode(true);
     m_tabBar->setDrawBase(false);
@@ -140,7 +140,7 @@ void MainWindow::onTabBarClicked(int index)
     // 隐藏所有工具栏
     m_mainToolbar->hide();
     m_arrangeToolbar->hide();
-    m_exportToolbar->hide();
+    m_exportAndImportToolbar->hide();
     
     // 根据选中的标签显示对应的工具栏
     switch (index) {
@@ -150,8 +150,8 @@ void MainWindow::onTabBarClicked(int index)
     case 1: // 排列
         m_arrangeToolbar->show();
         break;
-    case 2: // 导出 (由于删除了"页面"选项卡，原来的索引3变成了2)
-        m_exportToolbar->show();
+    case 2: // 导出和导入
+        m_exportAndImportToolbar->show();
         break;
     default:
         m_mainToolbar->show(); // 默认显示主工具栏
@@ -315,23 +315,32 @@ void MainWindow::createArrangeToolbar()
     m_arrangeToolbar->addSeparator();
 }
 
-void MainWindow::createExportToolbar()
+void MainWindow::createExportAndImportToolbar()
 {
     // 导出工具栏 (对应"导出"选项卡)
-    m_exportToolbar = new QToolBar(this);
-    m_exportToolbar->setMovable(false);
-    m_exportToolbar->setIconSize(QSize(16, 16));
-    m_exportToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
-    m_mainLayout->addWidget(m_exportToolbar);
+    m_exportAndImportToolbar = new QToolBar(this);
+    m_exportAndImportToolbar->setMovable(false);
+    m_exportAndImportToolbar->setIconSize(QSize(16, 16));
+    m_exportAndImportToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
+    m_mainLayout->addWidget(m_exportAndImportToolbar);
     
     // 添加导出工具栏的按钮和控件
-    QAction* exportAsPngAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("导出为PNG"));
-    QAction* exportAsJpgAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("导出为JPG"));
-    QAction* exportAsPdfAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("导出为PDF"));
+    QPushButton* exportAsPngButton = new QPushButton(tr("导出为PNG"));
+    QPushButton* exportAsPdfButton = new QPushButton(tr("导出为PDF"));
+    QPushButton* exportAsSvgButton = new QPushButton(tr("导出为svg"));
+
+    m_exportAndImportToolbar->addWidget(exportAsPngButton);
+    m_exportAndImportToolbar->addSeparator();
+    m_exportAndImportToolbar->addWidget(exportAsPdfButton);
+    m_exportAndImportToolbar->addSeparator();
+    m_exportAndImportToolbar->addWidget(exportAsSvgButton);
+    m_exportAndImportToolbar->addSeparator();
+
+    // 添加导入工具栏的按钮和控件
+    QPushButton* importAsSvgButton = new QPushButton(tr("从svg导入"));
+    m_exportAndImportToolbar->addWidget(importAsSvgButton);
+
     
-    m_exportToolbar->addSeparator();
-    
-    QAction* printAction = m_exportToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("打印"));
 }
 
 void MainWindow::showPageSettingDialog()

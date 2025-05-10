@@ -45,7 +45,7 @@ private:
     void createTopToolbar();
     void createMainToolbar();
     void createArrangeToolbar();
-    void createExportToolbar();
+    void createExportAndImportToolbar();
     void setupUi();
     
 private:
@@ -66,7 +66,7 @@ private:
     QToolBar *m_arrangeToolbar;
     
     // 导出工具栏 (对应"导出"选项卡)
-    QToolBar *m_exportToolbar;
+    QToolBar *m_exportAndImportToolbar;
     
     // 页面设置对话框
     PageSettingDialog *m_pageSettingDialog;
