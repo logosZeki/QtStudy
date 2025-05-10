@@ -28,6 +28,11 @@ private slots:
     void onTabBarClicked(int index);
     void showPageSettingDialog();
     void applyPageSettings();
+    
+    // 字体设置相关槽函数
+    void updateFontControls();
+    void onFontFamilyChanged(const QString& family);
+    void onFontSizeChanged(const QString& sizeText);
 
 private:
     void createTopToolbar();
@@ -59,6 +64,10 @@ private:
     // 页面设置对话框
     PageSettingDialog *m_pageSettingDialog;
     QPushButton *m_pageSettingButton;
+    
+    // 字体设置控件
+    QComboBox *m_fontCombo;
+    QComboBox *m_fontSizeCombo;
 };
 
 #endif // MAINWINDOW_H

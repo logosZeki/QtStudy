@@ -7,6 +7,7 @@
 #include <QRegularExpression> 
 #include <QVector>
 #include <QDebug>
+#include <QFont>  // 添加QFont头文件
 #define _USE_MATH_DEFINES
 #include <cmath>
 #ifndef M_PI
@@ -105,11 +106,21 @@ public:
     // 检测点击了哪个连接点（如果有）
     ConnectionPoint* hitConnectionPoint(const QPoint& point, bool isStart) const;
 
+    // 字体相关方法
+    void setFontFamily(const QString& family);
+    QString fontFamily() const;
+    
+    void setFontSize(int size);
+    int fontSize() const;
+    
+    QFont getFont() const;
+
 protected:
     QString m_type;
     QRect m_rect;
     QString m_text;  // 存储形状中的文本
     bool m_editing;  // 标记是否处于编辑状态
+    QFont m_font;    // 存储字体
 
     
     // 手柄大小常量

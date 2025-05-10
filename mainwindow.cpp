@@ -6,6 +6,7 @@
 #include <QStyle>
 #include <QIcon>
 #include <QScrollArea>
+#include <QFontDatabase>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), m_pageSettingDialog(nullptr)
@@ -15,6 +16,12 @@ MainWindow::MainWindow(QWidget *parent)
     // 设置窗口标题和大小
     setWindowTitle(tr("流程图设计器"));
     resize(1200, 800);
+    
+    // 连接DrawingArea的shapeSelectionChanged信号到updateFontControls槽
+    connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateFontControls);
+    
+    // 初始化字体控件状态
+    updateFontControls();
 }
 
 MainWindow::~MainWindow()
@@ -164,17 +171,30 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
     
     // 添加字体设置
-    QComboBox* fontCombo = new QComboBox();
-    fontCombo->addItem(tr("微软雅黑"));
-    fontCombo->addItem(tr("宋体"));
-    fontCombo->setFixedWidth(100);
-    m_mainToolbar->addWidget(fontCombo);
+    m_fontCombo = new QComboBox();
+    m_fontCombo->addItem(tr("微软雅黑"));
+    m_fontCombo->addItem(tr("宋体"));
+    m_fontCombo->addItems(QFontDatabase().families());  // 添加系统中所有可用的字体
+    m_fontCombo->setFixedWidth(120);
+    m_fontCombo->setEnabled(false);  // 初始状态下禁用
+    m_mainToolbar->addWidget(m_fontCombo);
 
-    QComboBox* fontSizeCombo = new QComboBox();
-    fontSizeCombo->addItem(tr("12 px"));
-    fontSizeCombo->addItem(tr("13 px"));
-    fontSizeCombo->setFixedWidth(100);
-    m_mainToolbar->addWidget(fontSizeCombo);
+    m_fontSizeCombo = new QComboBox();
+    // 添加PRD要求的字体大小选项
+    // 12px至20px（间隔为1px）
+    for (int i = 9; i <= 18; i++) {
+        m_fontSizeCombo->addItem(QString("%1 px").arg(i));
+    }
+    // 添加额外的大字号
+    m_fontSizeCombo->addItem(tr("20 px"));
+    m_fontSizeCombo->addItem(tr("24 px"));
+    m_fontSizeCombo->addItem(tr("32 px"));
+    m_fontSizeCombo->addItem(tr("40 px"));
+    m_fontSizeCombo->addItem(tr("64 px"));
+    
+    m_fontSizeCombo->setFixedWidth(100);
+    m_fontSizeCombo->setEnabled(false);  // 初始状态下禁用
+    m_mainToolbar->addWidget(m_fontSizeCombo);
     
     m_mainToolbar->addSeparator();
     
@@ -255,6 +275,10 @@ void MainWindow::createMainToolbar()
 
     // 连接页面设置按钮的点击信号
     connect(m_pageSettingButton, &QPushButton::clicked, this, &MainWindow::showPageSettingDialog);
+    
+    // 连接字体控件的信号
+    connect(m_fontCombo, &QComboBox::currentTextChanged, this, &MainWindow::onFontFamilyChanged);
+    connect(m_fontSizeCombo, &QComboBox::currentTextChanged, this, &MainWindow::onFontSizeChanged);
 }
 
 void MainWindow::createArrangeToolbar()
@@ -327,4 +351,50 @@ void MainWindow::applyPageSettings()
     
     // 应用设置后更新绘图区域
     m_drawingArea->applyPageSettings();
+}
+
+// 实现字体相关的槽函数
+void MainWindow::updateFontControls()
+{
+    // 获取当前选中的图形
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    
+    // 根据是否有选中图形来启用或禁用字体控件
+    bool hasSelection = (selectedShape != nullptr);
+    m_fontCombo->setEnabled(hasSelection);
+    m_fontSizeCombo->setEnabled(hasSelection);
+    
+    // 如果有选中图形，更新控件显示当前字体设置
+    if (hasSelection) {
+        // 更新字体类型下拉框
+        QString fontFamily = selectedShape->fontFamily();
+        int fontFamilyIndex = m_fontCombo->findText(fontFamily);
+        if (fontFamilyIndex >= 0) {
+            m_fontCombo->setCurrentIndex(fontFamilyIndex);
+        }
+        
+        // 更新字体大小下拉框
+        int fontSize = selectedShape->fontSize();
+        int fontSizeIndex = m_fontSizeCombo->findText(QString("%1 px").arg(fontSize));
+        if (fontSizeIndex >= 0) {
+            m_fontSizeCombo->setCurrentIndex(fontSizeIndex);
+        }
+    }
+}
+
+void MainWindow::onFontFamilyChanged(const QString& family)
+{
+    // 应用新的字体族到选中的图形
+    m_drawingArea->setSelectedShapeFontFamily(family);
+}
+
+void MainWindow::onFontSizeChanged(const QString& sizeText)
+{
+    // 从字符串中提取字体大小数值（去掉"px"后缀）
+    bool ok;
+    int size = sizeText.split(" ").first().toInt(&ok);
+    if (ok) {
+        // 应用新的字体大小到选中的图形
+        m_drawingArea->setSelectedShapeFontSize(size);
+    }
 }

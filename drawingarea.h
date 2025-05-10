@@ -53,6 +53,18 @@ public:
     QPoint mapToScene(const QPoint& viewPoint) const;    // 将视图坐标转换为场景坐标
     QPoint mapFromScene(const QPoint& scenePoint) const; // 将场景坐标转换为视图坐标
     
+    // 获取当前选中的图形
+    Shape* getSelectedShape() const { return m_selectedShape; }
+    
+    // 字体设置方法
+    void setSelectedShapeFontFamily(const QString& family);
+    void setSelectedShapeFontSize(int size);
+    
+signals:
+    // 图形选择状态改变的信号
+    void selectionChanged();
+    void shapeSelectionChanged(bool hasSelection);
+    
 public slots:
     // 应用页面设置
     void applyPageSettings();

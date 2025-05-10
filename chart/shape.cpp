@@ -7,6 +7,8 @@
 Shape::Shape(const QString& type, const int& basis)
     : m_type(type), m_editing(false)
 {
+    // 初始化默认字体为微软雅黑，12px
+    m_font = QFont("微软雅黑", 12);
     // m_rect will be initialized in derived classes
 }
 
@@ -185,6 +187,7 @@ void Shape::drawText(QPainter* painter) const
     QRect rect = textRect();
     painter->save();
     painter->setPen(Qt::black);
+    painter->setFont(m_font);  // 使用设置的字体
     painter->drawText(rect, Qt::AlignCenter | Qt::TextWordWrap, m_text);
     painter->restore();
 }
@@ -1005,4 +1008,30 @@ QPainterPath CloudShape::createCloudPath() {
                          final_dy  // dy
                          );
     return transform.map(prototypeCloudPath);
+}
+
+// 字体相关方法实现
+void Shape::setFontFamily(const QString& family)
+{
+    m_font.setFamily(family);
+}
+
+QString Shape::fontFamily() const
+{
+    return m_font.family();
+}
+
+void Shape::setFontSize(int size)
+{
+    m_font.setPointSize(size);
+}
+
+int Shape::fontSize() const
+{
+    return m_font.pointSize();
+}
+
+QFont Shape::getFont() const
+{
+    return m_font;
 }

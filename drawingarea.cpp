@@ -11,6 +11,8 @@
 #include "chart/shape.h"
 #include "chart/connection.h"
 #include "util/Utils.h"
+#include <QFontMetrics>
+#include <QTextCharFormat>
 
 // 定义A4尺寸（像素）
 constexpr int A4_WIDTH = 1050;    // A4宽度为1050像素
@@ -513,6 +515,8 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
         }
         
         // 检查是否点击了现有的形状
+        Shape* oldSelectedShape = m_selectedShape;  // 记录旧的选中图形
+        
         for (int i = m_shapes.size() - 1; i >= 0; --i) {
             if (m_shapes[i]->contains(scenePos)) {
                 // 取消当前选中的连接线
@@ -528,6 +532,12 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
                 m_shapeStart = m_selectedShape->getRect().topLeft();
                 
                 update();
+                
+                // 如果选中的图形改变，发出信号
+                if (oldSelectedShape != m_selectedShape) {
+                    emit shapeSelectionChanged(true);
+                }
+                
                 return;
             }
         }
@@ -536,6 +546,7 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
         if (m_selectedShape) {
             m_selectedShape = nullptr;
             update();
+            emit shapeSelectionChanged(false);  // 发出选择变化信号
         }
         
         if (m_selectedConnection) {
@@ -543,6 +554,9 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
             m_selectedConnection = nullptr;
             update();
         }
+    }
+    else if (event->button() == Qt::RightButton) {
+        // 右键点击处理...
     }
 }
 
@@ -569,7 +583,8 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         }
         update();
         
-
+        // 发出选择状态变化信号
+        emit shapeSelectionChanged(m_selectedShape != nullptr);
         
         return;
     }
@@ -621,16 +636,19 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         setCursor(Qt::ArrowCursor);
         update();
         
-
+        // 发出选择状态变化信号
+        emit shapeSelectionChanged(m_selectedShape != nullptr);
         
         return;
     }
     
-    // 如果正在调整大小，结束调整
-    if (m_resizing) {
+    // 结束调整大小
+    if (m_resizing && event->button() == Qt::LeftButton) {
         m_resizing = false;
         m_activeHandle = Shape::None;
-
+        
+        // 发出选择状态变化信号
+        emit shapeSelectionChanged(m_selectedShape != nullptr);
         
         return;
     }
@@ -638,8 +656,9 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
     // 如果正在拖动，结束拖动
     if (m_dragging) {
         m_dragging = false;
-
-
+        
+        // 发出选择状态变化信号
+        emit shapeSelectionChanged(m_selectedShape != nullptr);
         
         return;
     }
@@ -1106,31 +1125,39 @@ void DrawingArea::pasteShape(const QPoint &pos)
 // 删除选中的图形或连接线
 void DrawingArea::deleteSelectedShape()
 {
-    // 删除选中的图形
     if (m_selectedShape) {
-        // 删除与该形状关联的所有连线
+        // 将选中的形状从列表中移除
+        int index = m_shapes.indexOf(m_selectedShape);
+        if (index >= 0) {
+            m_shapes.removeAt(index);
+        }
+        
+        // 删除相关联的连接线
         QVector<Connection*> connectionsToRemove;
-        for (Connection *connection : m_connections) {
-            if (connection->getStartPoint()->getOwner() == m_selectedShape ||
+        
+        for (Connection* connection : m_connections) {
+            if ((connection->getStartPoint() && connection->getStartPoint()->getOwner() == m_selectedShape) || 
                 (connection->getEndPoint() && connection->getEndPoint()->getOwner() == m_selectedShape)) {
                 connectionsToRemove.append(connection);
             }
         }
         
-        for (Connection *connection : connectionsToRemove) {
+        // 从连接线列表中移除并释放内存
+        for (Connection* connection : connectionsToRemove) {
             m_connections.removeOne(connection);
             delete connection;
         }
         
-        // 从形状列表中移除并删除
-        m_shapes.removeOne(m_selectedShape);
+        // 释放形状内存
         delete m_selectedShape;
         m_selectedShape = nullptr;
+        
+        // 发送选中状态变化信号
+        emit shapeSelectionChanged(false);
+        
         update();
-    } 
-    // 删除选中的连接线
-    else if (m_selectedConnection) {
-        // 从连接线列表中移除并删除
+    } else if (m_selectedConnection) {
+        // 从连接线列表中移除并释放当前选中的连接线
         m_connections.removeOne(m_selectedConnection);
         delete m_selectedConnection;
         m_selectedConnection = nullptr;
@@ -1474,4 +1501,20 @@ QPoint DrawingArea::mapFromScene(const QPoint& scenePoint) const
     QPoint center(width() / 2, height() / 2);
     QPointF viewPoint = ((scenePoint - m_viewOffset) - center) * m_scale + center;
     return viewPoint.toPoint();
+}
+
+void DrawingArea::setSelectedShapeFontFamily(const QString& family)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setFontFamily(family);
+        update();  // 更新绘图区域以显示变化
+    }
+}
+
+void DrawingArea::setSelectedShapeFontSize(int size)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setFontSize(size);
+        update();  // 更新绘图区域以显示变化
+    }
 }
