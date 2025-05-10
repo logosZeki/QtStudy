@@ -69,6 +69,7 @@ signals:
     // 图形选择状态改变的信号
     void selectionChanged();
     void shapeSelectionChanged(bool hasSelection);
+    void fontColorChanged(const QColor& color);
     
 public slots:
     // 应用页面设置

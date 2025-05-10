@@ -39,6 +39,7 @@ private slots:
     void onUnderlineActionTriggered();
     void onFontColorButtonClicked();
     void onAlignmentChanged(int index);
+    void updateFontColorButton(const QColor& color);
 
 private:
     void createTopToolbar();

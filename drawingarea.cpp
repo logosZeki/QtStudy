@@ -1560,6 +1560,7 @@ void DrawingArea::setSelectedShapeFontColor(const QColor& color)
     if (m_selectedShape) {
         m_selectedShape->setFontColor(color);
         m_textEditor->setTextColor(color);  // 更新文本编辑器的字体颜色
+        emit fontColorChanged(color);       // 发出字体颜色已更改的信号
         update();  // 更新绘图区域以显示变化
     }
 }

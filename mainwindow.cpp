@@ -21,6 +21,9 @@ MainWindow::MainWindow(QWidget *parent)
     // 连接DrawingArea的shapeSelectionChanged信号到updateFontControls槽
     connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateFontControls);
     
+    // 连接DrawingArea的fontColorChanged信号到updateFontColorButton槽
+    connect(m_drawingArea, &DrawingArea::fontColorChanged, this, &MainWindow::updateFontColorButton);
+    
     // 初始化字体控件状态
     updateFontControls();
 }
@@ -477,11 +480,11 @@ void MainWindow::onAlignmentChanged(int index)
     case 0:  // 居中对齐
         alignment = Qt::AlignCenter;
         break;
-    case 1:  // 左对齐
-        alignment = Qt::AlignLeft;
+    case 1:  // 左对齐，并垂直居中
+        alignment = Qt::AlignLeft | Qt::AlignVCenter; 
         break;
     case 2:  // 右对齐
-        alignment = Qt::AlignRight;
+        alignment = Qt::AlignRight | Qt::AlignVCenter;
         break;
     default:
         alignment = Qt::AlignCenter;
@@ -490,4 +493,12 @@ void MainWindow::onAlignmentChanged(int index)
     
     // 应用对齐设置到选中的图形
     m_drawingArea->setSelectedShapeTextAlignment(alignment);
+}
+
+void MainWindow::updateFontColorButton(const QColor& color)
+{
+    QString colorStyle = QString("QPushButton { background-color: %1; color: %2 }")
+                         .arg(color.name())
+                         .arg(color.lightness() < 128 ? "white" : "black");
+    m_fontColorButton->setStyleSheet(colorStyle);
 }
