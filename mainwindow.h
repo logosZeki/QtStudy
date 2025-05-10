@@ -11,6 +11,7 @@
 #include <QComboBox>
 #include <QSpinBox>
 #include <QLineEdit>
+#include <QAction>
 
 class ToolBar;
 class DrawingArea;
@@ -33,6 +34,11 @@ private slots:
     void updateFontControls();
     void onFontFamilyChanged(const QString& family);
     void onFontSizeChanged(const QString& sizeText);
+    void onBoldActionTriggered();
+    void onItalicActionTriggered();
+    void onUnderlineActionTriggered();
+    void onFontColorButtonClicked();
+    void onAlignmentChanged(int index);
 
 private:
     void createTopToolbar();
@@ -68,6 +74,11 @@ private:
     // 字体设置控件
     QComboBox *m_fontCombo;
     QComboBox *m_fontSizeCombo;
+    QAction *m_boldAction;
+    QAction *m_italicAction;
+    QAction *m_underlineAction;
+    QPushButton *m_fontColorButton;
+    QComboBox *m_alignCombo;
 };
 
 #endif // MAINWINDOW_H

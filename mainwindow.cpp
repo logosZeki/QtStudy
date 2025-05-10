@@ -7,6 +7,7 @@
 #include <QIcon>
 #include <QScrollArea>
 #include <QFontDatabase>
+#include <QColorDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), m_pageSettingDialog(nullptr)
@@ -199,42 +200,46 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
     
     // 添加常用格式按钮 - 使用纯文本代替不存在的图标
-    QAction* boldAction = m_mainToolbar->addAction(tr("B"));
-    boldAction->setToolTip(tr("加粗"));
-    boldAction->setFont(QFont("Arial", 9, QFont::Bold));
+    m_boldAction = m_mainToolbar->addAction(tr("B"));
+    m_boldAction->setToolTip(tr("加粗"));
+    m_boldAction->setFont(QFont("Arial", 9, QFont::Bold));
+    m_boldAction->setCheckable(true);  // 设置为可选中状态
+    m_boldAction->setEnabled(false);   // 初始状态下禁用
     
-    QAction* italicAction = m_mainToolbar->addAction(tr("I"));
-    italicAction->setToolTip(tr("斜体"));
+    m_italicAction = m_mainToolbar->addAction(tr("I"));
+    m_italicAction->setToolTip(tr("斜体"));
     QFont italicFont("Arial", 9);
     italicFont.setItalic(true);
-    italicAction->setFont(italicFont);
+    m_italicAction->setFont(italicFont);
+    m_italicAction->setCheckable(true);  // 设置为可选中状态
+    m_italicAction->setEnabled(false);   // 初始状态下禁用
     
-    QAction* underlineAction = m_mainToolbar->addAction(tr("U"));
-    underlineAction->setToolTip(tr("下划线"));
+    m_underlineAction = m_mainToolbar->addAction(tr("U"));
+    m_underlineAction->setToolTip(tr("下划线"));
     QFont underlineFont("Arial", 9);
     underlineFont.setUnderline(true);
-    underlineAction->setFont(underlineFont);
+    m_underlineAction->setFont(underlineFont);
+    m_underlineAction->setCheckable(true);  // 设置为可选中状态
+    m_underlineAction->setEnabled(false);   // 初始状态下禁用
     
     m_mainToolbar->addSeparator();
-
-
     
-    // 添加字体颜色按钮 - 使用确定存在的图标
-    //QAction* alignAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogListView), tr("左对齐"));
-    // 添加页面设置按钮
-    QPushButton* fontColorButton = new QPushButton(tr("字体颜色"));
-    fontColorButton->setToolTip(tr("字体颜色"));
-    fontColorButton->setFixedWidth(100);
-    m_mainToolbar->addWidget(fontColorButton);
+    // 添加字体颜色按钮
+    m_fontColorButton = new QPushButton(tr("字体颜色"));
+    m_fontColorButton->setToolTip(tr("字体颜色"));
+    m_fontColorButton->setFixedWidth(100);
+    m_fontColorButton->setEnabled(false);  // 初始状态下禁用
+    m_mainToolbar->addWidget(m_fontColorButton);
     m_mainToolbar->addSeparator();
 
     // 添加对齐设置
-    QComboBox* alignCombo = new QComboBox();
-    alignCombo->addItem(tr("居中对齐"));
-    alignCombo->addItem(tr("左对齐"));
-    alignCombo->addItem(tr("右对齐"));
-    alignCombo->setFixedWidth(90);
-    m_mainToolbar->addWidget(alignCombo);
+    m_alignCombo = new QComboBox();
+    m_alignCombo->addItem(tr("居中对齐"));
+    m_alignCombo->addItem(tr("左对齐"));
+    m_alignCombo->addItem(tr("右对齐"));
+    m_alignCombo->setFixedWidth(90);
+    m_alignCombo->setEnabled(false);  // 初始状态下禁用
+    m_mainToolbar->addWidget(m_alignCombo);
     
     m_mainToolbar->addSeparator();
     
@@ -279,6 +284,11 @@ void MainWindow::createMainToolbar()
     // 连接字体控件的信号
     connect(m_fontCombo, &QComboBox::currentTextChanged, this, &MainWindow::onFontFamilyChanged);
     connect(m_fontSizeCombo, &QComboBox::currentTextChanged, this, &MainWindow::onFontSizeChanged);
+    connect(m_boldAction, &QAction::triggered, this, &MainWindow::onBoldActionTriggered);
+    connect(m_italicAction, &QAction::triggered, this, &MainWindow::onItalicActionTriggered);
+    connect(m_underlineAction, &QAction::triggered, this, &MainWindow::onUnderlineActionTriggered);
+    connect(m_fontColorButton, &QPushButton::clicked, this, &MainWindow::onFontColorButtonClicked);
+    connect(m_alignCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onAlignmentChanged);
 }
 
 void MainWindow::createArrangeToolbar()
@@ -363,6 +373,11 @@ void MainWindow::updateFontControls()
     bool hasSelection = (selectedShape != nullptr);
     m_fontCombo->setEnabled(hasSelection);
     m_fontSizeCombo->setEnabled(hasSelection);
+    m_boldAction->setEnabled(hasSelection);
+    m_italicAction->setEnabled(hasSelection);
+    m_underlineAction->setEnabled(hasSelection);
+    m_fontColorButton->setEnabled(hasSelection);
+    m_alignCombo->setEnabled(hasSelection);
     
     // 如果有选中图形，更新控件显示当前字体设置
     if (hasSelection) {
@@ -378,6 +393,28 @@ void MainWindow::updateFontControls()
         int fontSizeIndex = m_fontSizeCombo->findText(QString("%1 px").arg(fontSize));
         if (fontSizeIndex >= 0) {
             m_fontSizeCombo->setCurrentIndex(fontSizeIndex);
+        }
+        
+        // 更新粗体、斜体、下划线按钮状态
+        m_boldAction->setChecked(selectedShape->isFontBold());
+        m_italicAction->setChecked(selectedShape->isFontItalic());
+        m_underlineAction->setChecked(selectedShape->isFontUnderline());
+        
+        // 更新字体颜色按钮样式
+        QColor fontColor = selectedShape->fontColor();
+        QString colorStyle = QString("QPushButton { background-color: %1; color: %2 }")
+                             .arg(fontColor.name())
+                             .arg(fontColor.lightness() < 128 ? "white" : "black");
+        m_fontColorButton->setStyleSheet(colorStyle);
+        
+        // 更新对齐方式下拉框
+        Qt::Alignment alignment = selectedShape->textAlignment();
+        if (alignment & Qt::AlignCenter) {
+            m_alignCombo->setCurrentIndex(0);
+        } else if (alignment & Qt::AlignLeft) {
+            m_alignCombo->setCurrentIndex(1);
+        } else if (alignment & Qt::AlignRight) {
+            m_alignCombo->setCurrentIndex(2);
         }
     }
 }
@@ -397,4 +434,60 @@ void MainWindow::onFontSizeChanged(const QString& sizeText)
         // 应用新的字体大小到选中的图形
         m_drawingArea->setSelectedShapeFontSize(size);
     }
+}
+
+void MainWindow::onBoldActionTriggered()
+{
+    // 应用加粗状态到选中的图形
+    m_drawingArea->setSelectedShapeFontBold(m_boldAction->isChecked());
+}
+
+void MainWindow::onItalicActionTriggered()
+{
+    // 应用斜体状态到选中的图形
+    m_drawingArea->setSelectedShapeFontItalic(m_italicAction->isChecked());
+}
+
+void MainWindow::onUnderlineActionTriggered()
+{
+    // 应用下划线状态到选中的图形
+    m_drawingArea->setSelectedShapeFontUnderline(m_underlineAction->isChecked());
+}
+
+void MainWindow::onFontColorButtonClicked()
+{
+    // 打开颜色选择对话框，应用新的字体颜色到选中的图形
+    QColor initialColor = Qt::black;
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    if (selectedShape) {
+        initialColor = selectedShape->fontColor();
+    }
+    
+    QColor color = QColorDialog::getColor(initialColor, this, tr("选择字体颜色"));
+    if (color.isValid()) {
+        m_drawingArea->setSelectedShapeFontColor(color);
+    }
+}
+
+void MainWindow::onAlignmentChanged(int index)
+{
+    // 根据索引设置不同的对齐方式
+    Qt::Alignment alignment;
+    switch (index) {
+    case 0:  // 居中对齐
+        alignment = Qt::AlignCenter;
+        break;
+    case 1:  // 左对齐
+        alignment = Qt::AlignLeft;
+        break;
+    case 2:  // 右对齐
+        alignment = Qt::AlignRight;
+        break;
+    default:
+        alignment = Qt::AlignCenter;
+        break;
+    }
+    
+    // 应用对齐设置到选中的图形
+    m_drawingArea->setSelectedShapeTextAlignment(alignment);
 }

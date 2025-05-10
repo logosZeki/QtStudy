@@ -59,6 +59,11 @@ public:
     // 字体设置方法
     void setSelectedShapeFontFamily(const QString& family);
     void setSelectedShapeFontSize(int size);
+    void setSelectedShapeFontBold(bool bold);
+    void setSelectedShapeFontItalic(bool italic);
+    void setSelectedShapeFontUnderline(bool underline);
+    void setSelectedShapeFontColor(const QColor& color);
+    void setSelectedShapeTextAlignment(Qt::Alignment alignment);
     
 signals:
     // 图形选择状态改变的信号

@@ -9,6 +9,8 @@ Shape::Shape(const QString& type, const int& basis)
 {
     // 初始化默认字体为微软雅黑，12px
     m_font = QFont("微软雅黑", 12);
+    m_fontColor = Qt::black;
+    m_textAlignment = Qt::AlignCenter;
     // m_rect will be initialized in derived classes
 }
 
@@ -186,9 +188,9 @@ void Shape::drawText(QPainter* painter) const
         
     QRect rect = textRect();
     painter->save();
-    painter->setPen(Qt::black);
+    painter->setPen(m_fontColor);
     painter->setFont(m_font);  // 使用设置的字体
-    painter->drawText(rect, Qt::AlignCenter | Qt::TextWordWrap, m_text);
+    painter->drawText(rect, m_textAlignment | Qt::TextWordWrap, m_text);
     painter->restore();
 }
 
@@ -1029,6 +1031,56 @@ void Shape::setFontSize(int size)
 int Shape::fontSize() const
 {
     return m_font.pointSize();
+}
+
+void Shape::setFontBold(bool bold)
+{
+    m_font.setWeight(bold ? QFont::Bold : QFont::Normal);
+}
+
+bool Shape::isFontBold() const
+{
+    return m_font.weight() >= QFont::Bold;
+}
+
+void Shape::setFontItalic(bool italic)
+{
+    m_font.setItalic(italic);
+}
+
+bool Shape::isFontItalic() const
+{
+    return m_font.italic();
+}
+
+void Shape::setFontUnderline(bool underline)
+{
+    m_font.setUnderline(underline);
+}
+
+bool Shape::isFontUnderline() const
+{
+    return m_font.underline();
+}
+
+void Shape::setFontColor(const QColor& color)
+{
+    m_fontColor = color;
+}
+
+QColor Shape::fontColor() const
+{
+    return m_fontColor;
+}
+
+void Shape::setTextAlignment(Qt::Alignment alignment)
+{
+    m_textAlignment = alignment;
+}
+
+Qt::Alignment Shape::textAlignment() const
+{
+    return m_textAlignment;
 }
 
 QFont Shape::getFont() const

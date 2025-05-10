@@ -8,6 +8,7 @@
 #include <QVector>
 #include <QDebug>
 #include <QFont>  // 添加QFont头文件
+#include <QColor>
 #define _USE_MATH_DEFINES
 #include <cmath>
 #ifndef M_PI
@@ -113,6 +114,21 @@ public:
     void setFontSize(int size);
     int fontSize() const;
     
+    void setFontBold(bool bold);
+    bool isFontBold() const;
+    
+    void setFontItalic(bool italic);
+    bool isFontItalic() const;
+    
+    void setFontUnderline(bool underline);
+    bool isFontUnderline() const;
+    
+    void setFontColor(const QColor& color);
+    QColor fontColor() const;
+    
+    void setTextAlignment(Qt::Alignment alignment);
+    Qt::Alignment textAlignment() const;
+    
     QFont getFont() const;
 
 protected:
@@ -121,7 +137,8 @@ protected:
     QString m_text;  // 存储形状中的文本
     bool m_editing;  // 标记是否处于编辑状态
     QFont m_font;    // 存储字体
-
+    QColor m_fontColor;       // 存储字体颜色
+    Qt::Alignment m_textAlignment; // 存储文本对齐方式
     
     // 手柄大小常量
     static const int HANDLE_SIZE = 8;

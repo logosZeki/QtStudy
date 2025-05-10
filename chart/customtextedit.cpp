@@ -6,9 +6,19 @@ CustomTextEdit::CustomTextEdit(QWidget* parent)
     : QTextEdit(parent)
 {
     setAlignment(Qt::AlignCenter);
+    m_alignment = Qt::AlignCenter;
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_centerPending = false;
+}
+
+void CustomTextEdit::setTextAlignment(Qt::Alignment alignment)
+{
+    m_alignment = alignment;
+    setAlignment(alignment);
+    // 设置完对齐方式后重新居中
+    m_centerPending = true;
+    QMetaObject::invokeMethod(this, "performCenterCursor", Qt::QueuedConnection);
 }
 
 void CustomTextEdit::showEvent(QShowEvent* event)
@@ -92,6 +102,6 @@ void CustomTextEdit::centerCursor()
         setTextCursor(cursor);
     }
 
-    // Ensure horizontal center alignment
-    setAlignment(Qt::AlignCenter);
+    // Ensure horizontal alignment is applied
+    setAlignment(m_alignment);
 }

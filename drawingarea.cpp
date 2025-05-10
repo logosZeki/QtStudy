@@ -1507,6 +1507,9 @@ void DrawingArea::setSelectedShapeFontFamily(const QString& family)
 {
     if (m_selectedShape) {
         m_selectedShape->setFontFamily(family);
+        QFont font = m_selectedShape->getFont();
+        m_textEditor->setFont(font);// 更新文本编辑器的字体
+        //m_textEditor->setFontFamily(family);  
         update();  // 更新绘图区域以显示变化
     }
 }
@@ -1515,6 +1518,57 @@ void DrawingArea::setSelectedShapeFontSize(int size)
 {
     if (m_selectedShape) {
         m_selectedShape->setFontSize(size);
+        QFont font = m_selectedShape->getFont();
+        m_textEditor->setFont(font);// 更新文本编辑器的字体
+        //m_textEditor->setFontPointSize(size);  // 更新文本编辑器的字体大小
+        update();  // 更新绘图区域以显示变化
+    }
+}
+
+void DrawingArea::setSelectedShapeFontBold(bool bold)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setFontBold(bold);
+        QFont font = m_selectedShape->getFont();
+        m_textEditor->setFont(font);  // 更新文本编辑器的字体
+        update();  // 更新绘图区域以显示变化
+    }
+}
+
+void DrawingArea::setSelectedShapeFontItalic(bool italic)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setFontItalic(italic);
+        QFont font = m_selectedShape->getFont();
+        m_textEditor->setFont(font);  // 更新文本编辑器的字体
+        update();  // 更新绘图区域以显示变化
+    }
+}
+
+void DrawingArea::setSelectedShapeFontUnderline(bool underline)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setFontUnderline(underline);
+        QFont font = m_selectedShape->getFont();
+        m_textEditor->setFont(font);  // 更新文本编辑器的字体
+        update();  // 更新绘图区域以显示变化
+    }
+}
+
+void DrawingArea::setSelectedShapeFontColor(const QColor& color)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setFontColor(color);
+        m_textEditor->setTextColor(color);  // 更新文本编辑器的字体颜色
+        update();  // 更新绘图区域以显示变化
+    }
+}
+
+void DrawingArea::setSelectedShapeTextAlignment(Qt::Alignment alignment)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setTextAlignment(alignment);
+        m_textEditor->setAlignment(alignment);  // 更新文本编辑器的对齐方式
         update();  // 更新绘图区域以显示变化
     }
 }
