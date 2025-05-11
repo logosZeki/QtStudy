@@ -65,6 +65,9 @@ public:
     void setSelectedShapeFontColor(const QColor& color);
     void setSelectedShapeTextAlignment(Qt::Alignment alignment);
     
+    // 导出功能
+    bool exportToPng(const QString &filePath);
+    
 signals:
     // 图形选择状态改变的信号
     void selectionChanged();

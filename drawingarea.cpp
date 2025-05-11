@@ -1573,3 +1573,55 @@ void DrawingArea::setSelectedShapeTextAlignment(Qt::Alignment alignment)
         update();  // 更新绘图区域以显示变化
     }
 }
+
+// 实现导出为PNG的功能
+bool DrawingArea::exportToPng(const QString &filePath)
+{
+    // 创建一个与页面尺寸相同的图像
+    QImage image(m_pageSize, QImage::Format_ARGB32);
+    image.fill(m_backgroundColor); // 填充背景颜色
+    
+    // 创建QPainter在图像上绘制
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    
+    // 保存当前可能的选中状态，以便稍后恢复
+    Shape* tempSelectedShape = m_selectedShape;
+    Connection* tempSelectedConnection = m_selectedConnection;
+    
+    // 临时取消选中状态，避免导出的图像显示选中框和手柄
+    m_selectedShape = nullptr;
+    m_selectedConnection = nullptr;
+    
+    // 不导出网格，无论当前设置如何
+    // 注释掉或移除原有的网格绘制代码
+    /*
+    if (m_showGrid) {
+        drawGrid(&painter);
+    }
+    */
+    
+    // 绘制所有形状
+    for (Shape* shape : m_shapes) {
+        shape->paint(&painter);
+    }
+    
+    // 绘制所有连线
+    for (Connection* connection : m_connections) {
+        connection->paint(&painter);
+    }
+    
+    // 恢复选中状态
+    m_selectedShape = tempSelectedShape;
+    m_selectedConnection = tempSelectedConnection;
+    
+    // 保存图像为PNG文件
+    bool success = image.save(filePath, "PNG");
+    
+    // 更新视图
+    update();
+    
+    return success;
+}

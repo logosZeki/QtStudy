@@ -40,6 +40,9 @@ private slots:
     void onFontColorButtonClicked();
     void onAlignmentChanged(int index);
     void updateFontColorButton(const QColor& color);
+    
+    // 导出功能相关槽函数
+    void exportAsPng();
 
 private:
     void createTopToolbar();
