@@ -3,6 +3,7 @@
 #include <QPixmap>
 #include <QDialogButtonBox>
 #include "util/Utils.h"
+#include "drawingarea.h"
 
 // 定义A4尺寸（像素）
 constexpr int A4_WIDTH = Utils::A4_WIDTH;    // A4宽度为1200像素
@@ -19,9 +20,13 @@ constexpr int A5_HEIGHT = Utils::A5_HEIGHT;
 constexpr int Default_WIDTH = Utils::Default_WIDTH; 
 constexpr int Default_HEIGHT = Utils::Default_HEIGHT;
 
-PageSettingDialog::PageSettingDialog(QWidget *parent)
+PageSettingDialog::PageSettingDialog(QWidget *parent, DrawingArea* drawingArea)
     : QDialog(parent)
     , m_colorDialog(nullptr)
+    , m_gridSizeModified(false)
+    , m_lineThicknessModified(false)
+    , m_pageSizeModified(false)
+    , m_drawingArea(drawingArea)
 {
     setWindowTitle(tr("页面设置"));
     setMinimumSize(400, 500);
@@ -39,6 +44,12 @@ PageSettingDialog::PageSettingDialog(QWidget *parent)
     connect(m_gridColorButton, &QPushButton::clicked, this, &PageSettingDialog::onGridColorClicked);
     connect(m_customSizeCheck, &QCheckBox::toggled, this, &PageSettingDialog::onCustomSizeToggled);
     connect(m_showGridCheck, &QCheckBox::toggled, this, &PageSettingDialog::onShowGridToggled);
+    connect(m_paperSizeGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), 
+            this, &PageSettingDialog::onPaperSizeRadioToggled);
+    connect(m_gridSizeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+            this, &PageSettingDialog::onGridSizeComboChanged);
+    connect(m_lineThicknessCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+            this, &PageSettingDialog::onLineThicknessComboChanged);
 }
 
 PageSettingDialog::~PageSettingDialog()
@@ -115,13 +126,22 @@ void PageSettingDialog::setupUi()
     m_sizeGroupBox = new QGroupBox(tr("页面尺寸"));
     QGridLayout *sizeLayout = new QGridLayout(m_sizeGroupBox);
     
-    m_paperSizeCombo = new QComboBox();
-    m_paperSizeCombo->addItem(tr("A3 "), QSize(A3_WIDTH, A3_HEIGHT));
-    m_paperSizeCombo->addItem(tr("A4 "), QSize(A4_WIDTH, A4_HEIGHT));
-    m_paperSizeCombo->addItem(tr("A5 "), QSize(A5_WIDTH, A5_HEIGHT));
-    m_paperSizeCombo->setCurrentIndex(1); // 默认选择A4
-
-    m_customSizeCheck = new QCheckBox(tr("自定义尺寸"));
+    // 替换下拉框为单选按钮组
+    m_paperSizeGroup = new QButtonGroup(this);
+    m_a3Radio = new QRadioButton(tr("A3"));
+    m_a4Radio = new QRadioButton(tr("A4"));
+    m_a5Radio = new QRadioButton(tr("A5"));
+    m_defaultSizeRadio = new QRadioButton(tr("默认尺寸"));
+    m_customSizeRadio = new QRadioButton(tr("自定义尺寸"));
+    
+    m_paperSizeGroup->addButton(m_a3Radio, 0);
+    m_paperSizeGroup->addButton(m_a4Radio, 1);
+    m_paperSizeGroup->addButton(m_a5Radio, 2);
+    m_paperSizeGroup->addButton(m_defaultSizeRadio, 3);
+    m_paperSizeGroup->addButton(m_customSizeRadio, 4);
+    
+    // 默认选择A4
+    m_a4Radio->setChecked(true);
     
     m_widthSpin = new QSpinBox();
     m_widthSpin->setRange(100, 2000);
@@ -130,21 +150,33 @@ void PageSettingDialog::setupUi()
     m_widthSpin->setEnabled(false);
     
     m_heightSpin = new QSpinBox();
-    m_heightSpin->setRange(100, 2000);
+    m_heightSpin->setRange(100, 2200);
     m_heightSpin->setValue(m_pageSize.height());
     m_heightSpin->setSuffix(tr(" px"));
     m_heightSpin->setEnabled(false);
     
-    m_pixelInfoLabel = new QLabel(tr("当前尺寸:  1050 x 1500 px"));
+    m_pixelInfoLabel = new QLabel();
+    updatePixelInfoLabel();
     
-    sizeLayout->addWidget(new QLabel(tr("可选尺寸:")), 0, 0);
-    sizeLayout->addWidget(m_paperSizeCombo, 0, 1, 1, 2);
-    sizeLayout->addWidget(m_customSizeCheck, 1, 0, 1, 3);
+    QHBoxLayout *paperSizeLayout = new QHBoxLayout();
+    paperSizeLayout->addWidget(m_a3Radio);
+    paperSizeLayout->addWidget(m_a4Radio);
+    paperSizeLayout->addWidget(m_a5Radio);
+    paperSizeLayout->addWidget(m_defaultSizeRadio);
+    
+    sizeLayout->addWidget(new QLabel(tr("预设尺寸:")), 0, 0);
+    sizeLayout->addLayout(paperSizeLayout, 0, 1, 1, 2);
+    sizeLayout->addWidget(m_customSizeRadio, 1, 0, 1, 3);
     sizeLayout->addWidget(new QLabel(tr("宽度:")), 2, 0);
     sizeLayout->addWidget(m_widthSpin, 2, 1);
     sizeLayout->addWidget(new QLabel(tr("高度:")), 3, 0);
     sizeLayout->addWidget(m_heightSpin, 3, 1);
     sizeLayout->addWidget(m_pixelInfoLabel, 4, 0, 1, 3);
+    
+    // 保留旧的CheckBox，但隐藏，以便兼容旧代码
+    m_customSizeCheck = new QCheckBox(tr("自定义尺寸"));
+    m_customSizeCheck->setVisible(false);
+    connect(m_customSizeRadio, &QRadioButton::toggled, m_customSizeCheck, &QCheckBox::setChecked);
     
     // 3. 网格控制设置组
     m_gridGroupBox = new QGroupBox(tr("页面网格控制"));
@@ -161,24 +193,67 @@ void PageSettingDialog::setupUi()
     gridPal.setColor(QPalette::Window, m_gridColor);
     m_gridColorPreview->setPalette(gridPal);
     
+    // 替换网格大小Spinner为下拉框
+    m_gridSizeCombo = new QComboBox();
+    m_gridSizeCombo->addItem(tr("小 (10 px)"), 10);
+    m_gridSizeCombo->addItem(tr("正常 (20 px)"), 20);
+    m_gridSizeCombo->addItem(tr("大 (30 px)"), 30);
+    m_gridSizeCombo->addItem(tr("很大 (40 px)"), 40);
+    
+    // 根据当前值设置默认选项
+    if (m_gridSize == 10) {
+        m_gridSizeCombo->setCurrentIndex(0);
+    } else if (m_gridSize == 20) {
+        m_gridSizeCombo->setCurrentIndex(1);
+    } else if (m_gridSize == 30) {
+        m_gridSizeCombo->setCurrentIndex(2);
+    } else if (m_gridSize == 40) {
+        m_gridSizeCombo->setCurrentIndex(3);
+    } else {
+        // 如果是其他值，设为正常
+        m_gridSizeCombo->setCurrentIndex(1);
+    }
+    
+    // 保留旧的Spinner，但隐藏，以便兼容旧代码
     m_gridSizeSpin = new QSpinBox();
     m_gridSizeSpin->setRange(5, 100);
     m_gridSizeSpin->setValue(m_gridSize);
     m_gridSizeSpin->setSuffix(tr(" px"));
+    m_gridSizeSpin->setVisible(false);
     
+    // 替换线条粗细Spinner为下拉框
+    m_lineThicknessCombo = new QComboBox();
+    m_lineThicknessCombo->addItem(tr("细 (0.5 px)"), 0.5);
+    m_lineThicknessCombo->addItem(tr("正常 (1 px)"), 1);
+    m_lineThicknessCombo->addItem(tr("粗 (2 px)"), 2);
+    
+    // 根据当前值设置默认选项
+    if (m_gridThickness == 0.5) {
+        m_lineThicknessCombo->setCurrentIndex(0);
+    } else if (m_gridThickness == 1) {
+        m_lineThicknessCombo->setCurrentIndex(1);
+    } else if (m_gridThickness == 2) {
+        m_lineThicknessCombo->setCurrentIndex(2);
+    } else {
+        // 如果是其他值，设为正常
+        m_lineThicknessCombo->setCurrentIndex(1);
+    }
+    
+    // 保留旧的Spinner，但隐藏，以便兼容旧代码
     m_gridThicknessSpin = new QSpinBox();
     m_gridThicknessSpin->setRange(1, 5);
     m_gridThicknessSpin->setValue(m_gridThickness);
     m_gridThicknessSpin->setSuffix(tr(" px"));
+    m_gridThicknessSpin->setVisible(false);
     
     gridLayout->addWidget(m_showGridCheck, 0, 0, 1, 3);
     gridLayout->addWidget(new QLabel(tr("网格颜色:")), 1, 0);
     gridLayout->addWidget(m_gridColorPreview, 1, 1);
     gridLayout->addWidget(m_gridColorButton, 1, 2);
     gridLayout->addWidget(new QLabel(tr("网格大小:")), 2, 0);
-    gridLayout->addWidget(m_gridSizeSpin, 2, 1, 1, 2);
+    gridLayout->addWidget(m_gridSizeCombo, 2, 1, 1, 2);
     gridLayout->addWidget(new QLabel(tr("线条粗细:")), 3, 0);
-    gridLayout->addWidget(m_gridThicknessSpin, 3, 1, 1, 2);
+    gridLayout->addWidget(m_lineThicknessCombo, 3, 1, 1, 2);
     
     // 将设置组添加到左侧布局
     settingsLayout->addWidget(m_colorGroupBox);
@@ -208,6 +283,17 @@ void PageSettingDialog::setupUi()
 void PageSettingDialog::updatePreview()
 {
     // 预览功能已被移除，此方法不再需要
+}
+
+void PageSettingDialog::updatePixelInfoLabel()
+{
+    // 使用DrawingArea的实际尺寸(如果可用)
+    if (m_drawingArea) {
+        QSize actualSize = m_drawingArea->getPageSize();
+        m_pixelInfoLabel->setText(tr("当前尺寸: %1 x %2 px").arg(actualSize.width()).arg(actualSize.height()));
+    } else {
+        m_pixelInfoLabel->setText(tr("当前尺寸: %1 x %2 px").arg(m_pageSize.width()).arg(m_pageSize.height()));
+    }
 }
 
 QColor PageSettingDialog::getBackgroundColor() const
@@ -256,18 +342,34 @@ void PageSettingDialog::onCancelClicked()
 void PageSettingDialog::onApplyClicked()
 {
     // 应用设置
-    // 页面尺寸
-    if (!m_customSizeCheck->isChecked()) {
-        int index = m_paperSizeCombo->currentIndex();
-        m_pageSize = m_paperSizeCombo->itemData(index).toSize();
-    } else {
-        m_pageSize = QSize(m_widthSpin->value(), m_heightSpin->value());
+    // 页面尺寸 - 只有在用户手动调整过时才应用新设置
+    if (m_pageSizeModified) {
+        if (m_customSizeRadio->isChecked()) {
+            m_pageSize = QSize(m_widthSpin->value(), m_heightSpin->value());
+        } else {
+            // 根据选择的预设尺寸设置页面大小
+            if (m_a3Radio->isChecked()) {
+                m_pageSize = QSize(A3_WIDTH, A3_HEIGHT);
+            } else if (m_a4Radio->isChecked()) {
+                m_pageSize = QSize(A4_WIDTH, A4_HEIGHT);
+            } else if (m_a5Radio->isChecked()) {
+                m_pageSize = QSize(A5_WIDTH, A5_HEIGHT);
+            } else if (m_defaultSizeRadio->isChecked()) {
+                m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
+            }
+        }
     }
     
-    // 网格设置
+    // 网格设置 - 只有在用户手动调整过时才应用新设置
     m_showGrid = m_showGridCheck->isChecked();
-    m_gridSize = m_gridSizeSpin->value();
-    m_gridThickness = m_gridThicknessSpin->value();
+    
+    if (m_gridSizeModified) {
+        m_gridSize = m_gridSizeCombo->currentData().toInt();
+    }
+    
+    if (m_lineThicknessModified) {
+        m_gridThickness = m_lineThicknessCombo->currentData().toDouble();
+    }
     
     // 发出设置已应用信号
     emit settingsApplied();
@@ -303,8 +405,6 @@ void PageSettingDialog::onRecentColorSelected(int index)
     }
 }
 
-
-
 void PageSettingDialog::onGridColorClicked()
 {
     if (!m_colorDialog) {
@@ -333,17 +433,26 @@ void PageSettingDialog::onCustomSizeToggled(bool checked)
         m_heightSpin->setValue(m_pageSize.height());
     } else {
         // 如果禁用自定义尺寸，则使用预设尺寸
-        int index = m_paperSizeCombo->currentIndex();
-        m_pageSize = m_paperSizeCombo->itemData(index).toSize();
+        if (m_a3Radio->isChecked()) {
+            m_pageSize = QSize(A3_WIDTH, A3_HEIGHT);
+        } else if (m_a4Radio->isChecked()) {
+            m_pageSize = QSize(A4_WIDTH, A4_HEIGHT);
+        } else if (m_a5Radio->isChecked()) {
+            m_pageSize = QSize(A5_WIDTH, A5_HEIGHT);
+        } else if (m_defaultSizeRadio->isChecked()) {
+            m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
+        }
     }
+    
+    m_pageSizeModified = true;
 }
 
 void PageSettingDialog::onShowGridToggled(bool checked)
 {
     m_showGrid = checked;
     m_gridColorButton->setEnabled(checked);
-    m_gridSizeSpin->setEnabled(checked);
-    m_gridThicknessSpin->setEnabled(checked);
+    m_gridSizeCombo->setEnabled(checked);
+    m_lineThicknessCombo->setEnabled(checked);
 }
 
 void PageSettingDialog::updateRecentColors(const QColor &color)
@@ -378,4 +487,54 @@ void PageSettingDialog::updateRecentColors(const QColor &color)
         pixmap.fill(recentColor);
         m_recentColorsCombo->addItem(QIcon(pixmap), recentColor.name());
     }
+}
+
+void PageSettingDialog::onPaperSizeRadioToggled(int id)
+{
+    // 处理纸张大小单选按钮的切换
+    if (id == 4) { // 自定义尺寸
+        m_widthSpin->setEnabled(true);
+        m_heightSpin->setEnabled(true);
+        m_widthSpin->setValue(m_pageSize.width());
+        m_heightSpin->setValue(m_pageSize.height());
+    } else {
+        m_widthSpin->setEnabled(false);
+        m_heightSpin->setEnabled(false);
+        
+        // 根据所选预设尺寸更新微调框的值
+        if (id == 0) { // A3
+            m_widthSpin->setValue(A3_WIDTH);
+            m_heightSpin->setValue(A3_HEIGHT);
+            m_pageSize = QSize(A3_WIDTH, A3_HEIGHT);
+        } else if (id == 1) { // A4
+            m_widthSpin->setValue(A4_WIDTH);
+            m_heightSpin->setValue(A4_HEIGHT);
+            m_pageSize = QSize(A4_WIDTH, A4_HEIGHT);
+        } else if (id == 2) { // A5
+            m_widthSpin->setValue(A5_WIDTH);
+            m_heightSpin->setValue(A5_HEIGHT);
+            m_pageSize = QSize(A5_WIDTH, A5_HEIGHT);
+        } else if (id == 3) { // 默认尺寸
+            m_widthSpin->setValue(Default_WIDTH);
+            m_heightSpin->setValue(Default_HEIGHT);
+            m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
+        }
+    }
+    
+    // 不再在这里更新信息标签，避免它显示预设尺寸而不是实际尺寸
+    m_pageSizeModified = true;
+}
+
+void PageSettingDialog::onGridSizeComboChanged(int index)
+{
+    // 用户修改网格大小，更新对应的SpinBox值并标记为已修改
+    m_gridSizeSpin->setValue(m_gridSizeCombo->currentData().toInt());
+    m_gridSizeModified = true;
+}
+
+void PageSettingDialog::onLineThicknessComboChanged(int index)
+{
+    // 用户修改线条粗细，更新对应的SpinBox值并标记为已修改
+    m_gridThicknessSpin->setValue(m_lineThicknessCombo->currentData().toDouble());
+    m_lineThicknessModified = true;
 } 

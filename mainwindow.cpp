@@ -368,7 +368,7 @@ void MainWindow::showPageSettingDialog()
 {
     // 如果对话框不存在，则创建
     if (!m_pageSettingDialog) {
-        m_pageSettingDialog = new PageSettingDialog(this);
+        m_pageSettingDialog = new PageSettingDialog(this, m_drawingArea);
         
         // 连接应用信号到相应的槽
         connect(m_pageSettingDialog, &PageSettingDialog::settingsApplied, 

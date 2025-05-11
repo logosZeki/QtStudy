@@ -12,13 +12,17 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QRadioButton>
+#include <QButtonGroup>
+
+class DrawingArea;
 
 class PageSettingDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit PageSettingDialog(QWidget *parent = nullptr);
+    explicit PageSettingDialog(QWidget *parent = nullptr, DrawingArea* drawingArea = nullptr);
     ~PageSettingDialog();
 
     // 获取页面设置参数
@@ -42,12 +46,19 @@ private slots:
     void onGridColorClicked();
     void onCustomSizeToggled(bool checked);
     void onShowGridToggled(bool checked);
+    void onPaperSizeRadioToggled(int id);
+    void onGridSizeComboChanged(int index);
+    void onLineThicknessComboChanged(int index);
 
 private:
     void setupUi();
     void initDefaultValues();
     void updateRecentColors(const QColor &color);
     void updatePreview();
+    void updatePixelInfoLabel();
+
+    // 绘图区域指针
+    DrawingArea* m_drawingArea;
 
     // 背景颜色设置相关控件
     QGroupBox *m_colorGroupBox;
@@ -66,6 +77,12 @@ private:
     QSpinBox *m_heightSpin;
     QLabel *m_pixelInfoLabel;
     QSize m_pageSize;
+    QButtonGroup *m_paperSizeGroup;
+    QRadioButton *m_a3Radio;
+    QRadioButton *m_a4Radio;
+    QRadioButton *m_a5Radio;
+    QRadioButton *m_defaultSizeRadio;
+    QRadioButton *m_customSizeRadio;
 
     // 网格设置相关控件
     QGroupBox *m_gridGroupBox;
@@ -78,11 +95,18 @@ private:
     int m_gridSize;
     int m_gridThickness;
     bool m_showGrid;
+    QComboBox *m_gridSizeCombo;
+    QComboBox *m_lineThicknessCombo;
 
     // 按钮
     QPushButton *m_okButton;
     QPushButton *m_cancelButton;
     QPushButton *m_applyButton;
+
+    // 跟踪用户手动调整状态
+    bool m_gridSizeModified;
+    bool m_lineThicknessModified;
+    bool m_pageSizeModified;
 };
 
 #endif // PAGESETTINGDIALOG_H 
