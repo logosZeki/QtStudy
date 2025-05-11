@@ -77,8 +77,8 @@ void MainWindow::setupUi()
     scrollArea->setWidget(m_drawingArea);
     scrollArea->setWidgetResizable(false);
     //scrollArea->setAlignment(Qt::AlignCenter);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     scrollArea->setFrameShape(QFrame::NoFrame);
     scrollArea->setStyleSheet("QScrollArea { border: none; background-color: #f0f0f0; }");
 

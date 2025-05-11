@@ -13,6 +13,7 @@
 #include "util/Utils.h"
 #include <QFontMetrics>
 #include <QTextCharFormat>
+#include <QTimer>
 
 // 定义默认尺寸（像素）
 constexpr int Default_WIDTH = 1623;    
@@ -52,8 +53,13 @@ DrawingArea::DrawingArea(QWidget *parent)
     // 创建右键菜单 (Create context menus)
     createContextMenus();
     
-    // 设置固定大小为A4纸张大小
+    // 设置初始大小，这将由setScale方法适当调整
     setMinimumSize(m_pageSize);
+    
+    // 调用一次setScale以正确初始化大小
+    QTimer::singleShot(0, this, [this]() {
+        setScale(m_scale);
+    });
 }
 
 DrawingArea::~DrawingArea()
@@ -1331,13 +1337,8 @@ void DrawingArea::setBackgroundColor(const QColor &color)
 void DrawingArea::setPageSize(const QSize &size)
 {
     m_pageSize = size;
-    // 考虑当前缩放比例调整绘图区域大小
-    QSize scaledSize = QSize(
-        m_pageSize.width() * m_scale,
-        m_pageSize.height() * m_scale
-    );
-    setMinimumSize(scaledSize);
-    resize(scaledSize);
+    // 使用setScale方法来正确调整尺寸
+    setScale(m_scale);
     update();
 }
 
@@ -1407,13 +1408,37 @@ void DrawingArea::setScale(qreal scale)
     // 限制缩放范围在0.25到5倍之间
     m_scale = qBound(MIN_SCALE, scale, MAX_SCALE);
     
-    // 更新绘图区域大小以适应缩放
-    QSize newSize = QSize(
+    // 计算基于缩放的新尺寸
+    QSize scaledSize = QSize(
         m_pageSize.width() * m_scale,
         m_pageSize.height() * m_scale
     );
-    setMinimumSize(newSize);
-    resize(newSize);
+    
+    // 获取父滚动区域的视口尺寸
+    QSize viewportSize;
+    QWidget* parent = this->parentWidget();
+    while (parent) {
+        QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parent);
+        if (scrollArea) {
+            // 考虑滚动条宽度，确保总是显示滚动条
+            viewportSize = scrollArea->viewport()->size();
+            break;
+        }
+        parent = parent->parentWidget();
+    }
+    
+    // 如果找到了滚动区域，确保DrawingArea的尺寸至少比视口尺寸大一些
+    if (!viewportSize.isEmpty()) {
+        // 确保绘图区域尺寸至少比视口大一点，以保持滚动条显示
+        int minWidth = viewportSize.width() + 50;  // 比视口宽50像素
+        int minHeight = viewportSize.height() + 50; // 比视口高50像素
+        
+        scaledSize.setWidth(qMax(scaledSize.width(), minWidth));
+        scaledSize.setHeight(qMax(scaledSize.height(), minHeight));
+    }
+    
+    setMinimumSize(scaledSize);
+    resize(scaledSize);
 }
 
 void DrawingArea::zoomInOrOut(const qreal& factor)
