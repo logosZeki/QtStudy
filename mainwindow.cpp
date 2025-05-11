@@ -20,7 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     
     // 设置窗口标题和大小
     setWindowTitle(tr("流程图设计器"));
-    resize(1200, 800);
+    resize(1800, 1000);
+
     
     // 连接DrawingArea的shapeSelectionChanged信号到updateFontControls槽
     connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateFontControls);
@@ -28,8 +29,19 @@ MainWindow::MainWindow(QWidget *parent)
     // 连接DrawingArea的fontColorChanged信号到updateFontColorButton槽
     connect(m_drawingArea, &DrawingArea::fontColorChanged, this, &MainWindow::updateFontColorButton);
     
+    // 连接状态栏更新信号
+    connect(m_drawingArea, &DrawingArea::selectionChanged, this, &MainWindow::updateStatusBarInfo);
+    connect(m_drawingArea, &DrawingArea::scaleChanged, this, &MainWindow::updateZoomSlider);
+    connect(m_drawingArea, &DrawingArea::shapesCountChanged, this, &MainWindow::updateStatusBarInfo);
+    
+    // 设置DrawingArea初始缩放比例
+    updateZoomSlider();
+    
     // 初始化字体控件状态
     updateFontControls();
+    
+    // 初始化状态栏信息
+    updateStatusBarInfo();
 }
 
 MainWindow::~MainWindow()
@@ -83,12 +95,15 @@ void MainWindow::setupUi()
     scrollArea->setStyleSheet("QScrollArea { border: none; background-color: #f0f0f0; }");
 
     // 设置工具栏固定宽度
-    m_toolBar->setFixedWidth(220);
+    m_toolBar->setFixedWidth(249);
     m_toolBar->setStyleSheet("QWidget { background-color: white; border-right: 1px solid #e0e0e0; }");
 
     // 添加到布局
     m_contentLayout->addWidget(m_toolBar);
     m_contentLayout->addWidget(scrollArea, 1);
+    
+    // 创建状态栏
+    createStatusBar();
 }
 
 void MainWindow::createTopToolbar()
@@ -551,5 +566,101 @@ void MainWindow::exportAsPng()
         QMessageBox::information(this, tr("导出成功"), tr("流程图已成功导出为PNG图片！"));
     } else {
         QMessageBox::critical(this, tr("导出失败"), tr("导出PNG图片时发生错误，请检查文件路径和权限。"));
+    }
+}
+
+void MainWindow::createStatusBar()
+{
+    // 创建状态栏
+    m_statusBar = new QStatusBar(this);
+    setStatusBar(m_statusBar);
+    
+    // 创建显示图形数量的标签
+    m_shapesCountLabel = new QLabel(tr("图形数量: 0"));
+    m_statusBar->addWidget(m_shapesCountLabel);
+    
+    // 添加一个固定宽度的空白区域
+    QWidget* spacer = new QWidget();
+    spacer->setFixedWidth(20);
+    m_statusBar->addWidget(spacer);
+    
+    // 创建显示缩放比例的标签
+    m_zoomLabel = new QLabel(tr("缩放比例: 100%"));
+    m_statusBar->addWidget(m_zoomLabel);
+    
+    // 添加一个固定宽度的空白区域
+    QWidget* sliderSpacer = new QWidget();
+    sliderSpacer->setFixedWidth(10);
+    m_statusBar->addWidget(sliderSpacer);
+    
+    // 创建缩放滑块
+    m_zoomSlider = new QSlider(Qt::Horizontal);
+    m_zoomSlider->setMinimumWidth(150);
+    m_zoomSlider->setMaximumWidth(200);
+    m_zoomSlider->setMinimum(0);    // 这个值将在 updateZoomSlider 中根据 MIN_SCALE 转换
+    m_zoomSlider->setMaximum(100);  // 这个值将在 updateZoomSlider 中根据 MAX_SCALE 转换
+    m_zoomSlider->setTickInterval(10);
+    m_zoomSlider->setTickPosition(QSlider::TicksBelow);
+    m_statusBar->addWidget(m_zoomSlider);
+    
+    // 连接缩放滑块值改变信号
+    connect(m_zoomSlider, &QSlider::valueChanged, this, &MainWindow::onZoomSliderValueChanged);
+}
+
+void MainWindow::updateStatusBarInfo()
+{
+    // 更新图形数量信息
+    if (m_drawingArea) {
+        // 获取图形数量 (包括所有图形和连接线)
+        int shapeCount = m_drawingArea->getShapesCount();
+        
+        // 更新图形数量标签
+        m_shapesCountLabel->setText(tr("图形数量: %1").arg(shapeCount));
+        
+        // 更新缩放比例标签
+        double zoomPercent = m_drawingArea->getScale() * 100.0;
+        m_zoomLabel->setText(tr("缩放比例: %1%").arg(zoomPercent, 0, 'f', 1));
+    }
+}
+
+void MainWindow::updateZoomSlider()
+{
+    if (m_drawingArea && m_zoomSlider) {
+        // 获取 DrawingArea 的当前缩放比例
+        qreal currentScale = m_drawingArea->getScale();
+        qreal minScale = m_drawingArea->MIN_SCALE;
+        qreal maxScale = m_drawingArea->MAX_SCALE;
+        
+        // 计算滑块位置 (将缩放比例映射到滑块范围)
+        // 滑块范围: 0 - 100
+        int sliderPos = static_cast<int>((currentScale - minScale) / (maxScale - minScale) * 100);
+        
+        // 更新滑块位置 (阻断信号以避免无限循环)
+        m_zoomSlider->blockSignals(true);
+        m_zoomSlider->setValue(sliderPos);
+        m_zoomSlider->blockSignals(false);
+        
+        // 更新缩放比例标签
+        double zoomPercent = currentScale * 100.0;
+        m_zoomLabel->setText(tr("缩放比例: %1%").arg(zoomPercent, 0, 'f', 1));
+    }
+}
+
+void MainWindow::onZoomSliderValueChanged(int value)
+{
+    if (m_drawingArea) {
+        // 获取 DrawingArea 的缩放范围
+        qreal minScale = m_drawingArea->MIN_SCALE;
+        qreal maxScale = m_drawingArea->MAX_SCALE;
+        
+        // 将滑块值映射回缩放比例
+        qreal newScale = minScale + (value / 100.0) * (maxScale - minScale);
+        
+        // 设置 DrawingArea 的缩放比例
+        m_drawingArea->setScale(newScale);
+        
+        // 更新缩放比例标签
+        double zoomPercent = newScale * 100.0;
+        m_zoomLabel->setText(tr("缩放比例: %1%").arg(zoomPercent, 0, 'f', 1));
     }
 }

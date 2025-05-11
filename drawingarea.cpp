@@ -6,18 +6,20 @@
 #include <QContextMenuEvent>
 #include <QScrollArea>
 #include <algorithm>  // 添加此行以使用std::swap
+#include <QFontMetrics>
+#include <QTextCharFormat>
+#include <QTimer>
+
 #include "chart/shapefactory.h"
 #include "chart/customtextedit.h"
 #include "chart/shape.h"
 #include "chart/connection.h"
 #include "util/Utils.h"
-#include <QFontMetrics>
-#include <QTextCharFormat>
-#include <QTimer>
+
 
 // 定义默认尺寸（像素）
-constexpr int Default_WIDTH = 1623;    
-constexpr int Default_HEIGHT = 792;   
+constexpr int Default_WIDTH = Utils::Default_WIDTH; 
+constexpr int Default_HEIGHT = Utils::Default_HEIGHT;
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
@@ -202,6 +204,8 @@ void DrawingArea::dropEvent(QDropEvent *event)
             createArrowLine(startPoint, endPoint);
             event->acceptProposedAction();
             
+            // 发送图形数量变化信号
+            emit shapesCountChanged(getShapesCount());
             
             return;
         }
@@ -219,8 +223,11 @@ void DrawingArea::dropEvent(QDropEvent *event)
             m_selectedShape = newShape; // 设置为当前选中形状
             // 添加形状到列表
             m_shapes.append(newShape);
+            
+            // 发送图形数量变化信号
+            emit shapesCountChanged(getShapesCount());
+            
             update();
-
         }
         
         event->acceptProposedAction();
@@ -826,6 +833,9 @@ void DrawingArea::completeConnection(ConnectionPoint* endPoint)
     if (m_currentConnection->isComplete()) {
         m_connections.append(m_currentConnection);
         selectConnection(m_currentConnection); // 选中新创建的连接线
+        
+        // 发送图形数量变化信号
+        emit shapesCountChanged(getShapesCount());
     } else {
         delete m_currentConnection;
         m_currentConnection = nullptr;
@@ -1161,12 +1171,19 @@ void DrawingArea::deleteSelectedShape()
         // 发送选中状态变化信号
         emit shapeSelectionChanged(false);
         
+        // 发送图形数量变化信号
+        emit shapesCountChanged(getShapesCount());
+        
         update();
     } else if (m_selectedConnection) {
         // 从连接线列表中移除并释放当前选中的连接线
         m_connections.removeOne(m_selectedConnection);
         delete m_selectedConnection;
         m_selectedConnection = nullptr;
+        
+        // 发送图形数量变化信号
+        emit shapesCountChanged(getShapesCount());
+        
         update();
     }
 }
@@ -1405,7 +1422,10 @@ void DrawingArea::applyPageSettings()
 // 检查并自动扩展绘图区域
 void DrawingArea::setScale(qreal scale)
 {
-    // 限制缩放范围在0.25到5倍之间
+    // 缓存旧的缩放值，用于检测变化
+    qreal oldScale = m_scale;
+    
+    // 限制缩放范围在MIN_SCALE到MAX_SCALE之间
     m_scale = qBound(MIN_SCALE, scale, MAX_SCALE);
     
     // 计算基于缩放的新尺寸
@@ -1439,6 +1459,11 @@ void DrawingArea::setScale(qreal scale)
     
     setMinimumSize(scaledSize);
     resize(scaledSize);
+    
+    // 如果缩放比例发生变化，发出scaleChanged信号
+    if (m_scale != oldScale) {
+        emit scaleChanged(m_scale);
+    }
 }
 
 void DrawingArea::zoomInOrOut(const qreal& factor)
@@ -1691,4 +1716,9 @@ bool DrawingArea::exportToPng(const QString &filePath)
     update();
     
     return success;
+}
+
+int DrawingArea::getShapesCount() const
+{
+    return m_shapes.size() + m_connections.size();
 }

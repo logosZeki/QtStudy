@@ -1,6 +1,9 @@
 #include "util/Utils.h"
 #include <QPainter>  // 添加QPainter的头文件
 
+// 定义默认尺寸（像素）
+static constexpr int Default_WIDTH = 1600;    
+static constexpr int Default_HEIGHT = 780;   
 
 
 QCursor Utils::getCrossCursor(){

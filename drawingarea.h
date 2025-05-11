@@ -23,6 +23,10 @@ class DrawingArea : public QWidget
     Q_OBJECT
     
 public:
+    // 缩放范围常量
+    inline static constexpr qreal MAX_SCALE = 2.0;      // 最大缩放比例
+    inline static constexpr qreal MIN_SCALE = 0.20;     // 最小缩放比例
+    
     DrawingArea(QWidget *parent = nullptr);
     ~DrawingArea();
     
@@ -46,6 +50,9 @@ public:
     void setScale(qreal scale);
     qreal getScale() const { return m_scale; }
     void zoomInOrOut(const qreal& factor);                    // 放大或缩小
+    
+    // 图形数量相关方法
+    int getShapesCount() const;
     
     // 坐标转换方法
     //视图坐标系：用户在屏幕上看到和交互的坐标
@@ -73,6 +80,8 @@ signals:
     void selectionChanged();
     void shapeSelectionChanged(bool hasSelection);
     void fontColorChanged(const QColor& color);
+    void scaleChanged(qreal scale);  // 新增的缩放比例变化信号
+    void shapesCountChanged(int count);  // 新增的图形数量变化信号
     
 public slots:
     // 应用页面设置
@@ -149,8 +158,6 @@ private:
     QPoint m_shapeStart;
     
     // 缩放相关变量
-    qreal MAX_SCALE = 2.0;               // 最大缩放比例
-    qreal MIN_SCALE = 0.20;             // 最小缩放比例
     qreal m_scale;                    // 当前缩放比例
     QPoint m_lastMousePos;            // 上次鼠标位置
     bool m_isPanning;                 // 是否正在平移

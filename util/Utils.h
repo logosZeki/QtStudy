@@ -5,6 +5,8 @@
 
 class Utils {
 public:
+
+
     // 禁用构造和析构
     Utils() = delete;
     ~Utils() = delete;
@@ -17,6 +19,9 @@ public:
 
     // 静态工具方法
     static QCursor getCrossCursor();
+
+    static constexpr int Default_WIDTH = 1600;    
+    static constexpr int Default_HEIGHT = 780;
 
 };
 

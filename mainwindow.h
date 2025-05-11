@@ -12,6 +12,8 @@
 #include <QSpinBox>
 #include <QLineEdit>
 #include <QAction>
+#include <QStatusBar>
+#include <QSlider>
 
 class ToolBar;
 class DrawingArea;
@@ -43,12 +45,18 @@ private slots:
     
     // 导出功能相关槽函数
     void exportAsPng();
+    
+    // 状态栏相关槽函数
+    void updateStatusBarInfo();
+    void onZoomSliderValueChanged(int value);
+    void updateZoomSlider();
 
 private:
     void createTopToolbar();
     void createMainToolbar();
     void createArrangeToolbar();
     void createExportAndImportToolbar();
+    void createStatusBar();
     void setupUi();
     
 private:
@@ -83,6 +91,12 @@ private:
     QAction *m_underlineAction;
     QPushButton *m_fontColorButton;
     QComboBox *m_alignCombo;
+    
+    // 状态栏控件
+    QStatusBar *m_statusBar;
+    QLabel *m_shapesCountLabel;
+    QLabel *m_zoomLabel;
+    QSlider *m_zoomSlider;
 };
 
 #endif // MAINWINDOW_H

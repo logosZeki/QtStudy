@@ -2,6 +2,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QDialogButtonBox>
+#include "util/Utils.h"
 
 // 定义A4尺寸（像素）
 constexpr int A4_WIDTH = 1050;    // A4宽度为1050像素
@@ -15,10 +16,8 @@ constexpr int A3_HEIGHT = 2100;   // A3高度为2100像素
 constexpr int A5_WIDTH = 750;    // A5宽度为750像素
 constexpr int A5_HEIGHT = 1050;   // A5高度为1050像素
 
-// 定义默认尺寸（像素）
-constexpr int Default_WIDTH = 1623;    
-constexpr int Default_HEIGHT = 792;   
-
+constexpr int Default_WIDTH = Utils::Default_WIDTH; 
+constexpr int Default_HEIGHT = Utils::Default_HEIGHT;
 
 PageSettingDialog::PageSettingDialog(QWidget *parent)
     : QDialog(parent)
