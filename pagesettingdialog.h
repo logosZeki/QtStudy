@@ -39,7 +39,6 @@ private slots:
     void onApplyClicked();
     void onSelectColorClicked();
     void onRecentColorSelected(int index);
-    void onPaperSizeChanged(int index);
     void onGridColorClicked();
     void onCustomSizeToggled(bool checked);
     void onShowGridToggled(bool checked);

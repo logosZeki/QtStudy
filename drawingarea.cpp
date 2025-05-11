@@ -14,12 +14,12 @@
 #include "chart/customtextedit.h"
 #include "chart/shape.h"
 #include "chart/connection.h"
-#include "util/Utils.h"
 
 
-// 定义默认尺寸（像素）
-constexpr int Default_WIDTH = Utils::Default_WIDTH; 
-constexpr int Default_HEIGHT = Utils::Default_HEIGHT;
+
+
+
+
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),

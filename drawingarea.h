@@ -9,7 +9,10 @@
 #include <QAction>
 #include <QClipboard>
 #include <QScrollBar>
+
+
 #include "chart/shape.h" //因为要用到Shape里的枚举
+#include "util/Utils.h"
 
 // 添加前向声明
 class Shape;
@@ -24,8 +27,12 @@ class DrawingArea : public QWidget
     
 public:
     // 缩放范围常量
-    inline static constexpr qreal MAX_SCALE = 2.0;      // 最大缩放比例
-    inline static constexpr qreal MIN_SCALE = 0.20;     // 最小缩放比例
+    const qreal MAX_SCALE = Utils::MAX_SCALE;      // 最大缩放比例
+    const qreal MIN_SCALE = Utils::MIN_SCALE;     // 最小缩放比例
+
+    // 定义默认尺寸（像素）
+    const int Default_WIDTH = Utils::Default_WIDTH; 
+    const int Default_HEIGHT = Utils::Default_HEIGHT;
     
     DrawingArea(QWidget *parent = nullptr);
     ~DrawingArea();

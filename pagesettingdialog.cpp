@@ -5,16 +5,16 @@
 #include "util/Utils.h"
 
 // 定义A4尺寸（像素）
-constexpr int A4_WIDTH = 1050;    // A4宽度为1050像素
-constexpr int A4_HEIGHT = 1500;   // A4高度为1500像素
+constexpr int A4_WIDTH = Utils::A4_WIDTH;    // A4宽度为1200像素
+constexpr int A4_HEIGHT = Utils::A4_HEIGHT;   // A4高度为1700像素
 
 // 定义A3尺寸（像素）
-constexpr int A3_WIDTH = 1500;    // A3宽度为1500像素
-constexpr int A3_HEIGHT = 2100;   // A3高度为2100像素
+constexpr int A3_WIDTH = Utils::A3_WIDTH;    // A3宽度为1700像素
+constexpr int A3_HEIGHT = Utils::A3_HEIGHT;   // A3高度为2400像素
 
 // 定义A5尺寸（像素）
-constexpr int A5_WIDTH = 750;    // A5宽度为750像素
-constexpr int A5_HEIGHT = 1050;   // A5高度为1050像素
+constexpr int A5_WIDTH =Utils::A5_WIDTH;
+constexpr int A5_HEIGHT = Utils::A5_HEIGHT;
 
 constexpr int Default_WIDTH = Utils::Default_WIDTH; 
 constexpr int Default_HEIGHT = Utils::Default_HEIGHT;
@@ -36,8 +36,6 @@ PageSettingDialog::PageSettingDialog(QWidget *parent)
     connect(m_colorButton, &QPushButton::clicked, this, &PageSettingDialog::onSelectColorClicked);
     connect(m_recentColorsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
             this, &PageSettingDialog::onRecentColorSelected);
-    connect(m_paperSizeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &PageSettingDialog::onPaperSizeChanged);
     connect(m_gridColorButton, &QPushButton::clicked, this, &PageSettingDialog::onGridColorClicked);
     connect(m_customSizeCheck, &QCheckBox::toggled, this, &PageSettingDialog::onCustomSizeToggled);
     connect(m_showGridCheck, &QCheckBox::toggled, this, &PageSettingDialog::onShowGridToggled);
@@ -118,11 +116,11 @@ void PageSettingDialog::setupUi()
     QGridLayout *sizeLayout = new QGridLayout(m_sizeGroupBox);
     
     m_paperSizeCombo = new QComboBox();
-    m_paperSizeCombo->addItem(tr("A3 (297mm x 420mm)"), QSize(A3_WIDTH, A3_HEIGHT));
-    m_paperSizeCombo->addItem(tr("A4 (210mm x 297mm)"), QSize(A4_WIDTH, A4_HEIGHT));
-    m_paperSizeCombo->addItem(tr("A5 (148mm x 210mm)"), QSize(A5_WIDTH, A5_HEIGHT));
+    m_paperSizeCombo->addItem(tr("A3 "), QSize(A3_WIDTH, A3_HEIGHT));
+    m_paperSizeCombo->addItem(tr("A4 "), QSize(A4_WIDTH, A4_HEIGHT));
+    m_paperSizeCombo->addItem(tr("A5 "), QSize(A5_WIDTH, A5_HEIGHT));
     m_paperSizeCombo->setCurrentIndex(1); // 默认选择A4
-    
+
     m_customSizeCheck = new QCheckBox(tr("自定义尺寸"));
     
     m_widthSpin = new QSpinBox();
@@ -137,9 +135,9 @@ void PageSettingDialog::setupUi()
     m_heightSpin->setSuffix(tr(" px"));
     m_heightSpin->setEnabled(false);
     
-    m_pixelInfoLabel = new QLabel(tr("像素值参考: A4 = 1050 x 1500 px"));
+    m_pixelInfoLabel = new QLabel(tr("当前尺寸:  1050 x 1500 px"));
     
-    sizeLayout->addWidget(new QLabel(tr("预设尺寸:")), 0, 0);
+    sizeLayout->addWidget(new QLabel(tr("可选尺寸:")), 0, 0);
     sizeLayout->addWidget(m_paperSizeCombo, 0, 1, 1, 2);
     sizeLayout->addWidget(m_customSizeCheck, 1, 0, 1, 3);
     sizeLayout->addWidget(new QLabel(tr("宽度:")), 2, 0);
@@ -258,6 +256,14 @@ void PageSettingDialog::onCancelClicked()
 void PageSettingDialog::onApplyClicked()
 {
     // 应用设置
+    // 页面尺寸
+    if (!m_customSizeCheck->isChecked()) {
+        int index = m_paperSizeCombo->currentIndex();
+        m_pageSize = m_paperSizeCombo->itemData(index).toSize();
+    } else {
+        m_pageSize = QSize(m_widthSpin->value(), m_heightSpin->value());
+    }
+    
     // 网格设置
     m_showGrid = m_showGridCheck->isChecked();
     m_gridSize = m_gridSizeSpin->value();
@@ -297,20 +303,7 @@ void PageSettingDialog::onRecentColorSelected(int index)
     }
 }
 
-void PageSettingDialog::onPaperSizeChanged(int index)
-{
-    if (index >= 0) {
-        QSize selectedSize = m_paperSizeCombo->itemData(index).toSize();
-        
-        // 更新像素值参考标签
-        m_pixelInfoLabel->setText(
-            tr("像素值参考: %1 = %2 x %3 px")
-            .arg(m_paperSizeCombo->currentText().section(" ", 0, 0))
-            .arg(selectedSize.width())
-            .arg(selectedSize.height())
-        );
-    }
-}
+
 
 void PageSettingDialog::onGridColorClicked()
 {
