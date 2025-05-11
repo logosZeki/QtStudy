@@ -15,7 +15,7 @@ constexpr int A3_HEIGHT = 2100;   // A3高度为2100像素
 constexpr int A5_WIDTH = 750;    // A5宽度为750像素
 constexpr int A5_HEIGHT = 1050;   // A5高度为1050像素
 
-// 定义A4尺寸（像素）
+// 定义默认尺寸（像素）
 constexpr int Default_WIDTH = 1623;    
 constexpr int Default_HEIGHT = 792;   
 

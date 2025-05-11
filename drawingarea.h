@@ -139,7 +139,7 @@ private:
     
     
     // 获取滚动视图的滚动条
-    QScrollBar* findParentScrollBar() const;
+    QScrollBar* findParentScrollBar(Qt::Orientation orientation = Qt::Horizontal) const;
     
 private:
     QVector<Shape*> m_shapes;
@@ -149,8 +149,8 @@ private:
     QPoint m_shapeStart;
     
     // 缩放相关变量
-    qreal MAX_SCALE = 5.0;               // 最大缩放比例
-    qreal MIN_SCALE = 0.25;             // 最小缩放比例
+    qreal MAX_SCALE = 2.0;               // 最大缩放比例
+    qreal MIN_SCALE = 0.20;             // 最小缩放比例
     qreal m_scale;                    // 当前缩放比例
     QPoint m_lastMousePos;            // 上次鼠标位置
     bool m_isPanning;                 // 是否正在平移

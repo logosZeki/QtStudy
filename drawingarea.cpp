@@ -14,9 +14,9 @@
 #include <QFontMetrics>
 #include <QTextCharFormat>
 
-// 定义A4尺寸（像素）
-constexpr int A4_WIDTH = 1050;    // A4宽度为1050像素
-constexpr int A4_HEIGHT = 1500;   // A4高度为1500像素
+// 定义默认尺寸（像素）
+constexpr int Default_WIDTH = 1623;    
+constexpr int Default_HEIGHT = 792;   
 
 DrawingArea::DrawingArea(QWidget *parent)
     : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
@@ -34,7 +34,7 @@ DrawingArea::DrawingArea(QWidget *parent)
     
     // 初始化页面设置相关变量
     m_backgroundColor = Qt::white;
-    m_pageSize = QSize(A4_WIDTH, A4_HEIGHT);
+    m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
     m_showGrid = true;
     m_gridColor = QColor(220, 220, 220);
     m_gridSize = 20;
@@ -1331,7 +1331,13 @@ void DrawingArea::setBackgroundColor(const QColor &color)
 void DrawingArea::setPageSize(const QSize &size)
 {
     m_pageSize = size;
-    setMinimumSize(m_pageSize); // 使用最小尺寸而不是固定尺寸
+    // 考虑当前缩放比例调整绘图区域大小
+    QSize scaledSize = QSize(
+        m_pageSize.width() * m_scale,
+        m_pageSize.height() * m_scale
+    );
+    setMinimumSize(scaledSize);
+    resize(scaledSize);
     update();
 }
 
@@ -1396,16 +1402,18 @@ void DrawingArea::applyPageSettings()
 }
 
 // 检查并自动扩展绘图区域
-
-
-
-
-
 void DrawingArea::setScale(qreal scale)
 {
     // 限制缩放范围在0.25到5倍之间
     m_scale = qBound(MIN_SCALE, scale, MAX_SCALE);
-
+    
+    // 更新绘图区域大小以适应缩放
+    QSize newSize = QSize(
+        m_pageSize.width() * m_scale,
+        m_pageSize.height() * m_scale
+    );
+    setMinimumSize(newSize);
+    resize(newSize);
 }
 
 void DrawingArea::zoomInOrOut(const qreal& factor)
@@ -1419,6 +1427,9 @@ void DrawingArea::wheelEvent(QWheelEvent *event)
         // 获取鼠标位置
         QPoint mousePos = event->position().toPoint();
         
+        // 保存当前缩放比例
+        qreal oldScale = m_scale;
+        
         // 计算缩放因子
         qreal factor = 1.0;
         if (event->angleDelta().y() > 0) {
@@ -1428,10 +1439,39 @@ void DrawingArea::wheelEvent(QWheelEvent *event)
         }
 
         if(factor == 1.0) return;
-        else{
-            zoomInOrOut(factor);
+        
+        // 应用缩放
+        zoomInOrOut(factor);
+        
+        // 调整滚动条位置，以保持鼠标指向的内容在视图中心
+        QScrollArea* parentScrollArea = nullptr;
+        QWidget* parent = this->parentWidget();
+        while (parent && !parentScrollArea) {
+            parentScrollArea = qobject_cast<QScrollArea*>(parent);
+            if (!parentScrollArea) {
+                parent = parent->parentWidget();
+            }
         }
         
+        if (parentScrollArea) {
+            // 计算鼠标位置相对于滚动区域的位置
+            QPoint scrollAreaPos = parentScrollArea->mapFromGlobal(event->globalPosition().toPoint());
+            
+            // 获取水平和垂直滚动条
+            QScrollBar* hBar = parentScrollArea->horizontalScrollBar();
+            QScrollBar* vBar = parentScrollArea->verticalScrollBar();
+            
+            // 计算新的滚动位置
+            if (hBar) {
+                int newX = hBar->value() + (m_scale / oldScale - 1) * scrollAreaPos.x();
+                hBar->setValue(newX);
+            }
+            
+            if (vBar) {
+                int newY = vBar->value() + (m_scale / oldScale - 1) * scrollAreaPos.y();
+                vBar->setValue(newY);
+            }
+        }
         
         // 重绘
         update();
@@ -1455,7 +1495,7 @@ void DrawingArea::wheelEvent(QWheelEvent *event)
         }
         
         // 尝试获取父滚动条并调整滚动位置
-        QScrollBar* hBar = findParentScrollBar();
+        QScrollBar* hBar = findParentScrollBar(Qt::Horizontal);
         if (hBar) {
             hBar->setValue(hBar->value() - scrollDelta.x());
         } else {
@@ -1472,14 +1512,16 @@ void DrawingArea::wheelEvent(QWheelEvent *event)
     }
 }
 
-QScrollBar* DrawingArea::findParentScrollBar() const
+QScrollBar* DrawingArea::findParentScrollBar(Qt::Orientation orientation) const
 {
     // 遍历父窗口层次，查找QScrollArea
     QWidget* parent = this->parentWidget();
     while (parent) {
         QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parent);
         if (scrollArea) {
-            return scrollArea->horizontalScrollBar();
+            return orientation == Qt::Horizontal ? 
+                   scrollArea->horizontalScrollBar() : 
+                   scrollArea->verticalScrollBar();
         }
         parent = parent->parentWidget();
     }

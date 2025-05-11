@@ -75,7 +75,8 @@ void MainWindow::setupUi()
     // 创建滚动区域来容纳绘图区域
     QScrollArea *scrollArea = new QScrollArea();
     scrollArea->setWidget(m_drawingArea);
-    scrollArea->setWidgetResizable(true);
+    scrollArea->setWidgetResizable(false);
+    //scrollArea->setAlignment(Qt::AlignCenter);
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scrollArea->setFrameShape(QFrame::NoFrame);
