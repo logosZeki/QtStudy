@@ -322,6 +322,16 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
         QPoint sceneDelta = mapToScene(delta) - mapToScene(QPoint(0, 0));
         m_selectedShape->resize(m_activeHandle, sceneDelta);
         m_dragStart = event->pos();
+        
+        // 如果文本编辑器正在显示，更新其位置
+        if (m_textEditor && m_textEditor->isVisible() && m_selectedShape->isEditing()) {
+            QRect textRect = m_selectedShape->textRect();
+            QPoint topLeft = mapFromScene(textRect.topLeft());
+            QPoint bottomRight = mapFromScene(textRect.bottomRight());
+            QRect scaledRect(topLeft, bottomRight);
+            m_textEditor->setGeometry(scaledRect);
+        }
+        
         update();
         return;
     }
@@ -338,6 +348,15 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
             QRect newRect = m_selectedShape->getRect();
             newRect.moveTo(m_shapeStart + sceneDelta);
             m_selectedShape->setRect(newRect);
+            
+            // 如果文本编辑器正在显示，更新其位置
+            if (m_textEditor && m_textEditor->isVisible() && m_selectedShape->isEditing()) {
+                QRect textRect = m_selectedShape->textRect();
+                QPoint topLeft = mapFromScene(textRect.topLeft());
+                QPoint bottomRight = mapFromScene(textRect.bottomRight());
+                QRect scaledRect(topLeft, bottomRight);
+                m_textEditor->setGeometry(scaledRect);
+            }
         } else if (m_selectedConnection) {
             // 移动整条线
             Connection* conn = m_selectedConnection;
@@ -737,7 +756,13 @@ void DrawingArea::startTextEditing()
     
     // 设置文本编辑器的位置和大小
     QRect textRect = m_selectedShape->textRect();
-    m_textEditor->setGeometry(textRect);
+    
+    // 将场景坐标转换为视图坐标，考虑缩放
+    QPoint topLeft = mapFromScene(textRect.topLeft());
+    QPoint bottomRight = mapFromScene(textRect.bottomRight());
+    QRect scaledRect(topLeft, bottomRight);
+    
+    m_textEditor->setGeometry(scaledRect);
     
     // 设置文本编辑器的内容
     m_textEditor->setPlainText(m_selectedShape->text());
@@ -1542,6 +1567,15 @@ void DrawingArea::wheelEvent(QWheelEvent *event)
                 int newY = vBar->value() + (m_scale / oldScale - 1) * scrollAreaPos.y();
                 vBar->setValue(newY);
             }
+        }
+        
+        // 如果文本编辑器正在显示，更新其位置
+        if (m_textEditor && m_textEditor->isVisible() && m_selectedShape) {
+            QRect textRect = m_selectedShape->textRect();
+            QPoint topLeft = mapFromScene(textRect.topLeft());
+            QPoint bottomRight = mapFromScene(textRect.bottomRight());
+            QRect scaledRect(topLeft, bottomRight);
+            m_textEditor->setGeometry(scaledRect);
         }
         
         // 重绘
