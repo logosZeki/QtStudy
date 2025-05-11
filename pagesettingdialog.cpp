@@ -24,7 +24,7 @@ PageSettingDialog::PageSettingDialog(QWidget *parent)
     , m_colorDialog(nullptr)
 {
     setWindowTitle(tr("页面设置"));
-    setMinimumSize(600, 500);
+    setMinimumSize(400, 500);
 
     initDefaultValues();
     setupUi();
@@ -41,9 +41,6 @@ PageSettingDialog::PageSettingDialog(QWidget *parent)
     connect(m_gridColorButton, &QPushButton::clicked, this, &PageSettingDialog::onGridColorClicked);
     connect(m_customSizeCheck, &QCheckBox::toggled, this, &PageSettingDialog::onCustomSizeToggled);
     connect(m_showGridCheck, &QCheckBox::toggled, this, &PageSettingDialog::onShowGridToggled);
-
-    // 初始化预览
-    updatePreview();
 }
 
 PageSettingDialog::~PageSettingDialog()
@@ -140,7 +137,7 @@ void PageSettingDialog::setupUi()
     m_heightSpin->setSuffix(tr(" px"));
     m_heightSpin->setEnabled(false);
     
-    m_pixelInfoLabel = new QLabel(tr("像素值参考: A4 = 595 x 842 px"));
+    m_pixelInfoLabel = new QLabel(tr("像素值参考: A4 = 1050 x 1500 px"));
     
     sizeLayout->addWidget(new QLabel(tr("预设尺寸:")), 0, 0);
     sizeLayout->addWidget(m_paperSizeCombo, 0, 1, 1, 2);
@@ -191,22 +188,8 @@ void PageSettingDialog::setupUi()
     settingsLayout->addWidget(m_gridGroupBox);
     settingsLayout->addStretch();
     
-    // 右侧预览区域
-    QVBoxLayout *previewLayout = new QVBoxLayout();
-    QLabel *previewTitle = new QLabel(tr("预览"));
-    previewTitle->setAlignment(Qt::AlignCenter);
-    
-    m_previewLabel = new QLabel();
-    m_previewLabel->setMinimumSize(200, 300);
-    m_previewLabel->setAlignment(Qt::AlignCenter);
-    m_previewLabel->setFrameShape(QFrame::StyledPanel);
-    
-    previewLayout->addWidget(previewTitle);
-    previewLayout->addWidget(m_previewLabel, 1);
-    
-    // 将左右两侧布局添加到内容布局
-    contentLayout->addLayout(settingsLayout, 3);
-    contentLayout->addLayout(previewLayout, 2);
+    // 将设置布局添加到内容布局
+    contentLayout->addLayout(settingsLayout);
     
     // 创建按钮
     QHBoxLayout *buttonLayout = new QHBoxLayout();
@@ -226,38 +209,7 @@ void PageSettingDialog::setupUi()
 
 void PageSettingDialog::updatePreview()
 {
-    // 创建预览图像，按比例缩小
-    double scaleFactor = 0.3; // 预览图是实际尺寸的30%
-    int previewWidth = int(m_pageSize.width() * scaleFactor);
-    int previewHeight = int(m_pageSize.height() * scaleFactor);
-    
-    QPixmap previewPixmap(previewWidth, previewHeight);
-    previewPixmap.fill(m_backgroundColor);
-    
-    // 绘制网格（如果启用）
-    if (m_showGrid) {
-        QPainter painter(&previewPixmap);
-        painter.setPen(QPen(m_gridColor, 1));
-        
-        int scaledGridSize = int(m_gridSize * scaleFactor);
-        if (scaledGridSize < 1) scaledGridSize = 1;
-        
-        // 绘制水平网格线
-        for (int y = 0; y < previewHeight; y += scaledGridSize) {
-            painter.drawLine(0, y, previewWidth, y);
-        }
-        
-        // 绘制垂直网格线
-        for (int x = 0; x < previewWidth; x += scaledGridSize) {
-            painter.drawLine(x, 0, x, previewHeight);
-        }
-    }
-    
-    // 设置预览标签
-    m_previewLabel->setPixmap(previewPixmap);
-    
-    // 调整预览标签的大小策略
-    m_previewLabel->setMinimumSize(previewWidth, previewHeight);
+    // 预览功能已被移除，此方法不再需要
 }
 
 QColor PageSettingDialog::getBackgroundColor() const
@@ -306,14 +258,6 @@ void PageSettingDialog::onCancelClicked()
 void PageSettingDialog::onApplyClicked()
 {
     // 应用设置
-    // 页面尺寸
-    if (!m_customSizeCheck->isChecked()) {
-        int index = m_paperSizeCombo->currentIndex();
-        m_pageSize = m_paperSizeCombo->itemData(index).toSize();
-    } else {
-        m_pageSize = QSize(m_widthSpin->value(), m_heightSpin->value());
-    }
-    
     // 网格设置
     m_showGrid = m_showGridCheck->isChecked();
     m_gridSize = m_gridSizeSpin->value();
@@ -338,9 +282,6 @@ void PageSettingDialog::onSelectColorClicked()
         QPalette pal = m_colorPreview->palette();
         pal.setColor(QPalette::Window, m_backgroundColor);
         m_colorPreview->setPalette(pal);
-        
-        // 更新预览
-        updatePreview();
     }
 }
 
@@ -353,9 +294,6 @@ void PageSettingDialog::onRecentColorSelected(int index)
         QPalette pal = m_colorPreview->palette();
         pal.setColor(QPalette::Window, m_backgroundColor);
         m_colorPreview->setPalette(pal);
-        
-        // 更新预览
-        updatePreview();
     }
 }
 
@@ -371,14 +309,6 @@ void PageSettingDialog::onPaperSizeChanged(int index)
             .arg(selectedSize.width())
             .arg(selectedSize.height())
         );
-        
-        // 如果不是自定义尺寸，则更新页面尺寸
-        if (!m_customSizeCheck->isChecked()) {
-            m_pageSize = selectedSize;
-            
-            // 更新预览
-            updatePreview();
-        }
     }
 }
 
@@ -396,9 +326,6 @@ void PageSettingDialog::onGridColorClicked()
         QPalette pal = m_gridColorPreview->palette();
         pal.setColor(QPalette::Window, m_gridColor);
         m_gridColorPreview->setPalette(pal);
-        
-        // 更新预览
-        updatePreview();
     }
 }
 
@@ -415,7 +342,6 @@ void PageSettingDialog::onCustomSizeToggled(bool checked)
         // 如果禁用自定义尺寸，则使用预设尺寸
         int index = m_paperSizeCombo->currentIndex();
         m_pageSize = m_paperSizeCombo->itemData(index).toSize();
-        updatePreview();
     }
 }
 
@@ -425,7 +351,6 @@ void PageSettingDialog::onShowGridToggled(bool checked)
     m_gridColorButton->setEnabled(checked);
     m_gridSizeSpin->setEnabled(checked);
     m_gridThicknessSpin->setEnabled(checked);
-    updatePreview();
 }
 
 void PageSettingDialog::updateRecentColors(const QColor &color)

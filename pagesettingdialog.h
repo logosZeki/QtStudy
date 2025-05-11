@@ -84,9 +84,6 @@ private:
     QPushButton *m_okButton;
     QPushButton *m_cancelButton;
     QPushButton *m_applyButton;
-
-    // 预览区域
-    QLabel *m_previewLabel;
 };
 
 #endif // PAGESETTINGDIALOG_H 

@@ -100,21 +100,34 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     
+    // 先将整个控件背景填充为灰色（使用更浅的灰色，更适合UI）
+    painter.fillRect(rect(), QColor(240, 240, 240));
+    
     // 保存当前变换状态
     painter.save();
+    
+    // 计算页面在绘图区域中的居中位置
+    QPoint pageOffset(
+        (width() - m_pageSize.width() * m_scale) / 2 / m_scale,
+        (height() - m_pageSize.height() * m_scale) / 2 / m_scale
+    );
     
     // 应用缩放变换
     QPoint center(width() / 2, height() / 2);
     painter.translate(center);
     painter.scale(m_scale, m_scale);
     painter.translate(-center);
-    // painter.translate(-center.x() / m_scale, -center.y() / m_scale);
     
     // 应用视图偏移
-    painter.translate(-m_viewOffset);
+    painter.translate(-m_viewOffset + pageOffset);
     
     // 绘制背景
-    painter.fillRect(rect().translated(m_viewOffset), m_backgroundColor);
+    painter.fillRect(QRect(0, 0, m_pageSize.width(), m_pageSize.height()), m_backgroundColor);
+    
+    // 绘制页面边框（添加一个细线边框使页面更清晰）
+    QPen pageBorderPen(QColor(200, 200, 200), 1);
+    painter.setPen(pageBorderPen);
+    painter.drawRect(0, 0, m_pageSize.width(), m_pageSize.height());
     
     // 绘制网格
     drawGrid(&painter);
@@ -1331,14 +1344,17 @@ void DrawingArea::drawGrid(QPainter *painter)
     QPen gridPen(m_gridColor, m_gridThickness);
     painter->setPen(gridPen);
     
+    // 获取页面区域
+    QRect pageRect(0, 0, m_pageSize.width(), m_pageSize.height());
+    
     // 绘制水平网格线
-    for (int y = 0; y <= height(); y += m_gridSize) {
-        painter->drawLine(0, y, width(), y);
+    for (int y = 0; y <= pageRect.height(); y += m_gridSize) {
+        painter->drawLine(0, y, pageRect.width(), y);
     }
     
     // 绘制垂直网格线
-    for (int x = 0; x <= width(); x += m_gridSize) {
-        painter->drawLine(x, 0, x, height());
+    for (int x = 0; x <= pageRect.width(); x += m_gridSize) {
+        painter->drawLine(x, 0, x, pageRect.height());
     }
     
     painter->restore();
@@ -1447,11 +1463,16 @@ void DrawingArea::setScale(qreal scale)
         parent = parent->parentWidget();
     }
     
-    // 如果找到了滚动区域，确保DrawingArea的尺寸至少比视口尺寸大一些
+    // 确保绘图区域尺寸比实际页面尺寸大一些，以显示灰色边缘
+    // 无论是否找到滚动区域，或者无论缩放比例是多少，都添加边距
+    int margin = 10; // 边距像素
+    scaledSize.setWidth(scaledSize.width() + margin * 2);
+    scaledSize.setHeight(scaledSize.height() + margin * 2);
+    
+    // 如果找到了滚动区域，进一步确保DrawingArea的尺寸至少比视口尺寸大一些
     if (!viewportSize.isEmpty()) {
-        // 确保绘图区域尺寸至少比视口大一点，以保持滚动条显示
-        int minWidth = viewportSize.width() + 50;  // 比视口宽50像素
-        int minHeight = viewportSize.height() + 50; // 比视口高50像素
+        int minWidth = viewportSize.width() + margin;
+        int minHeight = viewportSize.height() + margin;
         
         scaledSize.setWidth(qMax(scaledSize.width(), minWidth));
         scaledSize.setHeight(qMax(scaledSize.height(), minHeight));
@@ -1581,17 +1602,29 @@ QScrollBar* DrawingArea::findParentScrollBar(Qt::Orientation orientation) const
 
 QPoint DrawingArea::mapToScene(const QPoint& viewPoint) const
 {
+    // 计算页面在绘图区域中的居中位置偏移
+    QPoint pageOffset(
+        (width() - m_pageSize.width() * m_scale) / 2 / m_scale,
+        (height() - m_pageSize.height() * m_scale) / 2 / m_scale
+    );
+    
     // 将视图坐标转换为场景坐标，考虑偏移和缩放
     QPoint center(width() / 2, height() / 2);
-    QPointF scenePoint = (viewPoint - center) / m_scale + center + m_viewOffset;
+    QPointF scenePoint = (viewPoint - center) / m_scale + center + m_viewOffset - pageOffset;
     return scenePoint.toPoint();
 }
 
 QPoint DrawingArea::mapFromScene(const QPoint& scenePoint) const
 {
+    // 计算页面在绘图区域中的居中位置偏移
+    QPoint pageOffset(
+        (width() - m_pageSize.width() * m_scale) / 2 / m_scale,
+        (height() - m_pageSize.height() * m_scale) / 2 / m_scale
+    );
+    
     // 将场景坐标转换为视图坐标，考虑偏移和缩放
     QPoint center(width() / 2, height() / 2);
-    QPointF viewPoint = ((scenePoint - m_viewOffset) - center) * m_scale + center;
+    QPointF viewPoint = ((scenePoint + pageOffset - m_viewOffset) - center) * m_scale + center;
     return viewPoint.toPoint();
 }
 
