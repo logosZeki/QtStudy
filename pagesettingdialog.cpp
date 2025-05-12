@@ -358,17 +358,38 @@ void PageSettingDialog::onApplyClicked()
                 m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
             }
         }
+        
+        // 应用页面尺寸到绘图区域
+        if (m_drawingArea) {
+            m_drawingArea->setPageSize(m_pageSize);
+            m_drawingArea->setDrawingAreaSize(m_pageSize); // 同时更新绘图区域尺寸
+        }
+    }
+    
+    // 应用背景颜色
+    if (m_drawingArea) {
+        m_drawingArea->setBackgroundColor(m_backgroundColor);
     }
     
     // 网格设置 - 只有在用户手动调整过时才应用新设置
     m_showGrid = m_showGridCheck->isChecked();
+    if (m_drawingArea) {
+        m_drawingArea->setShowGrid(m_showGrid);
+        m_drawingArea->setGridColor(m_gridColor);
+    }
     
     if (m_gridSizeModified) {
         m_gridSize = m_gridSizeCombo->currentData().toInt();
+        if (m_drawingArea) {
+            m_drawingArea->setGridSize(m_gridSize);
+        }
     }
     
     if (m_lineThicknessModified) {
         m_gridThickness = m_lineThicknessCombo->currentData().toDouble();
+        if (m_drawingArea) {
+            m_drawingArea->setGridThickness(m_gridThickness);
+        }
     }
     
     // 发出设置已应用信号
@@ -491,38 +512,55 @@ void PageSettingDialog::updateRecentColors(const QColor &color)
 
 void PageSettingDialog::onPaperSizeRadioToggled(int id)
 {
-    // 处理纸张大小单选按钮的切换
-    if (id == 4) { // 自定义尺寸
-        m_widthSpin->setEnabled(true);
-        m_heightSpin->setEnabled(true);
-        m_widthSpin->setValue(m_pageSize.width());
-        m_heightSpin->setValue(m_pageSize.height());
-    } else {
-        m_widthSpin->setEnabled(false);
-        m_heightSpin->setEnabled(false);
-        
-        // 根据所选预设尺寸更新微调框的值
-        if (id == 0) { // A3
+    switch (id) {
+        case 0: // A3
+            m_pageSize = QSize(A3_WIDTH, A3_HEIGHT);
             m_widthSpin->setValue(A3_WIDTH);
             m_heightSpin->setValue(A3_HEIGHT);
-            m_pageSize = QSize(A3_WIDTH, A3_HEIGHT);
-        } else if (id == 1) { // A4
+            m_widthSpin->setEnabled(false);
+            m_heightSpin->setEnabled(false);
+            break;
+        
+        case 1: // A4
+            m_pageSize = QSize(A4_WIDTH, A4_HEIGHT);
             m_widthSpin->setValue(A4_WIDTH);
             m_heightSpin->setValue(A4_HEIGHT);
-            m_pageSize = QSize(A4_WIDTH, A4_HEIGHT);
-        } else if (id == 2) { // A5
+            m_widthSpin->setEnabled(false);
+            m_heightSpin->setEnabled(false);
+            break;
+        
+        case 2: // A5
+            m_pageSize = QSize(A5_WIDTH, A5_HEIGHT);
             m_widthSpin->setValue(A5_WIDTH);
             m_heightSpin->setValue(A5_HEIGHT);
-            m_pageSize = QSize(A5_WIDTH, A5_HEIGHT);
-        } else if (id == 3) { // 默认尺寸
+            m_widthSpin->setEnabled(false);
+            m_heightSpin->setEnabled(false);
+            break;
+            
+        case 3: // 默认尺寸
+            m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
             m_widthSpin->setValue(Default_WIDTH);
             m_heightSpin->setValue(Default_HEIGHT);
-            m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
-        }
+            m_widthSpin->setEnabled(false);
+            m_heightSpin->setEnabled(false);
+            break;
+            
+        case 4: // 自定义尺寸
+            // 使用当前设置的SpinBox值
+            m_pageSize = QSize(m_widthSpin->value(), m_heightSpin->value());
+            m_widthSpin->setEnabled(true);
+            m_heightSpin->setEnabled(true);
+            break;
     }
     
-    // 不再在这里更新信息标签，避免它显示预设尺寸而不是实际尺寸
     m_pageSizeModified = true;
+    updatePixelInfoLabel();
+    
+    // 立即预览尺寸变化（如果有绘图区域指针）
+    if (m_drawingArea) {
+        m_drawingArea->setPageSize(m_pageSize);
+        m_drawingArea->setDrawingAreaSize(m_pageSize); // 同时更新绘图区域尺寸
+    }
 }
 
 void PageSettingDialog::onGridSizeComboChanged(int index)

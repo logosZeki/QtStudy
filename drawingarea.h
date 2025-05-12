@@ -40,6 +40,7 @@ public:
     // 页面设置相关方法
     void setBackgroundColor(const QColor &color);
     void setPageSize(const QSize &size);
+    void setDrawingAreaSize(const QSize &size);
     void setShowGrid(bool show);
     void setGridColor(const QColor &color);
     void setGridSize(int size);
@@ -48,6 +49,7 @@ public:
     // 获取当前页面设置
     QColor getBackgroundColor() const;
     QSize getPageSize() const;
+    QSize getDrawingAreaSize() const { return m_drawingAreaSize; }
     bool getShowGrid() const;
     QColor getGridColor() const;
     int getGridSize() const;
@@ -200,6 +202,7 @@ private:
     // 页面设置相关变量
     QColor m_backgroundColor;              // 页面背景颜色
     QSize m_pageSize;                      // 页面尺寸
+    QSize m_drawingAreaSize;               // 绘图区域尺寸，新增
     bool m_showGrid;                       // 是否显示网格
     QColor m_gridColor;                    // 网格颜色
     int m_gridSize;                        // 网格大小

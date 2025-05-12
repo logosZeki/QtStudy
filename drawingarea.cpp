@@ -38,6 +38,7 @@ DrawingArea::DrawingArea(QWidget *parent)
     // 初始化页面设置相关变量
     m_backgroundColor = Qt::white;
     m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
+    m_drawingAreaSize = QSize(Default_WIDTH, Default_HEIGHT); // 初始化绘图区域尺寸
     m_showGrid = true;
     m_gridColor = QColor(220, 220, 220);
     m_gridSize = 20;
@@ -55,8 +56,9 @@ DrawingArea::DrawingArea(QWidget *parent)
     // 创建右键菜单 (Create context menus)
     createContextMenus();
     
-    // 设置初始大小，这将由setScale方法适当调整
-    setMinimumSize(m_pageSize);
+    // 设置初始大小，将在setScale方法中适当调整
+    // 设置Widget的大小为绘图区域的3倍
+    setMinimumSize(m_drawingAreaSize * 3);
     
     // 调用一次setScale以正确初始化大小
     QTimer::singleShot(0, this, [this]() {
@@ -100,6 +102,17 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     
+    // 首先填充整个Widget为灰色
+    painter.fillRect(rect(), QColor(180, 180, 180));
+    
+    // 计算绘图区域在Widget中的位置（居中）
+    QRect drawingRect(
+        (width() - m_drawingAreaSize.width()) / 2,
+        (height() - m_drawingAreaSize.height()) / 2,
+        m_drawingAreaSize.width(),
+        m_drawingAreaSize.height()
+    );
+    
     // 保存当前变换状态
     painter.save();
     
@@ -108,17 +121,20 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     painter.translate(center);
     painter.scale(m_scale, m_scale);
     painter.translate(-center);
-    // painter.translate(-center.x() / m_scale, -center.y() / m_scale);
     
     // 应用视图偏移
     painter.translate(-m_viewOffset);
     
-    // 绘制背景
-    painter.fillRect(rect().translated(m_viewOffset), m_backgroundColor);
-
+    // 绘制背景（绘图区域）
+    painter.fillRect(drawingRect, m_backgroundColor);
     
-    // 绘制网格
-    drawGrid(&painter);
+    // 在绘图区域绘制网格
+    if (m_showGrid) {
+        // 定义绘制网格的区域为drawingRect
+        painter.setClipRect(drawingRect);
+        drawGrid(&painter);
+        painter.setClipping(false);
+    }
     
     // 绘制所有形状
     for (Shape *shape : m_shapes) {
@@ -128,7 +144,6 @@ void DrawingArea::paintEvent(QPaintEvent *event)
         if(m_hoveredShape==shape){
             shape->drawConnectionPoints(&painter);
         }
-        
         
         // 如果是当前选中的形状，绘制一个选中框和调整大小的手柄
         if (shape == m_selectedShape) {
@@ -1336,17 +1351,23 @@ void DrawingArea::drawGrid(QPainter *painter)
     QPen gridPen(m_gridColor, m_gridThickness);
     painter->setPen(gridPen);
     
-    // 绘制水平网格线
-    for (int y = 0; y <= height(); y += m_gridSize) {
-        painter->drawLine(0, y, width(), y);
+    // 计算绘图区域在Widget中的位置（居中）
+    QRect drawingRect(
+        (width() - m_drawingAreaSize.width()) / 2,
+        (height() - m_drawingAreaSize.height()) / 2,
+        m_drawingAreaSize.width(),
+        m_drawingAreaSize.height()
+    );
+    
+    // 绘制水平网格线（仅在绘图区域内）
+    for (int y = drawingRect.top(); y <= drawingRect.bottom(); y += m_gridSize) {
+        painter->drawLine(drawingRect.left(), y, drawingRect.right(), y);
     }
     
-    // 绘制垂直网格线
-    for (int x = 0; x <= width(); x += m_gridSize) {
-        painter->drawLine(x, 0, x, height());
+    // 绘制垂直网格线（仅在绘图区域内）
+    for (int x = drawingRect.left(); x <= drawingRect.right(); x += m_gridSize) {
+        painter->drawLine(x, drawingRect.top(), x, drawingRect.bottom());
     }
-    
-
     
     painter->restore();
 }
@@ -1361,7 +1382,8 @@ void DrawingArea::setBackgroundColor(const QColor &color)
 void DrawingArea::setPageSize(const QSize &size)
 {
     m_pageSize = size;
-    setMinimumSize(m_pageSize);
+    // 同时更新绘图区域尺寸
+    setDrawingAreaSize(size);
     update();
 }
 
@@ -1428,10 +1450,34 @@ void DrawingArea::applyPageSettings()
 // 检查并自动扩展绘图区域
 void DrawingArea::setScale(qreal scale)
 {
-
     // 限制缩放范围在MIN_SCALE到MAX_SCALE之间
     m_scale = qBound(MIN_SCALE, scale, MAX_SCALE);
- 
+    
+    // 更新Widget的尺寸，保持为绘图区域尺寸的3倍
+    setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
+    
+    // 更新滚动区域，使绘图区域居中显示
+    QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parent());
+    if (scrollArea) {
+        // 居中滚动条
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        if (hBar && vBar) {
+            int hMax = hBar->maximum();
+            int vMax = vBar->maximum();
+            
+            // 设置滚动条在中间位置
+            hBar->setValue(hMax / 2);
+            vBar->setValue(vMax / 2);
+        }
+    }
+    
+    // 发出缩放比例变化信号
+    emit scaleChanged(m_scale);
+    
+    // 更新视图
+    update();
 }
 
 void DrawingArea::zoomInOrOut(const qreal& factor)
@@ -1607,8 +1653,8 @@ void DrawingArea::setSelectedShapeTextAlignment(Qt::Alignment alignment)
 // 实现导出为PNG的功能
 bool DrawingArea::exportToPng(const QString &filePath)
 {
-    // 创建一个与页面尺寸相同的图像
-    QImage image(m_pageSize, QImage::Format_ARGB32);
+    // 创建一个与绘图区域尺寸相同的图像
+    QImage image(m_drawingAreaSize, QImage::Format_ARGB32);
     image.fill(m_backgroundColor); // 填充背景颜色
     
     // 创建QPainter在图像上绘制
@@ -1659,4 +1705,30 @@ bool DrawingArea::exportToPng(const QString &filePath)
 int DrawingArea::getShapesCount() const
 {
     return m_shapes.size() + m_connections.size();
+}
+
+void DrawingArea::setDrawingAreaSize(const QSize &size)
+{
+    m_drawingAreaSize = size;
+    // 更新Widget尺寸为绘图区域的3倍
+    setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
+    
+    // 调整滚动区域，使绘图区域居中
+    QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parent());
+    if (scrollArea) {
+        // 居中滚动条
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        if (hBar && vBar) {
+            int hMax = hBar->maximum();
+            int vMax = vBar->maximum();
+            
+            // 设置滚动条在中间位置
+            hBar->setValue(hMax / 2);
+            vBar->setValue(vMax / 2);
+        }
+    }
+    
+    update(); // 更新显示
 }
