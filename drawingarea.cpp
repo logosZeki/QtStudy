@@ -58,11 +58,16 @@ DrawingArea::DrawingArea(QWidget *parent)
     
     // 设置初始大小，将在setScale方法中适当调整
     // 设置Widget的大小为绘图区域的3倍
-    setMinimumSize(m_drawingAreaSize * 3);
+    setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
     
     // 调用一次setScale以正确初始化大小
     QTimer::singleShot(0, this, [this]() {
         setScale(m_scale);
+    });
+    
+    // 添加一个定时器，确保在界面完全加载后居中显示绘图区域
+    QTimer::singleShot(100, this, [this]() {
+        centerDrawingArea();
     });
 }
 
@@ -1457,21 +1462,7 @@ void DrawingArea::setScale(qreal scale)
     setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
     
     // 更新滚动区域，使绘图区域居中显示
-    QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parent());
-    if (scrollArea) {
-        // 居中滚动条
-        QScrollBar* hBar = scrollArea->horizontalScrollBar();
-        QScrollBar* vBar = scrollArea->verticalScrollBar();
-        
-        if (hBar && vBar) {
-            int hMax = hBar->maximum();
-            int vMax = vBar->maximum();
-            
-            // 设置滚动条在中间位置
-            hBar->setValue(hMax / 2);
-            vBar->setValue(vMax / 2);
-        }
-    }
+    centerDrawingArea();
     
     // 发出缩放比例变化信号
     emit scaleChanged(m_scale);
@@ -1714,21 +1705,52 @@ void DrawingArea::setDrawingAreaSize(const QSize &size)
     setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
     
     // 调整滚动区域，使绘图区域居中
-    QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parent());
+    centerDrawingArea();
+    
+    update(); // 更新显示
+}
+
+void DrawingArea::centerDrawingArea()
+{
+    // 查找父滚动区域
+    QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parentWidget());
+    if (!scrollArea) {
+        // 如果没有找到直接父滚动区域，尝试在整个父窗口层次结构中查找
+        QWidget* parent = parentWidget();
+        while (parent) {
+            scrollArea = qobject_cast<QScrollArea*>(parent);
+            if (scrollArea) {
+                break;
+            }
+            parent = parent->parentWidget();
+        }
+    }
+    
     if (scrollArea) {
-        // 居中滚动条
+        // 获取水平和垂直滚动条
         QScrollBar* hBar = scrollArea->horizontalScrollBar();
         QScrollBar* vBar = scrollArea->verticalScrollBar();
         
         if (hBar && vBar) {
-            int hMax = hBar->maximum();
-            int vMax = vBar->maximum();
+            // 计算绘图区域的总尺寸（Widget尺寸）
+            QSize totalSize = size();
+            // 计算滚动区域视口的尺寸
+            QSize viewportSize = scrollArea->viewport()->size();
             
-            // 设置滚动条在中间位置
-            hBar->setValue(hMax / 2);
-            vBar->setValue(vMax / 2);
+            // 计算需要滚动的位置，使绘图区域居中
+            // 这是将widget的中心位置与viewport的中心位置对齐所需的滚动值
+            int hValue = (totalSize.width() - viewportSize.width()) / 2;
+            int vValue = (totalSize.height() - viewportSize.height()) / 2;
+            
+            // 确保滚动值在有效范围内
+            hValue = qMax(0, qMin(hValue, hBar->maximum()));
+            vValue = qMax(0, qMin(vValue, vBar->maximum()));
+            
+            // 设置滚动条位置
+            hBar->setValue(hValue);
+            vBar->setValue(vValue);
         }
     }
     
-    update(); // 更新显示
+    update();
 }

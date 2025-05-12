@@ -155,6 +155,8 @@ private:
     // 绘制网格
     void drawGrid(QPainter *painter);
     
+    // 居中显示绘图区域
+    void centerDrawingArea();
     
     // 获取滚动视图的滚动条
     QScrollBar* findParentScrollBar(Qt::Orientation orientation = Qt::Horizontal) const;

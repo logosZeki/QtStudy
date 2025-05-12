@@ -363,6 +363,7 @@ void PageSettingDialog::onApplyClicked()
         if (m_drawingArea) {
             m_drawingArea->setPageSize(m_pageSize);
             m_drawingArea->setDrawingAreaSize(m_pageSize); // 同时更新绘图区域尺寸
+            // 不需要显式调用centerDrawingArea()，因为setDrawingAreaSize已经会调用它
         }
     }
     
@@ -560,6 +561,7 @@ void PageSettingDialog::onPaperSizeRadioToggled(int id)
     if (m_drawingArea) {
         m_drawingArea->setPageSize(m_pageSize);
         m_drawingArea->setDrawingAreaSize(m_pageSize); // 同时更新绘图区域尺寸
+        // 不需要显式调用centerDrawingArea()，因为setDrawingAreaSize已经会调用它
     }
 }
 
