@@ -108,12 +108,19 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     painter.setRenderHint(QPainter::Antialiasing);
     
     // 首先填充整个Widget为灰色
-    painter.fillRect(rect(), QColor(180, 180, 180));
+    painter.fillRect(rect(), QColor(230, 230, 230));
     
-    // 计算绘图区域在Widget中的位置（居中）
+    
+    // QRect drawingRect(
+    //     (width() - m_drawingAreaSize.width()) / 2,
+    //     (height() - m_drawingAreaSize.height()) / 2,
+    //     m_drawingAreaSize.width(),
+    //     m_drawingAreaSize.height()
+    // );
+    // 计算绘图区域在Widget中的位置（居中）,且固定左上角的顶点
     QRect drawingRect(
-        (width() - m_drawingAreaSize.width()) / 2,
-        (height() - m_drawingAreaSize.height()) / 2,
+        Default_WIDTH,
+        Default_HEIGHT,
         m_drawingAreaSize.width(),
         m_drawingAreaSize.height()
     );
@@ -1357,9 +1364,16 @@ void DrawingArea::drawGrid(QPainter *painter)
     painter->setPen(gridPen);
     
     // 计算绘图区域在Widget中的位置（居中）
+    /*TODO: 可以固定网格的左上角顶点*/
+    // QRect drawingRect(
+    //     (width() - m_drawingAreaSize.width()) / 2,
+    //     (height() - m_drawingAreaSize.height()) / 2,
+    //     m_drawingAreaSize.width(),
+    //     m_drawingAreaSize.height()
+    // );
     QRect drawingRect(
-        (width() - m_drawingAreaSize.width()) / 2,
-        (height() - m_drawingAreaSize.height()) / 2,
+        Default_WIDTH,
+        Default_HEIGHT,
         m_drawingAreaSize.width(),
         m_drawingAreaSize.height()
     );
@@ -1462,7 +1476,7 @@ void DrawingArea::setScale(qreal scale)
     setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
     
     // 更新滚动区域，使绘图区域居中显示
-    centerDrawingArea();
+    //centerDrawingArea();
     
     // 发出缩放比例变化信号
     emit scaleChanged(m_scale);
@@ -1705,11 +1719,12 @@ void DrawingArea::setDrawingAreaSize(const QSize &size)
     setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
     
     // 调整滚动区域，使绘图区域居中
-    centerDrawingArea();
+    //centerDrawingArea();
     
     update(); // 更新显示
 }
 
+//todo：第一次执行程序时候居中，调整尺寸的时候不要让滚动条居中
 void DrawingArea::centerDrawingArea()
 {
     // 查找父滚动区域
