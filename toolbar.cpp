@@ -388,14 +388,12 @@ void ToolBar::setupUI()
     // 创建标签栏
     m_tabBar = new QTabBar(this);
     m_tabBar->addTab(tr("图形库"));
-    m_tabBar->addTab(tr("风格"));
     m_tabBar->setExpanding(true);  // 让标签填充整个宽度
     m_tabBar->setDocumentMode(true);
     m_tabBar->setDrawBase(false);
     m_tabBar->setStyleSheet("QTabBar::tab { padding: 8px 0; border: none; border-bottom: 1px solid #e0e0e0; background-color: white; }"
                           "QTabBar::tab:selected { border-bottom: 2px solid #1a73e8; color: #1a73e8; }"
                           "QTabBar::tab:hover:!selected { background-color: #f5f5f5; }");
-    connect(m_tabBar, &QTabBar::currentChanged, this, &ToolBar::onTabChanged);
     m_layout->addWidget(m_tabBar);
     
     // 创建搜索框
@@ -412,17 +410,13 @@ void ToolBar::setupUI()
     
     // 创建图形库和风格面板
     m_libraryWidget = new QWidget(this);
-    m_stylesWidget = new QWidget(this);
     
     // 创建图形库面板内容
     createGraphicsLibTab();
     
-    // 创建风格面板内容
-    createStylesTab();
     
     // 默认显示图形库面板
     m_scrollArea->setWidget(m_libraryWidget);
-    m_stylesWidget->hide();
 }
 
 void ToolBar::createGraphicsLibTab()
@@ -467,33 +461,4 @@ void ToolBar::createGraphicsLibTab()
     
     // 添加弹簧占用剩余空间
     layout->addStretch();
-}
-
-void ToolBar::createStylesTab()
-{
-    QVBoxLayout* layout = new QVBoxLayout(m_stylesWidget);
-    layout->setContentsMargins(5, 0, 5, 5);
-    layout->setSpacing(10);
-    
-    // 这里可以添加样式相关的控件
-    QLabel* notImplementedLabel = new QLabel(tr("样式功能未实现"), m_stylesWidget);
-    notImplementedLabel->setAlignment(Qt::AlignCenter);
-    layout->addWidget(notImplementedLabel);
-    
-    // 添加弹簧占用剩余空间
-    layout->addStretch();
-}
-
-void ToolBar::onTabChanged(int index)
-{
-    // 切换标签页
-    if (index == 0) {  // 图形库
-        m_scrollArea->setWidget(m_libraryWidget);
-        m_libraryWidget->show();
-        m_stylesWidget->hide();
-    } else if (index == 1) {  // 风格
-        m_scrollArea->setWidget(m_stylesWidget);
-        m_stylesWidget->show();
-        m_libraryWidget->hide();
-    }
 }

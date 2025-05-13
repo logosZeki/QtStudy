@@ -59,20 +59,17 @@ class ToolBar : public QWidget
 public:
     ToolBar(QWidget* parent = nullptr);
 
-private slots:
-    void onTabChanged(int index);
+
     
 private:
     void setupUI();
     void createGraphicsLibTab();
-    void createStylesTab();
     
 private:
     QVBoxLayout* m_layout;
     QTabBar* m_tabBar;
     QLineEdit* m_searchBox;
     QWidget* m_libraryWidget;
-    QWidget* m_stylesWidget;
     QScrollArea* m_scrollArea;
 };
 
