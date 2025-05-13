@@ -108,36 +108,34 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     
     // 首先填充整个Widget为灰色
     painter.fillRect(rect(), QColor(230, 230, 230));
-    
+    // 保存当前变换状态
+    painter.save();
     
 
     // 计算绘图区域在Widget中的位置（居中）,且固定左上角的顶点
-    QRect drawingRect(
-        Default_WIDTH * m_scale,
-        Default_HEIGHT * m_scale,
+    QRectF drawingRect(
+        (width() - m_drawingAreaSize.width() * m_scale) / 2,
+        (height() - m_drawingAreaSize.height() * m_scale) / 2,
         m_drawingAreaSize.width() * m_scale,
         m_drawingAreaSize.height() * m_scale
     );
     
-    // 保存当前变换状态
-    painter.save();
+
+    painter.translate(drawingRect.topLeft());
     
     // 应用缩放变换
-    QPoint center(width() / 2, height() / 2);
-    painter.translate(center);
     painter.scale(m_scale, m_scale);
-    painter.translate(-center);
     
     // 应用视图偏移
     painter.translate(-m_viewOffset);
     
     // 绘制背景（绘图区域）
-    painter.fillRect(drawingRect, m_backgroundColor);
+    QRectF bgRect(0, 0, m_drawingAreaSize.width(), m_drawingAreaSize.height());
+    painter.fillRect(bgRect, m_backgroundColor);
     
     // 在绘图区域绘制网格
     if (m_showGrid) {
-        // 定义绘制网格的区域为drawingRect
-        painter.setClipRect(drawingRect);
+        painter.setClipRect(bgRect);
         drawGrid(&painter);
         painter.setClipping(false);
     }
@@ -1357,23 +1355,17 @@ void DrawingArea::drawGrid(QPainter *painter)
     QPen gridPen(m_gridColor, m_gridThickness);
     painter->setPen(gridPen);
     
-    // 计算绘图区域在Widget中的位置（居中）
-    /*TODO: 可以固定网格的左上角顶点*/
-    QRect drawingRect(
-        Default_WIDTH * m_scale,
-        Default_HEIGHT * m_scale,
-        m_drawingAreaSize.width() * m_scale,
-        m_drawingAreaSize.height() * m_scale
-    );
+    // 在当前变换后的坐标系中绘制网格
+    QRectF gridRect(0, 0, m_drawingAreaSize.width(), m_drawingAreaSize.height());
     
-    // 绘制水平网格线（仅在绘图区域内）
-    for (int y = drawingRect.top(); y <= drawingRect.bottom(); y += m_gridSize) {
-        painter->drawLine(drawingRect.left(), y, drawingRect.right(), y);
+    // 绘制水平网格线
+    for (int y = 0; y <= gridRect.height(); y += m_gridSize) {
+        painter->drawLine(0, y, gridRect.width(), y);
     }
     
-    // 绘制垂直网格线（仅在绘图区域内）
-    for (int x = drawingRect.left(); x <= drawingRect.right(); x += m_gridSize) {
-        painter->drawLine(x, drawingRect.top(), x, drawingRect.bottom());
+    // 绘制垂直网格线
+    for (int x = 0; x <= gridRect.width(); x += m_gridSize) {
+        painter->drawLine(x, 0, x, gridRect.height());
     }
     
     painter->restore();
@@ -1598,17 +1590,13 @@ QPoint DrawingArea::mapToScene(const QPoint& viewPoint) const
 {
     
     // 将视图坐标转换为场景坐标，考虑偏移和缩放
-    QPoint center(width() / 2, height() / 2);
-    QPointF scenePoint = (viewPoint - center) / m_scale + center + m_viewOffset;
-    return scenePoint.toPoint();
+
 }
 
 QPoint DrawingArea::mapFromScene(const QPoint& scenePoint) const
 {
     // 将场景坐标转换为视图坐标，考虑偏移和缩放
-    QPoint center(width() / 2, height() / 2);
-    QPointF viewPoint = ((scenePoint  - m_viewOffset) - center) * m_scale + center;
-    return viewPoint.toPoint();
+
 }
 
 void DrawingArea::setSelectedShapeFontFamily(const QString& family)
