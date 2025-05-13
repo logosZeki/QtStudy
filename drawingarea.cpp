@@ -110,18 +110,13 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     painter.fillRect(rect(), QColor(230, 230, 230));
     
     
-    // QRect drawingRect(
-    //     (width() - m_drawingAreaSize.width()) / 2,
-    //     (height() - m_drawingAreaSize.height()) / 2,
-    //     m_drawingAreaSize.width(),
-    //     m_drawingAreaSize.height()
-    // );
+
     // 计算绘图区域在Widget中的位置（居中）,且固定左上角的顶点
     QRect drawingRect(
-        Default_WIDTH,
-        Default_HEIGHT,
-        m_drawingAreaSize.width(),
-        m_drawingAreaSize.height()
+        Default_WIDTH * m_scale,
+        Default_HEIGHT * m_scale,
+        m_drawingAreaSize.width() * m_scale,
+        m_drawingAreaSize.height() * m_scale
     );
     
     // 保存当前变换状态
@@ -1364,17 +1359,11 @@ void DrawingArea::drawGrid(QPainter *painter)
     
     // 计算绘图区域在Widget中的位置（居中）
     /*TODO: 可以固定网格的左上角顶点*/
-    // QRect drawingRect(
-    //     (width() - m_drawingAreaSize.width()) / 2,
-    //     (height() - m_drawingAreaSize.height()) / 2,
-    //     m_drawingAreaSize.width(),
-    //     m_drawingAreaSize.height()
-    // );
     QRect drawingRect(
-        Default_WIDTH,
-        Default_HEIGHT,
-        m_drawingAreaSize.width(),
-        m_drawingAreaSize.height()
+        Default_WIDTH * m_scale,
+        Default_HEIGHT * m_scale,
+        m_drawingAreaSize.width() * m_scale,
+        m_drawingAreaSize.height() * m_scale
     );
     
     // 绘制水平网格线（仅在绘图区域内）
@@ -1463,18 +1452,64 @@ void DrawingArea::applyPageSettings()
 // 检查并自动扩展绘图区域
 void DrawingArea::setScale(qreal scale)
 {
-    // 限制缩放范围在MIN_SCALE到MAX_SCALE之间
-    m_scale = qBound(MIN_SCALE, scale, MAX_SCALE);
+// 限制缩放范围
+    qreal newScale = qBound(MIN_SCALE, scale, MAX_SCALE);
+    if (qFuzzyCompare(newScale, m_scale))
+        return; // 如果缩放比例没有实质性变化，直接返回
     
-    // 更新Widget的尺寸，保持为绘图区域尺寸的3倍
-    setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
+    // 保存原始大小和缩放比例
+    QSize oldSize = size();
+    qreal oldScale = m_scale;
     
+    // 记录滚动条的相对位置
+    QScrollArea* scrollArea = nullptr;
+    QWidget* parent = parentWidget();
+    while (parent) {
+        scrollArea = qobject_cast<QScrollArea*>(parent);
+        if (scrollArea)
+            break;
+        parent = parent->parentWidget();
+    }
     
-    // 发出缩放比例变化信号
+    QPointF relativePos;
+    if (scrollArea) {
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        // 计算相对位置(0.0-1.0范围)，表示滚动条的百分比位置
+        double hRatio = (hBar->maximum() > 0) ? 
+                       (double)hBar->value() / hBar->maximum() : 0.5;
+        double vRatio = (vBar->maximum() > 0) ? 
+                       (double)vBar->value() / vBar->maximum() : 0.5;
+        relativePos = QPointF(hRatio, vRatio);
+    }
+    
+    // 更新缩放比例
+    m_scale = newScale;
+    
+    // 计算新尺寸并调整大小
+    // 注意：确保新尺寸始终大于滚动区域的视口尺寸，即使在缩小时
+    QSize newSize(m_drawingAreaSize.width() * 3 * m_scale, 
+                 m_drawingAreaSize.height() * 3 * m_scale);
+    
+    // 确保大小不会小于最小尺寸
+    setFixedSize(newSize);  // 使用setFixedSize而不是resize，强制更新布局
+    
+    // 更新界面
     emit scaleChanged(m_scale);
-    
-    // 更新视图
     update();
+    
+    // 重新设置滚动条位置，保持相对位置不变
+    if (scrollArea) {
+        // 强制立即更新滚动条，而不是使用定时器
+        scrollArea->updateGeometry();
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        // 根据相对位置设置新的滚动条值
+        hBar->setValue(qRound(relativePos.x() * hBar->maximum()));
+        vBar->setValue(qRound(relativePos.y() * vBar->maximum()));
+    }
 }
 
 void DrawingArea::zoomInOrOut(const qreal& factor)
@@ -1709,7 +1744,6 @@ void DrawingArea::setDrawingAreaSize(const QSize &size)
     m_drawingAreaSize = size;
     // 更新Widget尺寸为绘图区域的3倍
     setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
-    
     
     update(); // 更新显示
 }
