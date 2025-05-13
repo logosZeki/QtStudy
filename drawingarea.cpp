@@ -733,10 +733,7 @@ void DrawingArea::createTextEditor()
 {
     if (!m_textEditor) {
         m_textEditor = new CustomTextEdit(this);
-        // m_textEditor->setFrameStyle(QFrame::Box);  // 设置边框样式为方框
-        // m_textEditor->setStyleSheet("border: 1px solid black;");  // 设置黑色边框
         m_textEditor->setFrameStyle(QFrame::NoFrame);  // 设置为无边框
-        m_textEditor->setStyleSheet("border: none;");  // 移除边框样式
         m_textEditor->installEventFilter(this);
         m_textEditor->hide();
     }
@@ -760,6 +757,16 @@ if (!m_selectedShape) return;
     
     // 设置文本编辑器的内容
     m_textEditor->setPlainText(m_selectedShape->text());
+    
+    // 获取图形的填充颜色并设置为编辑器的背景色
+    QColor fillColor = m_selectedShape->fillColor();
+    // 根据填充颜色的亮度决定文字颜色
+    QString textColor = fillColor.lightness() < 128 ? "white" : "black";
+    // 设置编辑器样式
+    QString styleSheet = QString("background-color: %1; color: %2; border: none;")
+                            .arg(fillColor.name())
+                            .arg(textColor);
+    m_textEditor->setStyleSheet(styleSheet);
     
     // 标记形状为编辑状态
     m_selectedShape->setEditing(true);

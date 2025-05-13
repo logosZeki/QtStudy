@@ -801,11 +801,17 @@ void MainWindow::updateColorButtons()
         return;
     }
     
-    // 可以在这里添加更新按钮样式或预览颜色的代码
-    // 例如，可以设置按钮的背景色为当前选中的颜色
-    QString fillColorStyle = QString("QPushButton { background-color: %1; }").arg(selectedShape->fillColor().name());
+    // 填充颜色按钮样式更新
+    QColor fillColor = selectedShape->fillColor();
+    // 根据填充颜色的亮度决定文字颜色
+    QString textColor = fillColor.lightness() < 128 ? "white" : "black";
+    QString fillColorStyle = QString("QPushButton { background-color: %1; color: %2; }").arg(fillColor.name()).arg(textColor);
     m_fillColorButton->setStyleSheet(fillColorStyle);
     
-    QString lineColorStyle = QString("QPushButton { background-color: %1; }").arg(selectedShape->lineColor().name());
+    // 线条颜色按钮样式更新
+    QColor lineColor = selectedShape->lineColor();
+    // 根据线条颜色的亮度决定文字颜色
+    textColor = lineColor.lightness() < 128 ? "white" : "black";
+    QString lineColorStyle = QString("QPushButton { background-color: %1; color: %2; }").arg(lineColor.name()).arg(textColor);
     m_lineColorButton->setStyleSheet(lineColorStyle);
 }
