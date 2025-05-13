@@ -188,7 +188,8 @@ void Shape::setEditing(bool editing)
 
 void Shape::drawText(QPainter* painter) const
 {
-    if (m_text.isEmpty())
+    // 如果正在编辑或者文本为空，不绘制文本
+    if (m_editing || m_text.isEmpty())
         return;
         
     QRect rect = textRect();
