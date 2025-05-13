@@ -1175,7 +1175,7 @@ void Shape::setupPainter(QPainter* painter) const
     case 1: // 虚线样式一：pattern<< 1.0 << 1.0
         {
             QVector<qreal> pattern;
-            pattern << 1.0 << 1.0;
+            pattern << 3.0 << 3.0;
             pen.setDashPattern(pattern);
         }
         break;

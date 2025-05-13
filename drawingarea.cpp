@@ -760,12 +760,22 @@ if (!m_selectedShape) return;
     
     // 获取图形的填充颜色并设置为编辑器的背景色
     QColor fillColor = m_selectedShape->fillColor();
-    // 根据填充颜色的亮度决定文字颜色
-    QString textColor = fillColor.lightness() < 128 ? "white" : "black";
-    // 设置编辑器样式
-    QString styleSheet = QString("background-color: %1; color: %2; border: none;")
-                            .arg(fillColor.name())
-                            .arg(textColor);
+    QColor transparentFillColor = fillColor; 
+    double presentTransparency=m_selectedShape->transparency()/100.0; // 获取透明度
+    if(presentTransparency==1.0){
+        transparentFillColor.setAlphaF(1); 
+    }else{//当透明度不为1时，设置编辑框背景全透明
+        transparentFillColor.setAlphaF(0.0); // 编辑框背景全透明
+    }
+    
+
+    // 设置编辑器样式，使用带有透明度的背景色
+    // 使用 rgba() 格式，其中 %4 为 alpha 值
+    QString styleSheet = QString("background-color: rgba(%1, %2, %3, %4); border: none;")
+                            .arg(transparentFillColor.red())
+                            .arg(transparentFillColor.green())
+                            .arg(transparentFillColor.blue())
+                            .arg(transparentFillColor.alphaF()); // 使用alphaF获取0.0-1.0的alpha值
     m_textEditor->setStyleSheet(styleSheet);
     
     // 标记形状为编辑状态
