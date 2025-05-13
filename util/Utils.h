@@ -35,7 +35,7 @@ public:
     static constexpr int A5_HEIGHT = 1050;   // A5高度为1050像素
 
     static constexpr qreal MAX_SCALE = 2.0;      // 最大缩放比例
-    static constexpr qreal MIN_SCALE = 0.20;     // 最小缩放比例
+    static constexpr qreal MIN_SCALE = 0.35;     // 最小缩放比例
 
 };
 
