@@ -231,8 +231,19 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
         mimeData->setText(m_type);
         drag->setMimeData(mimeData);
         
-        // 设置拖拽的图像为透明背景
-        QPixmap pixmap(size());
+        // 创建一个长宽都为m_shapeRect两倍的矩形
+        QRect tempRect(
+            m_shapeRect.topLeft().x() - m_shapeRect.width()/4,   // 左边界向左扩展1/4宽度
+            m_shapeRect.topLeft().y() - m_shapeRect.height()/4,  // 上边界向上扩展1/4高度
+            m_shapeRect.width() * 2,    // 宽度扩大为原来的2倍
+            m_shapeRect.height() * 2    // 高度扩大为原来的2倍
+        );
+        
+        // 计算放大后图形所需的pixmap尺寸
+        QSize dragSize(92, 92); // 原始尺寸46x46的两倍
+        
+        // 设置拖拽的图像为透明背景，使用更大的尺寸
+        QPixmap pixmap(dragSize);
         pixmap.fill(Qt::transparent); // 使用透明填充而不是背景色
         QPainter painter(&pixmap);
         painter.setRenderHint(QPainter::Antialiasing);
@@ -241,8 +252,9 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
         painter.setPen(QPen(Qt::black, 1));
         painter.setBrush(QBrush(QColor(255, 255, 255)));
 
-        //创建一个长宽都为m_shapeRect两倍的矩形
-        QRect tempRect(m_shapeRect.topLeft().x(), m_shapeRect.topLeft().y(), m_shapeRect.width() , m_shapeRect.height() );
+        // 调整tempRect的位置，确保它在更大的pixmap中居中
+        tempRect.moveCenter(QPoint(dragSize.width()/2, dragSize.height()/2));
+
         if (m_type == ShapeTypes::Rectangle) {
             painter.drawRect(tempRect);
         } else if (m_type == ShapeTypes::Circle) {
@@ -389,7 +401,8 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
         }
         
         drag->setPixmap(pixmap);
-        drag->setHotSpot(event->pos());
+        // 设置热点为pixmap的中心点，这样鼠标将位于拖动图形的中心
+        drag->setHotSpot(QPoint(dragSize.width()/2, dragSize.height()/2));
         
         drag->exec(Qt::CopyAction);
     }
