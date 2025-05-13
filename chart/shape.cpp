@@ -13,6 +13,9 @@ Shape::Shape(const QString& type, const int& basis)
     m_fillColor = Qt::white;  // 默认填充颜色为白色
     m_lineColor = Qt::black;  // 默认线条颜色为黑色
     m_textAlignment = Qt::AlignCenter;
+    m_transparency = 100;     // 默认完全不透明
+    m_lineWidth = 1.5;        // 默认线条粗细为1.5px
+    m_lineStyle = 0;          // 默认线条样式为实线
     // m_rect will be initialized in derived classes
 }
 
@@ -190,7 +193,15 @@ void Shape::drawText(QPainter* painter) const
         
     QRect rect = textRect();
     painter->save();
-    painter->setPen(m_fontColor);
+    
+    // 根据透明度计算alpha值（0-255）
+    int alpha = qRound(m_transparency * 2.55); // 将0-100的值映射到0-255
+    
+    // 设置考虑透明度的字体颜色
+    QColor fontColorWithAlpha = m_fontColor;
+    fontColorWithAlpha.setAlpha(alpha);
+    painter->setPen(fontColorWithAlpha);
+    
     painter->setFont(m_font);  // 使用设置的字体
     painter->drawText(rect, m_textAlignment | Qt::TextWordWrap, m_text);
     painter->restore();
@@ -321,11 +332,12 @@ RectangleShape::RectangleShape(const int& basis)
 
 void RectangleShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
+    painter->save();
+    setupPainter(painter);
     painter->drawRect(m_rect);
+    painter->restore();
     
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
 }
 
@@ -348,13 +360,12 @@ CircleShape::CircleShape(const int& basis)
 
 void CircleShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
-    
-    // 直接绘制圆形，不需要额外计算
+    painter->save();
+    setupPainter(painter);
     painter->drawEllipse(m_rect);
+    painter->restore();
     
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
 }
 
@@ -403,14 +414,12 @@ PentagonShape::PentagonShape(const int& basis)
 
 void PentagonShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
+    painter->save();
+    setupPainter(painter);
+    painter->drawPolygon(createPentagonPolygon());
+    painter->restore();
     
-    // 创建五边形的点
-    QPolygon polygon = createPentagonPolygon();
-    painter->drawPolygon(polygon);
-    
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
 }
 
@@ -505,11 +514,12 @@ EllipseShape::EllipseShape(const int& basis)
 
 void EllipseShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
+    painter->save();
+    setupPainter(painter);
     painter->drawEllipse(m_rect);
+    painter->restore();
     
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
 }
 
@@ -557,11 +567,12 @@ RoundedRectangleShape::RoundedRectangleShape(const int& basis)
 
 void RoundedRectangleShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
+    painter->save();
+    setupPainter(painter);
     painter->drawRoundedRect(m_rect, m_radius, m_radius);
+    painter->restore();
     
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
 }
 
@@ -586,14 +597,12 @@ DiamondShape::DiamondShape(const int& basis)
 
 void DiamondShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
+    painter->save();
+    setupPainter(painter);
+    painter->drawPolygon(createDiamondPolygon());
+    painter->restore();
     
-    // 创建菱形的点
-    QPolygon polygon = createDiamondPolygon();
-    painter->drawPolygon(polygon);
-    
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
 }
 
@@ -672,14 +681,12 @@ HexagonShape::HexagonShape(const int& basis)
 
 void HexagonShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
+    painter->save();
+    setupPainter(painter);
+    painter->drawPolygon(createHexagonPolygon());
+    painter->restore();
     
-    // 创建六边形的点
-    QPolygon polygon = createHexagonPolygon();
-    painter->drawPolygon(polygon);
-    
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
 }
 
@@ -765,14 +772,12 @@ OctagonShape::OctagonShape(const int& basis)
 
 void OctagonShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
+    painter->save();
+    setupPainter(painter);
+    painter->drawPolygon(createOctagonPolygon());
+    painter->restore();
     
-    // 创建八边形的点
-    QPolygon polygon = createOctagonPolygon();
-    painter->drawPolygon(polygon);
-    
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
 }
 
@@ -868,17 +873,13 @@ CloudShape::CloudShape(const int& basis)
 
 void CloudShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(m_lineColor, 2));
-    painter->setBrush(QBrush(m_fillColor));
+    painter->save();
+    setupPainter(painter);
+    painter->drawPath(createCloudPath());
+    painter->restore();
     
-    // 绘制云朵形状
-    cloudPath= createCloudPath();
-    
-    painter->drawPath(cloudPath);
-    
-    // 绘制文本
+    // 如果有文本，绘制文本
     drawText(painter);
-
 }
 
 QRect CloudShape::textRect() const
@@ -1109,4 +1110,90 @@ void Shape::setLineColor(const QColor& color)
 QColor Shape::lineColor() const
 {
     return m_lineColor;
+}
+
+// 透明度相关方法实现
+void Shape::setTransparency(int transparency)
+{
+    // 确保透明度在0-100范围内
+    m_transparency = qBound(0, transparency, 100);
+}
+
+int Shape::transparency() const
+{
+    return m_transparency;
+}
+
+// 线条粗细相关方法实现
+void Shape::setLineWidth(qreal width)
+{
+    // 确保线条粗细为正数
+    m_lineWidth = qMax(0.0, width);
+}
+
+qreal Shape::lineWidth() const
+{
+    return m_lineWidth;
+}
+
+// 线条样式相关方法实现
+void Shape::setLineStyle(int style)
+{
+    // 确保样式值在有效范围内（0-3，0为实线，1-3为各种虚线样式）
+    m_lineStyle = qBound(0, style, 3);
+}
+
+int Shape::lineStyle() const
+{
+    return m_lineStyle;
+}
+
+// 为所有派生类的paint方法添加一个通用的设置画笔和画刷的方法
+void Shape::setupPainter(QPainter* painter) const
+{
+    // 根据透明度计算alpha值（0-255）
+    int alpha = qRound(m_transparency * 2.55); // 将0-100的值映射到0-255
+    
+    // 设置填充颜色（考虑透明度）
+    QColor fillColorWithAlpha = m_fillColor;
+    fillColorWithAlpha.setAlpha(alpha);
+    painter->setBrush(QBrush(fillColorWithAlpha));
+    
+    // 设置线条颜色（考虑透明度）
+    QColor lineColorWithAlpha = m_lineColor;
+    lineColorWithAlpha.setAlpha(alpha);
+    
+    // 创建画笔并设置宽度
+    QPen pen(lineColorWithAlpha);
+    pen.setWidthF(m_lineWidth);
+    
+    // 根据线条样式设置画笔样式
+    switch(m_lineStyle) {
+    case 0: // 实线
+        pen.setStyle(Qt::SolidLine);
+        break;
+    case 1: // 虚线样式一：pattern<< 1.0 << 1.0
+        {
+            QVector<qreal> pattern;
+            pattern << 1.0 << 1.0;
+            pen.setDashPattern(pattern);
+        }
+        break;
+    case 2: // 虚线样式二：pattern<< 8.0 << 3.0
+        {
+            QVector<qreal> pattern;
+            pattern << 8.0 << 3.0;
+            pen.setDashPattern(pattern);
+        }
+        break;
+    case 3: // 虚线样式三：pattern<< 7.0 << 3.0<<2.0<<3.0
+        {
+            QVector<qreal> pattern;
+            pattern << 7.0 << 3.0 << 2.0 << 3.0;
+            pen.setDashPattern(pattern);
+        }
+        break;
+    }
+    
+    painter->setPen(pen);
 }

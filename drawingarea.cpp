@@ -2266,5 +2266,33 @@ void DrawingArea::setSelectedShapeLineColor(const QColor& color)
     }
 }
 
+// 添加透明度、线条粗细和线条样式设置方法的实现
+void DrawingArea::setSelectedShapeTransparency(int transparency)
+{
+    if (m_selectedShape) {
+        // 设置透明度并更新视图
+        m_selectedShape->setTransparency(transparency);
+        update();
+    }
+}
+
+void DrawingArea::setSelectedShapeLineWidth(qreal width)
+{
+    if (m_selectedShape) {
+        // 设置线条粗细并更新视图
+        m_selectedShape->setLineWidth(width);
+        update();
+    }
+}
+
+void DrawingArea::setSelectedShapeLineStyle(int style)
+{
+    if (m_selectedShape) {
+        // 设置线条样式并更新视图
+        m_selectedShape->setLineStyle(style);
+        update();
+    }
+}
+
 
 

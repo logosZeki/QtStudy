@@ -46,6 +46,9 @@ public:
     
     virtual void paint(QPainter* painter) = 0;
     
+    // 画笔和画刷设置方法
+    void setupPainter(QPainter* painter) const;
+    
     virtual QRect getRect() const { return m_rect; }
     virtual void setRect(const QRect& rect);
     
@@ -139,6 +142,18 @@ public:
     void setLineColor(const QColor& color);
     QColor lineColor() const;
 
+    // 透明度相关方法
+    void setTransparency(int transparency);
+    int transparency() const;
+    
+    // 线条粗细相关方法
+    void setLineWidth(qreal width);
+    qreal lineWidth() const;
+    
+    // 线条样式相关方法
+    void setLineStyle(int style);
+    int lineStyle() const;
+
 protected:
     QString m_type;
     QRect m_rect;
@@ -149,6 +164,9 @@ protected:
     QColor m_fillColor;       // 存储填充颜色
     QColor m_lineColor;       // 存储线条颜色
     Qt::Alignment m_textAlignment; // 存储文本对齐方式
+    int m_transparency;      // 存储透明度值（0-100）
+    qreal m_lineWidth;       // 存储线条粗细
+    int m_lineStyle;         // 存储线条样式
     
     // 手柄大小常量
     static const int HANDLE_SIZE = 8;

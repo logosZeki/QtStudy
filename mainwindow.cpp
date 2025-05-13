@@ -283,11 +283,21 @@ void MainWindow::createMainToolbar()
     
     m_mainToolbar->addSeparator();
 
-    // 添加缩放控件
-    QComboBox* zoomCombo = new QComboBox();
-    zoomCombo->addItem(tr("100%"));
-    zoomCombo->setFixedWidth(70);
-    m_mainToolbar->addWidget(zoomCombo);
+    // 添加透明度组合框
+    QLabel* transparencyLabel = new QLabel(tr("透明度:"));
+    m_mainToolbar->addWidget(transparencyLabel);
+    
+    m_transparencyCombo = new QComboBox();
+    // 添加0%-100%的选项，每10%一个档位
+    for (int i = 0; i <= 100; i += 10) {
+        m_transparencyCombo->addItem(QString("%1%").arg(i));
+    }
+    m_transparencyCombo->setCurrentIndex(10); // 默认选择100%（完全不透明）
+    m_transparencyCombo->setFixedWidth(70);
+    m_transparencyCombo->setEnabled(false);  // 初始状态下禁用
+    m_mainToolbar->addWidget(m_transparencyCombo);
+    
+    m_mainToolbar->addSeparator();
     
     // 创建线条颜色按钮
     m_lineColorButton = new QPushButton(tr("线条颜色"));
@@ -300,21 +310,45 @@ void MainWindow::createMainToolbar()
     
     m_mainToolbar->addSeparator();
 
-    QComboBox* lineWidthCombo = new QComboBox();
-    lineWidthCombo->addItem(tr("线条粗度"));
-    lineWidthCombo->setFixedWidth(90);
-    m_mainToolbar->addWidget(lineWidthCombo);
+    // 添加线条粗细下拉框
+    QLabel* lineWidthLabel = new QLabel(tr("线条粗细:"));
+    m_mainToolbar->addWidget(lineWidthLabel);
     
-    QComboBox* lineStyleCombo = new QComboBox();
-    lineStyleCombo->addItem(tr("线条样式"));
-    lineStyleCombo->setFixedWidth(90);
-    m_mainToolbar->addWidget(lineStyleCombo);
+    m_lineWidthCombo = new QComboBox();
+    // 添加各种线条粗细选项
+    m_lineWidthCombo->addItem(tr("0px"));
+    m_lineWidthCombo->addItem(tr("0.5px"));
+    m_lineWidthCombo->addItem(tr("1px"));
+    m_lineWidthCombo->addItem(tr("1.5px"));
+    m_lineWidthCombo->addItem(tr("2px"));
+    m_lineWidthCombo->addItem(tr("3px"));
+    m_lineWidthCombo->addItem(tr("4px"));
+    m_lineWidthCombo->addItem(tr("5px"));
+    m_lineWidthCombo->addItem(tr("6px"));
+    m_lineWidthCombo->addItem(tr("8px"));
+    m_lineWidthCombo->addItem(tr("10px"));
     
-    QComboBox* lineTypeCombo = new QComboBox();
-    lineTypeCombo->addItem(tr("线条类型"));
-    lineTypeCombo->setFixedWidth(90);
-    m_mainToolbar->addWidget(lineTypeCombo);
-
+    m_lineWidthCombo->setCurrentIndex(3); // 默认选择1.5px
+    m_lineWidthCombo->setFixedWidth(90);
+    m_lineWidthCombo->setEnabled(false);  // 初始状态下禁用
+    m_mainToolbar->addWidget(m_lineWidthCombo);
+    
+    // 添加线条样式下拉框
+    QLabel* lineStyleLabel = new QLabel(tr("线条样式:"));
+    m_mainToolbar->addWidget(lineStyleLabel);
+    
+    m_lineStyleCombo = new QComboBox();
+    // 添加各种线条样式选项
+    m_lineStyleCombo->addItem(tr("实线"));
+    m_lineStyleCombo->addItem(tr("虚线 (短)"));
+    m_lineStyleCombo->addItem(tr("虚线 (长)"));
+    m_lineStyleCombo->addItem(tr("点划线"));
+    
+    m_lineStyleCombo->setCurrentIndex(0); // 默认选择实线
+    m_lineStyleCombo->setFixedWidth(90);
+    m_lineStyleCombo->setEnabled(false);  // 初始状态下禁用
+    m_mainToolbar->addWidget(m_lineStyleCombo);
+    
     // 添加页面设置按钮
     m_pageSettingButton = new QPushButton(tr("Page Setting"));
     m_pageSettingButton->setToolTip(tr("页面设置"));
@@ -332,6 +366,12 @@ void MainWindow::createMainToolbar()
     connect(m_underlineAction, &QAction::triggered, this, &MainWindow::onUnderlineActionTriggered);
     connect(m_fontColorButton, &QPushButton::clicked, this, &MainWindow::onFontColorButtonClicked);
     connect(m_alignCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onAlignmentChanged);
+    connect(m_transparencyCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+            this, &MainWindow::onTransparencyChanged);
+    connect(m_lineWidthCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+            this, &MainWindow::onLineWidthChanged);
+    connect(m_lineStyleCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+            this, &MainWindow::onLineStyleChanged);
 }
 
 void MainWindow::createArrangeToolbar()
@@ -437,7 +477,12 @@ void MainWindow::updateFontControls()
     m_fillColorButton->setEnabled(hasSelection);
     m_lineColorButton->setEnabled(hasSelection);
     
-    // 如果有选中图形，更新控件显示当前字体设置
+    // 更新透明度、线条粗细和线条样式下拉框的状态
+    m_transparencyCombo->setEnabled(hasSelection);
+    m_lineWidthCombo->setEnabled(hasSelection);
+    m_lineStyleCombo->setEnabled(hasSelection);
+    
+    // 如果有选中图形，更新控件显示当前设置
     if (hasSelection) {
         // 更新字体类型下拉框
         QString fontFamily = selectedShape->fontFamily();
@@ -474,6 +519,34 @@ void MainWindow::updateFontControls()
         } else if (alignment & Qt::AlignRight) {
             m_alignCombo->setCurrentIndex(2);
         }
+        
+        // 更新透明度组合框
+        int transparency = selectedShape->transparency();
+        int transparencyIndex = transparency / 10; // 0-10之间的索引
+        m_transparencyCombo->setCurrentIndex(transparencyIndex);
+        
+        // 更新线条粗细下拉框
+        qreal lineWidth = selectedShape->lineWidth();
+        int lineWidthIndex = 0;
+        
+        // 查找最接近的线条粗细选项
+        if (lineWidth <= 0) lineWidthIndex = 0;
+        else if (lineWidth <= 0.5) lineWidthIndex = 1;
+        else if (lineWidth <= 1) lineWidthIndex = 2;
+        else if (lineWidth <= 1.5) lineWidthIndex = 3;
+        else if (lineWidth <= 2) lineWidthIndex = 4;
+        else if (lineWidth <= 3) lineWidthIndex = 5;
+        else if (lineWidth <= 4) lineWidthIndex = 6;
+        else if (lineWidth <= 5) lineWidthIndex = 7;
+        else if (lineWidth <= 6) lineWidthIndex = 8;
+        else if (lineWidth <= 8) lineWidthIndex = 9;
+        else lineWidthIndex = 10;
+        
+        m_lineWidthCombo->setCurrentIndex(lineWidthIndex);
+        
+        // 更新线条样式下拉框
+        int lineStyle = selectedShape->lineStyle();
+        m_lineStyleCombo->setCurrentIndex(lineStyle);
     }
 }
 
@@ -814,4 +887,64 @@ void MainWindow::updateColorButtons()
     textColor = lineColor.lightness() < 128 ? "white" : "black";
     QString lineColorStyle = QString("QPushButton { background-color: %1; color: %2; }").arg(lineColor.name()).arg(textColor);
     m_lineColorButton->setStyleSheet(lineColorStyle);
+}
+
+void MainWindow::onTransparencyChanged(int index)
+{
+    // 计算透明度值（0-100）
+    int transparency = index * 10;
+    
+    // 获取当前选中的图形
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    if (selectedShape) {
+        // 设置透明度
+        selectedShape->setTransparency(transparency);
+        
+        // 更新绘图区域
+        m_drawingArea->update();
+    }
+}
+
+void MainWindow::onLineWidthChanged(int index)
+{
+    // 获取线条粗细值
+    qreal lineWidth = 0.0;
+    
+    switch (index) {
+    case 0: lineWidth = 0.0; break;
+    case 1: lineWidth = 0.5; break;
+    case 2: lineWidth = 1.0; break;
+    case 3: lineWidth = 1.5; break;
+    case 4: lineWidth = 2.0; break;
+    case 5: lineWidth = 3.0; break;
+    case 6: lineWidth = 4.0; break;
+    case 7: lineWidth = 5.0; break;
+    case 8: lineWidth = 6.0; break;
+    case 9: lineWidth = 8.0; break;
+    case 10: lineWidth = 10.0; break;
+    default: lineWidth = 1.0;
+    }
+    
+    // 获取当前选中的图形
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    if (selectedShape) {
+        // 设置线条粗细
+        selectedShape->setLineWidth(lineWidth);
+        
+        // 更新绘图区域
+        m_drawingArea->update();
+    }
+}
+
+void MainWindow::onLineStyleChanged(int index)
+{
+    // 获取当前选中的图形
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    if (selectedShape) {
+        // 设置线条样式
+        selectedShape->setLineStyle(index);
+        
+        // 更新绘图区域
+        m_drawingArea->update();
+    }
 }

@@ -48,6 +48,11 @@ private slots:
     void onLineColorButtonClicked();
     void updateColorButtons();
     
+    // 透明度、线条粗细和线条样式相关槽函数
+    void onTransparencyChanged(int index);
+    void onLineWidthChanged(int index);
+    void onLineStyleChanged(int index);
+    
     // 导出功能相关槽函数
     void exportAsPng();
     // SVG导出与导入功能相关槽函数
@@ -101,6 +106,11 @@ private:
     QPushButton  *m_fillColorButton;
     QPushButton *m_lineColorButton;
     QComboBox *m_alignCombo;
+    
+    // 透明度、线条粗细和线条样式控件
+    QComboBox *m_transparencyCombo;
+    QComboBox *m_lineWidthCombo;
+    QComboBox *m_lineStyleCombo;
     
     // 状态栏控件
     QStatusBar *m_statusBar;

@@ -85,6 +85,11 @@ public:
     void setSelectedShapeFillColor(const QColor& color);
     void setSelectedShapeLineColor(const QColor& color);
     
+    // 图形透明度、线条粗细和线条样式设置方法
+    void setSelectedShapeTransparency(int transparency);
+    void setSelectedShapeLineWidth(qreal width);
+    void setSelectedShapeLineStyle(int style);
+    
     // 导出功能
     bool exportToPng(const QString &filePath);
     // SVG导出与导入功能
