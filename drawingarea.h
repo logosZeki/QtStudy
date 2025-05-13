@@ -203,7 +203,6 @@ private:
     
     // 页面设置相关变量
     QColor m_backgroundColor;              // 页面背景颜色
-    QSize m_pageSize;                      // 页面尺寸
     QSize m_drawingAreaSize;               // 绘图区域尺寸，新增
     bool m_showGrid;                       // 是否显示网格
     QColor m_gridColor;                    // 网格颜色

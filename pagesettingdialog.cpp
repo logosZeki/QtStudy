@@ -64,8 +64,8 @@ void PageSettingDialog::initDefaultValues()
     // 默认背景颜色为白色
     m_backgroundColor = Qt::white;
     
-    // 默认页面尺寸为A4
-    m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
+    // 从DrawingArea获取当前页面尺寸
+    m_pageSize = m_drawingArea->getDrawingAreaSize();
     
     // 默认显示网格
     m_showGrid = true;
@@ -289,8 +289,8 @@ void PageSettingDialog::updatePixelInfoLabel()
 {
     // 使用DrawingArea的实际尺寸(如果可用)
     if (m_drawingArea) {
-        QSize actualSize = m_drawingArea->getPageSize();
-        m_pixelInfoLabel->setText(tr("当前尺寸: %1 x %2 px").arg(actualSize.width()).arg(actualSize.height()));
+        QSize drawingAreaSize = m_drawingArea->getDrawingAreaSize();
+        m_pixelInfoLabel->setText(tr("当前尺寸: %1 x %2 px").arg(drawingAreaSize.width()).arg(drawingAreaSize.height()));
     } else {
         m_pixelInfoLabel->setText(tr("当前尺寸: %1 x %2 px").arg(m_pageSize.width()).arg(m_pageSize.height()));
     }

@@ -20,7 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     
     // 设置窗口标题和大小
     setWindowTitle(tr("流程图设计器"));
-    resize(1800, 1000);
+    //resize(1800, 1000);
+    showMaximized();
 
     
     // 连接DrawingArea的shapeSelectionChanged信号到updateFontControls槽

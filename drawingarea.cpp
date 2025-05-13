@@ -37,7 +37,6 @@ DrawingArea::DrawingArea(QWidget *parent)
     
     // 初始化页面设置相关变量
     m_backgroundColor = Qt::white;
-    m_pageSize = QSize(Default_WIDTH, Default_HEIGHT);
     m_drawingAreaSize = QSize(Default_WIDTH, Default_HEIGHT); // 初始化绘图区域尺寸
     m_showGrid = true;
     m_gridColor = QColor(220, 220, 220);
@@ -1400,7 +1399,6 @@ void DrawingArea::setBackgroundColor(const QColor &color)
 
 void DrawingArea::setPageSize(const QSize &size)
 {
-    m_pageSize = size;
     // 同时更新绘图区域尺寸
     setDrawingAreaSize(size);
     update();
@@ -1435,10 +1433,6 @@ QColor DrawingArea::getBackgroundColor() const
     return m_backgroundColor;
 }
 
-QSize DrawingArea::getPageSize() const
-{
-    return m_pageSize;
-}
 
 bool DrawingArea::getShowGrid() const
 {

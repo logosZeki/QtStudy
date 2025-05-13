@@ -21,7 +21,7 @@ public:
     static QCursor getCrossCursor();
 
     static constexpr int Default_WIDTH = 1600;    
-    static constexpr int Default_HEIGHT = 780;
+    static constexpr int Default_HEIGHT = 820;
         // 定义A4尺寸（像素）
     static constexpr int A4_WIDTH = 1050;    // A4宽度为1050像素
     static constexpr int A4_HEIGHT = 1500;   // A4高度为1500像素
