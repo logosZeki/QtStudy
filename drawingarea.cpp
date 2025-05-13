@@ -1384,8 +1384,13 @@ void DrawingArea::setBackgroundColor(const QColor &color)
 
 void DrawingArea::setPageSize(const QSize &size)
 {
-    // 同时更新绘图区域尺寸
+    // 保存原来的绘图区域大小
+    QSize oldSize = m_drawingAreaSize;
+    
+    // 设置新的绘图区域大小
     setDrawingAreaSize(size);
+    
+    // 更新界面
     update();
 }
 
@@ -1497,7 +1502,7 @@ void DrawingArea::setScale(qreal scale)
     
     // 重新设置滚动条位置，保持相对位置不变
     if (scrollArea) {
-        // 强制立即更新滚动条，而不是使用定时器
+        // 强制立即更新滚动区域几何布局
         scrollArea->updateGeometry();
         QScrollBar* hBar = scrollArea->horizontalScrollBar();
         QScrollBar* vBar = scrollArea->verticalScrollBar();
@@ -1766,11 +1771,54 @@ int DrawingArea::getShapesCount() const
 
 void DrawingArea::setDrawingAreaSize(const QSize &size)
 {
-    m_drawingAreaSize = size;
-    // 更新Widget尺寸为绘图区域的3倍
-    setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
+    // 如果尺寸没有变化，直接返回
+    if (size == m_drawingAreaSize)
+        return;
     
-    update(); // 更新显示
+    // 记录滚动条的相对位置
+    QScrollArea* scrollArea = nullptr;
+    QWidget* parent = parentWidget();
+    while (parent) {
+        scrollArea = qobject_cast<QScrollArea*>(parent);
+        if (scrollArea)
+            break;
+        parent = parent->parentWidget();
+    }
+    
+    QPointF relativePos;
+    if (scrollArea) {
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        // 计算相对位置(0.0-1.0范围)，表示滚动条的百分比位置
+        double hRatio = (hBar->maximum() > 0) ? 
+                       (double)hBar->value() / hBar->maximum() : 0.5;
+        double vRatio = (vBar->maximum() > 0) ? 
+                       (double)vBar->value() / vBar->maximum() : 0.5;
+        relativePos = QPointF(hRatio, vRatio);
+    }
+    
+    // 更新绘图区域尺寸
+    m_drawingAreaSize = size;
+    
+    // 根据缩放比例计算新的窗口部件尺寸
+    QSize newWidgetSize(m_drawingAreaSize.width() * 3 * m_scale, 
+                       m_drawingAreaSize.height() * 3 * m_scale);
+    
+    // 使用setFixedSize设置新尺寸，强制更新布局
+    setFixedSize(newWidgetSize);
+    
+    // 重新设置滚动条位置，保持相对位置不变
+    if (scrollArea) {
+        // 强制立即更新滚动区域几何布局
+        scrollArea->updateGeometry();
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        // 根据相对位置设置新的滚动条值
+        hBar->setValue(qRound(relativePos.x() * hBar->maximum()));
+        vBar->setValue(qRound(relativePos.y() * vBar->maximum()));
+    }
 }
 
 //todo：第一次执行程序时候居中，调整尺寸的时候不要让滚动条居中
