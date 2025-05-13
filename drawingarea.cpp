@@ -740,15 +740,19 @@ void DrawingArea::createTextEditor()
 
 void DrawingArea::startTextEditing()
 {
-    if (!m_selectedShape) return;
+if (!m_selectedShape) return;
     
     createTextEditor();
     
     // 设置文本编辑器的位置和大小
     QRect textRect = m_selectedShape->textRect();
     
-
-    m_textEditor->setGeometry(textRect);
+    // 将场景坐标转换为窗口坐标
+    QPoint topLeft = mapFromScene(textRect.topLeft());
+    QPoint bottomRight = mapFromScene(textRect.bottomRight());
+    QRect viewRect(topLeft, bottomRight);
+    
+    m_textEditor->setGeometry(viewRect);
     
     // 设置文本编辑器的内容
     m_textEditor->setPlainText(m_selectedShape->text());
@@ -1588,15 +1592,48 @@ QScrollBar* DrawingArea::findParentScrollBar(Qt::Orientation orientation) const
 
 QPoint DrawingArea::mapToScene(const QPoint& viewPoint) const
 {
+    // 计算绘图区域在窗口中的位置（居中）
+    QPoint drawingAreaTopLeft(
+        (width() - m_drawingAreaSize.width() * m_scale) / 2,
+        (height() - m_drawingAreaSize.height() * m_scale) / 2
+    );
     
-    // 将视图坐标转换为场景坐标，考虑偏移和缩放
-
+    // 计算相对于绘图区域左上角的位置
+    QPoint relativePos = viewPoint - drawingAreaTopLeft;
+    
+    // 应用反向缩放
+    QPoint scaledPos(
+        relativePos.x() / m_scale,
+        relativePos.y() / m_scale
+    );
+    
+    // 应用视图偏移
+    QPoint scenePos = scaledPos + m_viewOffset;
+    
+    return scenePos;
 }
 
 QPoint DrawingArea::mapFromScene(const QPoint& scenePoint) const
 {
-    // 将场景坐标转换为视图坐标，考虑偏移和缩放
-
+    // 应用反向视图偏移
+    QPoint pointWithoutOffset = scenePoint - m_viewOffset;
+    
+    // 应用缩放
+    QPoint scaledPoint(
+        pointWithoutOffset.x() * m_scale,
+        pointWithoutOffset.y() * m_scale
+    );
+    
+    // 计算绘图区域在窗口中的位置（居中）
+    QPoint drawingAreaTopLeft(
+        (width() - m_drawingAreaSize.width() * m_scale) / 2,
+        (height() - m_drawingAreaSize.height() * m_scale) / 2
+    );
+    
+    // 加上绘图区域的位置偏移，得到窗口坐标
+    QPoint viewPoint = scaledPoint + drawingAreaTopLeft;
+    
+    return viewPoint;
 }
 
 void DrawingArea::setSelectedShapeFontFamily(const QString& family)
