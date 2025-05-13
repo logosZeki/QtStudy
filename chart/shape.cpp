@@ -575,8 +575,9 @@ void RoundedRectangleShape::registerShape()
 DiamondShape::DiamondShape(const int& basis)
     : Shape(ShapeTypes::Diamond, basis)
 {
-    // 设定菱形的宽高
-    int width = basis * 1.5;
+
+    // 长宽比为98:55，basis为宽
+    int width = basis * 98 / 55;
     int height = basis;
     m_rect = QRect(0, 0, width, height);
 }
@@ -661,10 +662,10 @@ void DiamondShape::registerShape()
 HexagonShape::HexagonShape(const int& basis)
     : Shape(ShapeTypes::Hexagon, basis)
 {
-    // 设定六边形的宽高
-    double h = basis;
-    double w = h * 1.1547; // 近似值，等于h*2/sqrt(3)
-    m_rect = QRect(0, 0, w, h);
+
+    int width = basis * 98 / 55;
+    int height = basis;
+    m_rect = QRect(0, 0, width, height);
 }
 
 void HexagonShape::paint(QPainter* painter)

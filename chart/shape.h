@@ -158,6 +158,7 @@ class RectangleShape : public Shape
 public:
     RectangleShape(const int& basis);
     void paint(QPainter* painter) override;
+    
     QString displayName() const override { return QObject::tr("Rectangle"); }
     
     // 向工厂注册
@@ -171,7 +172,7 @@ public:
     CircleShape(const int& basis);
     void paint(QPainter* painter) override;
     bool contains(const QPoint& point) const override;
-    // void setRect(const QRect& rect) override;
+    
     QString displayName() const override { return QObject::tr("Circle"); }
     QRect textRect() const override;
     
@@ -185,6 +186,7 @@ class PentagonShape : public Shape
 public:
     PentagonShape(const int& basis);
     void paint(QPainter* painter) override;
+    
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Pentagon"); }
     QRect textRect() const override;
@@ -204,6 +206,7 @@ class EllipseShape : public Shape
 public:
     EllipseShape(const int& basis);
     void paint(QPainter* painter) override;
+    
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Ellipse"); }
     QRect textRect() const override;
@@ -218,7 +221,7 @@ class RoundedRectangleShape : public Shape
 public:
     RoundedRectangleShape(const int& basis);
     void paint(QPainter* painter) override;
-    //bool contains(const QPoint& point) const override;
+    
     QString displayName() const override { return QObject::tr("Rounded Rectangle"); }
     
     // 向工厂注册
@@ -234,6 +237,7 @@ class DiamondShape : public Shape
 public:
     DiamondShape(const int& basis);
     void paint(QPainter* painter) override;
+    
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Diamond"); }
     QRect textRect() const override;
@@ -252,6 +256,7 @@ class HexagonShape : public Shape
 public:
     HexagonShape(const int& basis);
     void paint(QPainter* painter) override;
+    
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Hexagon"); }
     QRect textRect() const override;
@@ -270,6 +275,7 @@ class OctagonShape : public Shape
 public:
     OctagonShape(const int& basis);
     void paint(QPainter* painter) override;
+    
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Octagon"); }
     QRect textRect() const override;
@@ -288,6 +294,7 @@ class CloudShape : public Shape
 public:
     CloudShape(const int& basis);
     void paint(QPainter* painter) override;
+    
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Cloud"); }
     QRect textRect() const override;
