@@ -127,6 +127,9 @@ private:
     // 查找特定图形下最近的连接点
     ConnectionPoint* findNearestConnectionPoint(Shape* shape, const QPoint& pos);
 
+    // 尝试将连接线连接到最近的图形连接点
+    void tryConnectLineToShapes(Connection* connection);
+
     // 绘制连接线拖动预览
     void drawConnectionPreview(QPainter* painter, Connection* connection);
 
