@@ -1469,8 +1469,6 @@ void DrawingArea::setScale(qreal scale)
     // 更新Widget的尺寸，保持为绘图区域尺寸的3倍
     setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
     
-    // 更新滚动区域，使绘图区域居中显示
-    //centerDrawingArea();
     
     // 发出缩放比例变化信号
     emit scaleChanged(m_scale);
@@ -1712,8 +1710,6 @@ void DrawingArea::setDrawingAreaSize(const QSize &size)
     // 更新Widget尺寸为绘图区域的3倍
     setMinimumSize(m_drawingAreaSize.width() * 3, m_drawingAreaSize.height() * 3);
     
-    // 调整滚动区域，使绘图区域居中
-    //centerDrawingArea();
     
     update(); // 更新显示
 }
@@ -1743,8 +1739,10 @@ void DrawingArea::centerDrawingArea()
         if (hBar && vBar) {
             // 计算绘图区域的总尺寸（Widget尺寸）
             QSize totalSize = size();
+            //qDebug() << "totalSize:" << totalSize;
             // 计算滚动区域视口的尺寸
             QSize viewportSize = scrollArea->viewport()->size();
+            //qDebug() << "viewportSize:" << viewportSize;
             
             // 计算需要滚动的位置，使绘图区域居中
             // 这是将widget的中心位置与viewport的中心位置对齐所需的滚动值
