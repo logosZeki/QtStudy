@@ -83,6 +83,9 @@ public:
     
     // 导出功能
     bool exportToPng(const QString &filePath);
+    // SVG导出与导入功能
+    bool exportToSvg(const QString &filePath);
+    bool importFromSvg(const QString &filePath);
     
 signals:
     // 图形选择状态改变的信号

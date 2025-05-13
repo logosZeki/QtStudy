@@ -9,6 +9,10 @@
 #include <QFontMetrics>
 #include <QTextCharFormat>
 #include <QTimer>
+#include <QSvgGenerator>
+#include <QDomDocument>
+#include <QFile>
+#include <QSvgRenderer>
 
 #include "chart/shapefactory.h"
 #include "chart/customtextedit.h"
@@ -1762,6 +1766,666 @@ bool DrawingArea::exportToPng(const QString &filePath)
     update();
     
     return success;
+}
+
+// 实现导出为SVG的功能
+bool DrawingArea::exportToSvg(const QString &filePath)
+{
+    // 创建SVG生成器
+    QSvgGenerator generator;
+    generator.setFileName(filePath);
+    generator.setSize(m_drawingAreaSize);
+    generator.setViewBox(QRect(0, 0, m_drawingAreaSize.width(), m_drawingAreaSize.height()));
+    generator.setTitle(tr("流程图"));
+    generator.setDescription(tr("由流程图设计器生成的SVG文件"));
+    
+    // 保存当前的页面设置为元数据
+    generator.setResolution(96); // 标准屏幕DPI
+    
+    // 准备更详细的元数据信息，包括每个形状和连接线的信息
+    QString shapesMetadata = "<flowchart:shapes xmlns:flowchart=\"http://flowchart.example.com/ns\">";
+    
+    // 添加所有形状的元数据
+    for (int i = 0; i < m_shapes.size(); ++i) {
+        Shape* shape = m_shapes[i];
+        QRect rect = shape->getRect();
+        
+        shapesMetadata += QString("<flowchart:shape id=\"%1\" type=\"%2\" x=\"%3\" y=\"%4\" width=\"%5\" height=\"%6\"")
+                               .arg(i)
+                               .arg(shape->type())
+                               .arg(rect.x())
+                               .arg(rect.y())
+                               .arg(rect.width())
+                               .arg(rect.height());
+        
+        // 添加文本内容
+        shapesMetadata += QString(" text=\"%1\"").arg(shape->text().toHtmlEscaped());
+        
+        // 添加字体属性
+        shapesMetadata += QString(" fontFamily=\"%1\" fontSize=\"%2\" fontBold=\"%3\" fontItalic=\"%4\" fontColor=\"%5\"")
+                               .arg(shape->fontFamily())
+                               .arg(shape->fontSize())
+                               .arg(shape->isFontBold() ? "true" : "false")
+                               .arg(shape->isFontItalic() ? "true" : "false")
+                               .arg(shape->fontColor().name());
+        
+        shapesMetadata += " />";
+    }
+    
+    // 添加所有连接线的元数据
+    shapesMetadata += "<flowchart:connections>";
+    for (int i = 0; i < m_connections.size(); ++i) {
+        Connection* conn = m_connections[i];
+        
+        // 获取连接线的端点信息
+        QPoint startPos = conn->getStartPosition();
+        QPoint endPos = conn->getEndPosition();
+        
+        // 检查是否是ArrowLine类型
+        bool isArrow = (dynamic_cast<ArrowLine*>(conn) != nullptr);
+        
+        shapesMetadata += QString("<flowchart:connection id=\"%1\" startX=\"%2\" startY=\"%3\" endX=\"%4\" endY=\"%5\" isArrow=\"%6\" />")
+                               .arg(i)
+                               .arg(startPos.x())
+                               .arg(startPos.y())
+                               .arg(endPos.x())
+                               .arg(endPos.y())
+                               .arg(isArrow ? "true" : "false");
+    }
+    shapesMetadata += "</flowchart:connections>";
+    shapesMetadata += "</flowchart:shapes>";
+    
+    // 创建完整的元数据字符串
+    QString metadata = QString(
+        "<metadata>"
+        "<flowchart:settings xmlns:flowchart=\"http://flowchart.example.com/ns\">"
+        "<flowchart:drawingAreaWidth>%1</flowchart:drawingAreaWidth>"
+        "<flowchart:drawingAreaHeight>%2</flowchart:drawingAreaHeight>"
+        "<flowchart:backgroundColor>%3</flowchart:backgroundColor>"
+        "</flowchart:settings>"
+        "%4"
+        "</metadata>"
+    ).arg(m_drawingAreaSize.width())
+     .arg(m_drawingAreaSize.height())
+     .arg(m_backgroundColor.name())
+     .arg(shapesMetadata);
+    
+    // 创建QPainter在SVG上绘制
+    QPainter painter;
+    painter.begin(&generator);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    
+    // 保存当前可能的选中状态，以便稍后恢复
+    Shape* tempSelectedShape = m_selectedShape;
+    Connection* tempSelectedConnection = m_selectedConnection;
+    
+    // 临时取消选中状态，避免导出的SVG显示选中框和手柄
+    m_selectedShape = nullptr;
+    m_selectedConnection = nullptr;
+    
+    // 绘制背景
+    painter.fillRect(QRect(0, 0, m_drawingAreaSize.width(), m_drawingAreaSize.height()), m_backgroundColor);
+    
+    // 绘制所有形状
+    for (Shape* shape : m_shapes) {
+        shape->paint(&painter);
+    }
+    
+    // 绘制所有连线
+    for (Connection* connection : m_connections) {
+        connection->paint(&painter);
+    }
+    
+    // 恢复选中状态
+    m_selectedShape = tempSelectedShape;
+    m_selectedConnection = tempSelectedConnection;
+    
+    // 结束绘制
+    painter.end();
+    
+    // 更新视图
+    update();
+    
+    // 添加元数据到已生成的SVG文件
+    QFile file(filePath);
+    if (file.open(QIODevice::ReadWrite)) {
+        QByteArray svgData = file.readAll();
+        QString svgText = QString::fromUtf8(svgData);
+        
+        // 在文件中寻找</defs>标签，并在其后插入元数据
+        int defsEndPos = svgText.indexOf("</defs>");
+        if (defsEndPos != -1) {
+            svgText.insert(defsEndPos + 7, metadata);
+            
+            // 回到文件开头并重写内容
+            file.seek(0);
+            file.write(svgText.toUtf8());
+            file.resize(file.pos());
+        }
+        
+        file.close();
+    }
+    
+    return true;
+}
+
+// 实现从SVG导入的功能
+bool DrawingArea::importFromSvg(const QString &filePath)
+{
+    // 清除当前的所有图形和连线
+    qDeleteAll(m_shapes);
+    m_shapes.clear();
+    qDeleteAll(m_connections);
+    m_connections.clear();
+    
+    m_selectedShape = nullptr;
+    m_selectedConnection = nullptr;
+    
+    // 尝试加载SVG文件
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+    
+    QDomDocument doc;
+    if (!doc.setContent(&file)) {
+        file.close();
+        return false;
+    }
+    file.close();
+    
+    // 解析元数据，获取绘图区域尺寸和背景颜色
+    QDomNodeList metadataNodes = doc.elementsByTagName("metadata");
+    if (!metadataNodes.isEmpty()) {
+        QDomElement metadataElement = metadataNodes.at(0).toElement();
+        
+        // 获取绘图区域设置
+        QDomNodeList settingsNodes = metadataElement.elementsByTagName("flowchart:settings");
+        if (!settingsNodes.isEmpty()) {
+            QDomElement settingsElement = settingsNodes.at(0).toElement();
+            
+            // 获取绘图区域尺寸
+            QDomElement widthElement = settingsElement.firstChildElement("flowchart:drawingAreaWidth");
+            QDomElement heightElement = settingsElement.firstChildElement("flowchart:drawingAreaHeight");
+            
+            if (!widthElement.isNull() && !heightElement.isNull()) {
+                int width = widthElement.text().toInt();
+                int height = heightElement.text().toInt();
+                m_drawingAreaSize = QSize(width, height);
+            }
+            
+            // 获取背景颜色
+            QDomElement bgColorElement = settingsElement.firstChildElement("flowchart:backgroundColor");
+            if (!bgColorElement.isNull()) {
+                m_backgroundColor = QColor(bgColorElement.text());
+            }
+        }
+        
+        // 尝试从元数据中直接恢复图形和连接线
+        QDomNodeList shapesNodes = metadataElement.elementsByTagName("flowchart:shapes");
+        if (!shapesNodes.isEmpty()) {
+            QDomElement shapesElement = shapesNodes.at(0).toElement();
+            
+            // 处理形状元素
+            QDomNodeList shapeNodes = shapesElement.elementsByTagName("flowchart:shape");
+            for (int i = 0; i < shapeNodes.count(); ++i) {
+                QDomElement shapeElement = shapeNodes.at(i).toElement();
+                
+                QString type = shapeElement.attribute("type");
+                int x = shapeElement.attribute("x").toInt();
+                int y = shapeElement.attribute("y").toInt();
+                int width = shapeElement.attribute("width").toInt();
+                int height = shapeElement.attribute("height").toInt();
+                QString text = shapeElement.attribute("text");
+                
+                // 使用工厂创建相应类型的图形
+                Shape* newShape = ShapeFactory::instance().createShape(type, width / 2);
+                if (newShape) {
+                    // 设置位置和大小
+                    QRect rect(x, y, width, height);
+                    newShape->setRect(rect);
+                    
+                    // 设置文本内容
+                    newShape->setText(text);
+                    
+                    // 设置字体属性
+                    QString fontFamily = shapeElement.attribute("fontFamily");
+                    if (!fontFamily.isEmpty()) {
+                        newShape->setFontFamily(fontFamily);
+                    }
+                    
+                    int fontSize = shapeElement.attribute("fontSize").toInt();
+                    if (fontSize > 0) {
+                        newShape->setFontSize(fontSize);
+                    }
+                    
+                    bool isBold = (shapeElement.attribute("fontBold") == "true");
+                    newShape->setFontBold(isBold);
+                    
+                    bool isItalic = (shapeElement.attribute("fontItalic") == "true");
+                    newShape->setFontItalic(isItalic);
+                    
+                    QString fontColor = shapeElement.attribute("fontColor");
+                    if (!fontColor.isEmpty()) {
+                        newShape->setFontColor(QColor(fontColor));
+                    }
+                    
+                    // 添加到图形列表
+                    m_shapes.append(newShape);
+                }
+            }
+            
+            // 处理连接线元素
+            QDomNodeList connectionNodes = shapesElement.elementsByTagName("flowchart:connection");
+            for (int i = 0; i < connectionNodes.count(); ++i) {
+                QDomElement connectionElement = connectionNodes.at(i).toElement();
+                
+                int startX = connectionElement.attribute("startX").toInt();
+                int startY = connectionElement.attribute("startY").toInt();
+                int endX = connectionElement.attribute("endX").toInt();
+                int endY = connectionElement.attribute("endY").toInt();
+                bool isArrow = (connectionElement.attribute("isArrow") == "true");
+                
+                QPoint startPoint(startX, startY);
+                QPoint endPoint(endX, endY);
+                
+                // 创建连接线
+                if (isArrow) {
+                    createArrowLine(startPoint, endPoint);
+                } else {
+                    // 如果需要创建其他类型的连接线...
+                    // 目前我们的应用只支持ArrowLine
+                    createArrowLine(startPoint, endPoint);
+                }
+            }
+            
+            // 如果成功从元数据恢复了图形，直接返回成功
+            if (!m_shapes.isEmpty() || !m_connections.isEmpty()) {
+                // 强制设置缩放比例为1.0
+                setScale(1.0);
+                
+                // 更新视图
+                update();
+                
+                // 发出图形数量变化信号
+                emit shapesCountChanged(getShapesCount());
+                emit selectionChanged();
+                
+                return true;
+            }
+        }
+    }
+    
+    // 如果没有从元数据恢复成功，尝试从SVG元素中解析
+    QSvgRenderer renderer(filePath);
+    if (!renderer.isValid()) {
+        return false;
+    }
+    
+    // 解析SVG中的图形元素
+    QDomElement svgRoot = doc.documentElement();
+    QDomElement gElement = svgRoot.firstChildElement("g");
+    
+    // 遍历查找包含实际图形的g元素
+    while (!gElement.isNull()) {
+        QDomNodeList childNodes = gElement.childNodes();
+        
+        for (int i = 0; i < childNodes.count(); ++i) {
+            QDomNode node = childNodes.at(i);
+            if (node.isElement()) {
+                QDomElement element = node.toElement();
+                
+                // 解析椭圆元素
+                if (element.tagName() == "ellipse") {
+                    double cx = element.attribute("cx").toDouble();
+                    double cy = element.attribute("cy").toDouble();
+                    double rx = element.attribute("rx").toDouble();
+                    double ry = element.attribute("ry").toDouble();
+                    
+                    // 创建椭圆图形
+                    Shape* ellipseShape = ShapeFactory::instance().createShape(ShapeTypes::Ellipse, rx);
+                    if (ellipseShape) {
+                        QRect shapeRect(cx - rx, cy - ry, rx * 2, ry * 2);
+                        ellipseShape->setRect(shapeRect);
+                        m_shapes.append(ellipseShape);
+                    }
+                }
+                // 解析矩形元素
+                else if (element.tagName() == "rect" && element.parentNode().toElement().attribute("transform").isEmpty()) {
+                    double x = element.attribute("x").toDouble();
+                    double y = element.attribute("y").toDouble();
+                    double width = element.attribute("width").toDouble();
+                    double height = element.attribute("height").toDouble();
+                    
+                    // 如果是背景矩形，跳过
+                    if (x == 0 && y == 0 && width == m_drawingAreaSize.width() && height == m_drawingAreaSize.height()) {
+                        continue;
+                    }
+                    
+                    // 创建矩形图形
+                    Shape* rectShape = ShapeFactory::instance().createShape(ShapeTypes::Rectangle, width / 2);
+                    if (rectShape) {
+                        QRect shapeRect(x, y, width, height);
+                        rectShape->setRect(shapeRect);
+                        m_shapes.append(rectShape);
+                    }
+                }
+                // 解析路径元素(可能是多边形或者云形等)
+                else if (element.tagName() == "path") {
+                    QString dAttr = element.attribute("d");
+                    
+                    // 获取路径的边界矩形来确定位置和大小
+                    QPainterPath path;
+                    
+                    // 简单解析路径命令，这里仅处理最基本的M和C命令
+                    QStringList commands = dAttr.split(QRegExp("[ ,]"), QString::SkipEmptyParts);
+                    
+                    // 获取路径中所有点，用于确定边界
+                    QVector<QPointF> points;
+                    bool isFirstPoint = true;
+                    QPointF currentPoint;
+                    
+                    for (int j = 0; j < commands.size(); ++j) {
+                        if (commands[j] == "M" || commands[j] == "m") {
+                            if (j + 2 < commands.size()) {
+                                double x = commands[j+1].toDouble();
+                                double y = commands[j+2].toDouble();
+                                points.append(QPointF(x, y));
+                                if (isFirstPoint) {
+                                    path.moveTo(x, y);
+                                    currentPoint = QPointF(x, y);
+                                    isFirstPoint = false;
+                                }
+                                j += 2;
+                            }
+                        } 
+                        else if (commands[j] == "C" || commands[j] == "c") {
+                            if (j + 6 < commands.size()) {
+                                double x1 = commands[j+1].toDouble();
+                                double y1 = commands[j+2].toDouble();
+                                double x2 = commands[j+3].toDouble();
+                                double y2 = commands[j+4].toDouble();
+                                double x3 = commands[j+5].toDouble();
+                                double y3 = commands[j+6].toDouble();
+                                
+                                path.cubicTo(x1, y1, x2, y2, x3, y3);
+                                points.append(QPointF(x1, y1));
+                                points.append(QPointF(x2, y2));
+                                points.append(QPointF(x3, y3));
+                                currentPoint = QPointF(x3, y3);
+                                j += 6;
+                            }
+                        }
+                        else if (commands[j] == "L" || commands[j] == "l") {
+                            if (j + 2 < commands.size()) {
+                                double x = commands[j+1].toDouble();
+                                double y = commands[j+2].toDouble();
+                                path.lineTo(x, y);
+                                points.append(QPointF(x, y));
+                                currentPoint = QPointF(x, y);
+                                j += 2;
+                            }
+                        }
+                    }
+                    
+                    // 计算路径的边界框
+                    if (!points.isEmpty()) {
+                        double minX = points[0].x(), minY = points[0].y();
+                        double maxX = points[0].x(), maxY = points[0].y();
+                        
+                        for (const QPointF& point : points) {
+                            minX = qMin(minX, point.x());
+                            minY = qMin(minY, point.y());
+                            maxX = qMax(maxX, point.x());
+                            maxY = qMax(maxY, point.y());
+                        }
+                        
+                        QRectF boundingRect(minX, minY, maxX - minX, maxY - minY);
+                        
+                        // 尝试识别云形
+                        if (dAttr.contains("C") && boundingRect.width() / boundingRect.height() > 0.8 &&
+                            boundingRect.width() / boundingRect.height() < 2.0) {
+                            Shape* cloudShape = ShapeFactory::instance().createShape(ShapeTypes::Cloud, boundingRect.width() / 2);
+                            if (cloudShape) {
+                                QRect shapeRect(boundingRect.x(), boundingRect.y(), 
+                                                boundingRect.width(), boundingRect.height());
+                                cloudShape->setRect(shapeRect);
+                                m_shapes.append(cloudShape);
+                            }
+                        }
+                        // 尝试识别六边形
+                        else if (points.size() >= 6 && points.size() <= 8) {
+                            Shape* hexagonShape = ShapeFactory::instance().createShape(ShapeTypes::Hexagon, boundingRect.width() / 2);
+                            if (hexagonShape) {
+                                QRect shapeRect(boundingRect.x(), boundingRect.y(), 
+                                                boundingRect.width(), boundingRect.height());
+                                hexagonShape->setRect(shapeRect);
+                                m_shapes.append(hexagonShape);
+                            }
+                        }
+                        // 其他路径默认创建为菱形
+                        else {
+                            Shape* diamondShape = ShapeFactory::instance().createShape(ShapeTypes::Diamond, boundingRect.width() / 2);
+                            if (diamondShape) {
+                                QRect shapeRect(boundingRect.x(), boundingRect.y(), 
+                                                boundingRect.width(), boundingRect.height());
+                                diamondShape->setRect(shapeRect);
+                                m_shapes.append(diamondShape);
+                            }
+                        }
+                    }
+                }
+                // 解析多边形元素
+                else if (element.tagName() == "polygon" || (element.tagName() == "polyline" && !element.hasAttribute("fill") && element.attribute("fill") != "none")) {
+                    QString pointsStr = element.attribute("points");
+                    QStringList pointList = pointsStr.split(" ", QString::SkipEmptyParts);
+                    QVector<QPointF> points;
+                    
+                    for (const QString& pointStr : pointList) {
+                        QStringList coords = pointStr.split(",", QString::SkipEmptyParts);
+                        if (coords.size() == 2) {
+                            points.append(QPointF(coords[0].toDouble(), coords[1].toDouble()));
+                        }
+                    }
+                    
+                    if (!points.isEmpty()) {
+                        double minX = points[0].x(), minY = points[0].y();
+                        double maxX = points[0].x(), maxY = points[0].y();
+                        
+                        for (const QPointF& point : points) {
+                            minX = qMin(minX, point.x());
+                            minY = qMin(minY, point.y());
+                            maxX = qMax(maxX, point.x());
+                            maxY = qMax(maxY, point.y());
+                        }
+                        
+                        QRectF boundingRect(minX, minY, maxX - minX, maxY - minY);
+                        
+                        // 根据点的数量来判断多边形类型
+                        QString shapeType;
+                        if (points.size() == 6) {
+                            shapeType = ShapeTypes::Hexagon;
+                        } else if (points.size() == 8) {
+                            shapeType = ShapeTypes::Octagon;
+                        } else if (points.size() == 5) {
+                            shapeType = ShapeTypes::Pentagon;
+                        } else if (points.size() == 4) {
+                            shapeType = ShapeTypes::Diamond;
+                        } else {
+                            shapeType = ShapeTypes::Rectangle; // 默认为矩形
+                        }
+                        
+                        Shape* polygonShape = ShapeFactory::instance().createShape(shapeType, boundingRect.width() / 2);
+                        if (polygonShape) {
+                            QRect shapeRect(boundingRect.x(), boundingRect.y(), 
+                                            boundingRect.width(), boundingRect.height());
+                            polygonShape->setRect(shapeRect);
+                            m_shapes.append(polygonShape);
+                        }
+                    }
+                }
+                // 解析箭头线（连接线）
+                else if (element.tagName() == "polyline") {
+                    QString pointsStr = element.attribute("points");
+                    QStringList pointList = pointsStr.split(" ", QString::SkipEmptyParts);
+                    
+                    if (pointList.size() >= 2) {
+                        QStringList startCoords = pointList.first().split(",", QString::SkipEmptyParts);
+                        QStringList endCoords = pointList.last().split(",", QString::SkipEmptyParts);
+                        
+                        if (startCoords.size() == 2 && endCoords.size() == 2) {
+                            QPoint startPoint(startCoords[0].toDouble(), startCoords[1].toDouble());
+                            QPoint endPoint(endCoords[0].toDouble(), endCoords[1].toDouble());
+                            
+                            // 创建箭头线
+                            createArrowLine(startPoint, endPoint);
+                        }
+                    }
+                }
+                // 检查箭头路径，这通常是由polyline+path组合而成的箭头
+                else if (element.tagName() == "path" && element.nextSiblingElement().tagName() == "path") {
+                    // 尝试查找前面的polyline元素，这通常是箭头的线部分
+                    QDomElement prevElement = element.previousSiblingElement("polyline");
+                    if (!prevElement.isNull()) {
+                        QString pointsStr = prevElement.attribute("points");
+                        QStringList pointList = pointsStr.split(" ", QString::SkipEmptyParts);
+                        
+                        if (pointList.size() >= 2) {
+                            QStringList startCoords = pointList.first().split(",", QString::SkipEmptyParts);
+                            QStringList endCoords = pointList.last().split(",", QString::SkipEmptyParts);
+                            
+                            if (startCoords.size() == 2 && endCoords.size() == 2) {
+                                QPoint startPoint(startCoords[0].toDouble(), startCoords[1].toDouble());
+                                QPoint endPoint(endCoords[0].toDouble(), endCoords[1].toDouble());
+                                
+                                // 创建箭头线
+                                createArrowLine(startPoint, endPoint);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 查找并处理文本元素
+        QDomNodeList textNodes = gElement.elementsByTagName("text");
+        
+        // 创建一个map来将相近位置的文本组合起来
+        QMap<QPair<int, int>, QPair<Shape*, QString>> textGroups;
+        
+        for (int i = 0; i < textNodes.size(); ++i) {
+            QDomElement textElement = textNodes.at(i).toElement();
+            double x = textElement.attribute("x").toDouble();
+            double y = textElement.attribute("y").toDouble();
+            QString fontFamily = textElement.attribute("font-family");
+            double fontSize = textElement.attribute("font-size").toDouble();
+            QString fontWeight = textElement.attribute("font-weight");
+            QString fontStyle = textElement.attribute("font-style");
+            QString textContent = textElement.text();
+            
+            // 查找最近的图形来关联文本
+            double minDistance = std::numeric_limits<double>::max();
+            Shape* closestShape = nullptr;
+            
+            for (Shape* shape : m_shapes) {
+                QRect rect = shape->getRect();
+                QPoint center = rect.center();
+                double distance = std::sqrt(std::pow(center.x() - x, 2) + std::pow(center.y() - y, 2));
+                
+                if (distance < minDistance && distance < 100) { // 100像素的阈值
+                    minDistance = distance;
+                    closestShape = shape;
+                }
+            }
+            
+            // 如果找到了合适的图形，将文本保存到组中
+            if (closestShape) {
+                // 使用图形ID和文本Y坐标作为分组键
+                int shapeId = m_shapes.indexOf(closestShape);
+                int lineY = qRound(y / 20) * 20; // 将Y值舍入到最近的20的整数倍，作为行标识
+                
+                QPair<int, int> key(shapeId, lineY);
+                
+                // 如果这个组已经存在，追加文本，否则创建新组
+                if (textGroups.contains(key)) {
+                    QString existingText = textGroups[key].second;
+                    textGroups[key].second = existingText + textContent;
+                } else {
+                    textGroups[key] = qMakePair(closestShape, textContent);
+                }
+                
+                // 设置字体属性（在后面统一应用）
+                if (!fontFamily.isEmpty()) {
+                    closestShape->setFontFamily(fontFamily);
+                }
+                
+                if (fontSize > 0) {
+                    closestShape->setFontSize(fontSize);
+                }
+                
+                if (fontWeight == "bold" || fontWeight == "700") {
+                    closestShape->setFontBold(true);
+                }
+                
+                if (fontStyle == "italic") {
+                    closestShape->setFontItalic(true);
+                }
+                
+                // 设置文本颜色
+                QColor textColor = QColor(textElement.attribute("fill", "#000000"));
+                closestShape->setFontColor(textColor);
+            }
+        }
+        
+        // 应用文本和分行处理
+        QMapIterator<QPair<int, int>, QPair<Shape*, QString>> it(textGroups);
+        QMap<Shape*, QStringList> shapeTexts;
+        
+        while (it.hasNext()) {
+            it.next();
+            Shape* shape = it.value().first;
+            QString text = it.value().second;
+            
+            // 按图形分组收集文本行
+            if (!shapeTexts.contains(shape)) {
+                shapeTexts[shape] = QStringList();
+            }
+            shapeTexts[shape].append(text);
+        }
+        
+        // 将多行文本设置到图形上
+        QMapIterator<Shape*, QStringList> textIt(shapeTexts);
+        while (textIt.hasNext()) {
+            textIt.next();
+            Shape* shape = textIt.key();
+            QStringList lines = textIt.value();
+            
+            // 按Y坐标排序行
+            std::sort(lines.begin(), lines.end(), [](const QString& a, const QString& b) {
+                return a < b;
+            });
+            
+            // 组合所有行
+            QString fullText = lines.join("\n");
+            shape->setText(fullText);
+        }
+        
+        gElement = gElement.nextSiblingElement("g");
+    }
+    
+    // 强制设置缩放比例为1.0
+    setScale(1.0);
+    
+    // 更新视图
+    update();
+    
+    // 发出图形数量变化信号
+    emit shapesCountChanged(getShapesCount());
+    emit selectionChanged();
+    
+    return true;
 }
 
 int DrawingArea::getShapesCount() const

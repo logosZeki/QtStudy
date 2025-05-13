@@ -45,6 +45,9 @@ private slots:
     
     // 导出功能相关槽函数
     void exportAsPng();
+    // SVG导出与导入功能相关槽函数
+    void exportAsSvg();
+    void importFromSvg();
     
     // 状态栏相关槽函数
     void updateStatusBarInfo();

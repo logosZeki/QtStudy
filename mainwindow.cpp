@@ -348,7 +348,7 @@ void MainWindow::createExportAndImportToolbar()
     // 添加导出工具栏的按钮和控件
     QPushButton* exportAsPngButton = new QPushButton(tr("导出为PNG"));
     QPushButton* exportAsPdfButton = new QPushButton(tr("导出为PDF"));
-    QPushButton* exportAsSvgButton = new QPushButton(tr("导出为svg"));
+    QPushButton* exportAsSvgButton = new QPushButton(tr("导出为SVG"));
 
     m_exportAndImportToolbar->addWidget(exportAsPngButton);
     m_exportAndImportToolbar->addSeparator();
@@ -358,11 +358,13 @@ void MainWindow::createExportAndImportToolbar()
     m_exportAndImportToolbar->addSeparator();
 
     // 添加导入工具栏的按钮和控件
-    QPushButton* importAsSvgButton = new QPushButton(tr("从svg导入"));
-    m_exportAndImportToolbar->addWidget(importAsSvgButton);
+    QPushButton* importFromSvgButton = new QPushButton(tr("从SVG导入"));
+    m_exportAndImportToolbar->addWidget(importFromSvgButton);
 
     // 连接导出按钮的信号到相应的槽函数
     connect(exportAsPngButton, &QPushButton::clicked, this, &MainWindow::exportAsPng);
+    connect(exportAsSvgButton, &QPushButton::clicked, this, &MainWindow::exportAsSvg);
+    connect(importFromSvgButton, &QPushButton::clicked, this, &MainWindow::importFromSvg);
 }
 
 void MainWindow::showPageSettingDialog()
@@ -567,6 +569,81 @@ void MainWindow::exportAsPng()
         QMessageBox::information(this, tr("导出成功"), tr("流程图已成功导出为PNG图片！"));
     } else {
         QMessageBox::critical(this, tr("导出失败"), tr("导出PNG图片时发生错误，请检查文件路径和权限。"));
+    }
+}
+
+void MainWindow::exportAsSvg()
+{
+    if (!m_drawingArea) return;
+    
+    // 获取当前日期时间，格式化为字符串作为默认文件名
+    QString defaultFileName = QString("FlowChart_%1").arg(
+        QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+    
+    // 打开文件保存对话框
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        tr("导出为SVG"),
+        QDir::homePath() + "/" + defaultFileName,
+        tr("SVG矢量图 (*.svg)"));
+    
+    // 如果用户取消了对话框，则返回
+    if (filePath.isEmpty()) {
+        return;
+    }
+    
+    // 确保文件路径以.svg结尾
+    if (!filePath.endsWith(".svg", Qt::CaseInsensitive)) {
+        filePath += ".svg";
+    }
+    
+    // 调用绘图区域的导出方法
+    bool success = m_drawingArea->exportToSvg(filePath);
+    
+    // 显示导出结果提示
+    if (success) {
+        QMessageBox::information(this, tr("导出成功"), tr("流程图已成功导出为SVG矢量图！"));
+    } else {
+        QMessageBox::critical(this, tr("导出失败"), tr("导出SVG文件时发生错误，请检查文件路径和权限。"));
+    }
+}
+
+void MainWindow::importFromSvg()
+{
+    if (!m_drawingArea) return;
+    
+    // 打开文件选择对话框
+    QString filePath = QFileDialog::getOpenFileName(
+        this,
+        tr("从SVG导入"),
+        QDir::homePath(),
+        tr("SVG文件 (*.svg)"));
+    
+    // 如果用户取消了对话框，则返回
+    if (filePath.isEmpty()) {
+        return;
+    }
+    
+    // 提示用户确认是否要导入
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this, 
+        tr("确认导入"), 
+        tr("导入SVG将清除当前画布上的所有内容，是否继续？"),
+        QMessageBox::Yes | QMessageBox::No
+    );
+    
+    if (reply == QMessageBox::No) {
+        return;
+    }
+    
+    // 调用绘图区域的导入方法
+    bool success = m_drawingArea->importFromSvg(filePath);
+    
+    // 显示导入结果提示
+    if (success) {
+        QMessageBox::information(this, tr("导入成功"), tr("SVG文件已成功导入！"));
+    } else {
+        QMessageBox::critical(this, tr("导入失败"), tr("导入SVG文件时发生错误，请确保文件格式正确。"));
     }
 }
 
