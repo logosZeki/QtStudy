@@ -1802,12 +1802,13 @@ bool DrawingArea::exportToSvg(const QString &filePath)
         shapesMetadata += QString(" text=\"%1\"").arg(shape->text().toHtmlEscaped());
         
         // 添加字体属性
-        shapesMetadata += QString(" fontFamily=\"%1\" fontSize=\"%2\" fontBold=\"%3\" fontItalic=\"%4\" fontColor=\"%5\"")
+        shapesMetadata += QString(" fontFamily=\"%1\" fontSize=\"%2\" fontBold=\"%3\" fontItalic=\"%4\" fontColor=\"%5\" fontUnderline=\"%6\"")
                                .arg(shape->fontFamily())
                                .arg(shape->fontSize())
                                .arg(shape->isFontBold() ? "true" : "false")
                                .arg(shape->isFontItalic() ? "true" : "false")
-                               .arg(shape->fontColor().name());
+                               .arg(shape->fontColor().name())
+                               .arg(shape->isFontUnderline() ? "true" : "false");
         
         shapesMetadata += " />";
     }
@@ -2006,6 +2007,9 @@ bool DrawingArea::importFromSvg(const QString &filePath)
                     
                     bool isItalic = (shapeElement.attribute("fontItalic") == "true");
                     newShape->setFontItalic(isItalic);
+                    
+                    bool isUnderline = (shapeElement.attribute("fontUnderline") == "true");
+                    newShape->setFontUnderline(isUnderline);
                     
                     QString fontColor = shapeElement.attribute("fontColor");
                     if (!fontColor.isEmpty()) {
@@ -2371,6 +2375,12 @@ bool DrawingArea::importFromSvg(const QString &filePath)
                 
                 if (fontStyle == "italic") {
                     closestShape->setFontItalic(true);
+                }
+                
+                // 检查是否有文本装饰属性（下划线）
+                QString textDecoration = textElement.attribute("text-decoration");
+                if (textDecoration.contains("underline")) {
+                    closestShape->setFontUnderline(true);
                 }
                 
                 // 设置文本颜色
