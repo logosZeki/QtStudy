@@ -249,7 +249,7 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
         painter.setRenderHint(QPainter::Antialiasing);
         
         // 绘制形状但不绘制背景
-        painter.setPen(QPen(Qt::black, 1));
+        painter.setPen(QPen(Qt::black, 1.5));
         painter.setBrush(QBrush(QColor(255, 255, 255)));
 
         // 调整tempRect的位置，确保它在更大的pixmap中居中

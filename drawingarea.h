@@ -81,6 +81,10 @@ public:
     void setSelectedShapeFontColor(const QColor& color);
     void setSelectedShapeTextAlignment(Qt::Alignment alignment);
     
+    // 图形颜色设置方法
+    void setSelectedShapeFillColor(const QColor& color);
+    void setSelectedShapeLineColor(const QColor& color);
+    
     // 导出功能
     bool exportToPng(const QString &filePath);
     // SVG导出与导入功能
@@ -92,6 +96,8 @@ signals:
     void selectionChanged();
     void shapeSelectionChanged(bool hasSelection);
     void fontColorChanged(const QColor& color);
+    void fillColorChanged(const QColor& color);
+    void lineColorChanged(const QColor& color);
     void scaleChanged(qreal scale);  // 新增的缩放比例变化信号
     void shapesCountChanged(int count);  // 新增的图形数量变化信号
     

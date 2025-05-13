@@ -43,6 +43,11 @@ private slots:
     void onAlignmentChanged(int index);
     void updateFontColorButton(const QColor& color);
     
+    // 填充颜色和线条颜色按钮槽函数
+    void onFillColorButtonClicked();
+    void onLineColorButtonClicked();
+    void updateColorButtons();
+    
     // 导出功能相关槽函数
     void exportAsPng();
     // SVG导出与导入功能相关槽函数

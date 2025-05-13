@@ -35,6 +35,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_drawingArea, &DrawingArea::scaleChanged, this, &MainWindow::updateZoomSlider);
     connect(m_drawingArea, &DrawingArea::shapesCountChanged, this, &MainWindow::updateStatusBarInfo);
     
+    // 连接填充颜色和线条颜色变化信号到更新按钮状态槽
+    connect(m_drawingArea, &DrawingArea::fillColorChanged, this, &MainWindow::updateColorButtons);
+    connect(m_drawingArea, &DrawingArea::lineColorChanged, this, &MainWindow::updateColorButtons);
+    connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateColorButtons);
+    
     // 设置DrawingArea初始缩放比例
     updateZoomSlider();
     
@@ -267,28 +272,34 @@ void MainWindow::createMainToolbar()
     
     m_mainToolbar->addSeparator();
 
-    // 添加填充颜色按钮
+    // 创建填充颜色按钮
     m_fillColorButton = new QPushButton(tr("填充颜色"));
     m_fillColorButton->setToolTip(tr("填充颜色"));
     m_fillColorButton->setFixedWidth(100);
     m_mainToolbar->addWidget(m_fillColorButton);
-    m_mainToolbar->addSeparator();
     
+    // 连接填充颜色按钮的点击信号
+    connect(m_fillColorButton, &QPushButton::clicked, this, &MainWindow::onFillColorButtonClicked);
+    
+    m_mainToolbar->addSeparator();
+
     // 添加缩放控件
     QComboBox* zoomCombo = new QComboBox();
     zoomCombo->addItem(tr("100%"));
     zoomCombo->setFixedWidth(70);
     m_mainToolbar->addWidget(zoomCombo);
     
-    
-
-    // 添加线条颜色按钮
+    // 创建线条颜色按钮
     m_lineColorButton = new QPushButton(tr("线条颜色"));
     m_lineColorButton->setToolTip(tr("线条颜色"));
     m_lineColorButton->setFixedWidth(100);
     m_mainToolbar->addWidget(m_lineColorButton);
-    m_mainToolbar->addSeparator();
     
+    // 连接线条颜色按钮的点击信号
+    connect(m_lineColorButton, &QPushButton::clicked, this, &MainWindow::onLineColorButtonClicked);
+    
+    m_mainToolbar->addSeparator();
+
     QComboBox* lineWidthCombo = new QComboBox();
     lineWidthCombo->addItem(tr("线条粗度"));
     lineWidthCombo->setFixedWidth(90);
@@ -410,10 +421,9 @@ void MainWindow::applyPageSettings()
 // 实现字体相关的槽函数
 void MainWindow::updateFontControls()
 {
-    // 获取当前选中的图形
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     
-    // 根据是否有选中图形来启用或禁用字体控件
+    // 启用或禁用控件，取决于是否有选中的图形
     bool hasSelection = (selectedShape != nullptr);
     m_fontCombo->setEnabled(hasSelection);
     m_fontSizeCombo->setEnabled(hasSelection);
@@ -422,6 +432,10 @@ void MainWindow::updateFontControls()
     m_underlineAction->setEnabled(hasSelection);
     m_fontColorButton->setEnabled(hasSelection);
     m_alignCombo->setEnabled(hasSelection);
+    
+    // 也更新填充颜色和线条颜色按钮的状态
+    m_fillColorButton->setEnabled(hasSelection);
+    m_lineColorButton->setEnabled(hasSelection);
     
     // 如果有选中图形，更新控件显示当前字体设置
     if (hasSelection) {
@@ -749,4 +763,49 @@ void MainWindow::onZoomSliderValueChanged(int value)
         double zoomPercent = newScale * 100.0;
         m_zoomLabel->setText(tr("缩放比例: %1%").arg(zoomPercent, 0, 'f', 1));
     }
+}
+
+// 填充颜色按钮的点击槽函数
+void MainWindow::onFillColorButtonClicked()
+{
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    if (selectedShape) {
+        QColor initialColor = selectedShape->fillColor();
+        QColor color = QColorDialog::getColor(initialColor, this, tr("选择填充颜色"));
+        
+        if (color.isValid()) {
+            m_drawingArea->setSelectedShapeFillColor(color);
+        }
+    }
+}
+
+// 线条颜色按钮的点击槽函数
+void MainWindow::onLineColorButtonClicked()
+{
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    if (selectedShape) {
+        QColor initialColor = selectedShape->lineColor();
+        QColor color = QColorDialog::getColor(initialColor, this, tr("选择线条颜色"));
+        
+        if (color.isValid()) {
+            m_drawingArea->setSelectedShapeLineColor(color);
+        }
+    }
+}
+
+// 更新颜色按钮的显示
+void MainWindow::updateColorButtons()
+{
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    if (!selectedShape) {
+        return;
+    }
+    
+    // 可以在这里添加更新按钮样式或预览颜色的代码
+    // 例如，可以设置按钮的背景色为当前选中的颜色
+    QString fillColorStyle = QString("QPushButton { background-color: %1; }").arg(selectedShape->fillColor().name());
+    m_fillColorButton->setStyleSheet(fillColorStyle);
+    
+    QString lineColorStyle = QString("QPushButton { background-color: %1; }").arg(selectedShape->lineColor().name());
+    m_lineColorButton->setStyleSheet(lineColorStyle);
 }

@@ -10,6 +10,8 @@ Shape::Shape(const QString& type, const int& basis)
     // 初始化默认字体为微软雅黑，12px
     m_font = QFont("微软雅黑", 12);
     m_fontColor = Qt::black;
+    m_fillColor = Qt::white;  // 默认填充颜色为白色
+    m_lineColor = Qt::black;  // 默认线条颜色为黑色
     m_textAlignment = Qt::AlignCenter;
     // m_rect will be initialized in derived classes
 }
@@ -319,8 +321,8 @@ RectangleShape::RectangleShape(const int& basis)
 
 void RectangleShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     painter->drawRect(m_rect);
     
     // 绘制文本
@@ -346,8 +348,8 @@ CircleShape::CircleShape(const int& basis)
 
 void CircleShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     
     // 直接绘制圆形，不需要额外计算
     painter->drawEllipse(m_rect);
@@ -401,8 +403,8 @@ PentagonShape::PentagonShape(const int& basis)
 
 void PentagonShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     
     // 创建五边形的点
     QPolygon polygon = createPentagonPolygon();
@@ -503,8 +505,8 @@ EllipseShape::EllipseShape(const int& basis)
 
 void EllipseShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     painter->drawEllipse(m_rect);
     
     // 绘制文本
@@ -555,8 +557,8 @@ RoundedRectangleShape::RoundedRectangleShape(const int& basis)
 
 void RoundedRectangleShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     painter->drawRoundedRect(m_rect, m_radius, m_radius);
     
     // 绘制文本
@@ -584,8 +586,8 @@ DiamondShape::DiamondShape(const int& basis)
 
 void DiamondShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     
     // 创建菱形的点
     QPolygon polygon = createDiamondPolygon();
@@ -670,8 +672,8 @@ HexagonShape::HexagonShape(const int& basis)
 
 void HexagonShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     
     // 创建六边形的点
     QPolygon polygon = createHexagonPolygon();
@@ -763,8 +765,8 @@ OctagonShape::OctagonShape(const int& basis)
 
 void OctagonShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     
     // 创建八边形的点
     QPolygon polygon = createOctagonPolygon();
@@ -866,8 +868,8 @@ CloudShape::CloudShape(const int& basis)
 
 void CloudShape::paint(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::black, 2));
-    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(m_lineColor, 2));
+    painter->setBrush(QBrush(m_fillColor));
     
     // 绘制云朵形状
     cloudPath= createCloudPath();
@@ -1087,4 +1089,24 @@ Qt::Alignment Shape::textAlignment() const
 QFont Shape::getFont() const
 {
     return m_font;
+}
+
+void Shape::setFillColor(const QColor& color)
+{
+    m_fillColor = color;
+}
+
+QColor Shape::fillColor() const
+{
+    return m_fillColor;
+}
+
+void Shape::setLineColor(const QColor& color)
+{
+    m_lineColor = color;
+}
+
+QColor Shape::lineColor() const
+{
+    return m_lineColor;
 }

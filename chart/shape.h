@@ -131,6 +131,14 @@ public:
     
     QFont getFont() const;
 
+    // 填充颜色相关方法
+    void setFillColor(const QColor& color);
+    QColor fillColor() const;
+    
+    // 线条颜色相关方法
+    void setLineColor(const QColor& color);
+    QColor lineColor() const;
+
 protected:
     QString m_type;
     QRect m_rect;
@@ -138,6 +146,8 @@ protected:
     bool m_editing;  // 标记是否处于编辑状态
     QFont m_font;    // 存储字体
     QColor m_fontColor;       // 存储字体颜色
+    QColor m_fillColor;       // 存储填充颜色
+    QColor m_lineColor;       // 存储线条颜色
     Qt::Alignment m_textAlignment; // 存储文本对齐方式
     
     // 手柄大小常量

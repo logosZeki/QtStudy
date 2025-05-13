@@ -2239,5 +2239,25 @@ bool DrawingArea::importFromSvg(const QString &filePath)
     return true;
 }
 
+// 设置选中图形的填充颜色
+void DrawingArea::setSelectedShapeFillColor(const QColor& color)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setFillColor(color);
+        update();  // 更新绘图区域
+        emit fillColorChanged(color);
+    }
+}
+
+// 设置选中图形的线条颜色
+void DrawingArea::setSelectedShapeLineColor(const QColor& color)
+{
+    if (m_selectedShape) {
+        m_selectedShape->setLineColor(color);
+        update();  // 更新绘图区域
+        emit lineColorChanged(color);
+    }
+}
+
 
 
