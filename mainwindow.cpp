@@ -266,6 +266,13 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addWidget(m_alignCombo);
     
     m_mainToolbar->addSeparator();
+
+    // 添加填充颜色按钮
+    m_fillColorButton = new QPushButton(tr("填充颜色"));
+    m_fillColorButton->setToolTip(tr("填充颜色"));
+    m_fillColorButton->setFixedWidth(100);
+    m_mainToolbar->addWidget(m_fillColorButton);
+    m_mainToolbar->addSeparator();
     
     // 添加缩放控件
     QComboBox* zoomCombo = new QComboBox();
@@ -273,13 +280,14 @@ void MainWindow::createMainToolbar()
     zoomCombo->setFixedWidth(70);
     m_mainToolbar->addWidget(zoomCombo);
     
-    m_mainToolbar->addSeparator();
     
-    // 添加样式设置
-    QComboBox* lineColorCombo = new QComboBox();
-    lineColorCombo->addItem(tr("线条颜色"));
-    lineColorCombo->setFixedWidth(90);
-    m_mainToolbar->addWidget(lineColorCombo);
+
+    // 添加线条颜色按钮
+    m_lineColorButton = new QPushButton(tr("线条颜色"));
+    m_lineColorButton->setToolTip(tr("线条颜色"));
+    m_lineColorButton->setFixedWidth(100);
+    m_mainToolbar->addWidget(m_lineColorButton);
+    m_mainToolbar->addSeparator();
     
     QComboBox* lineWidthCombo = new QComboBox();
     lineWidthCombo->addItem(tr("线条粗度"));

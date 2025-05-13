@@ -384,8 +384,6 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
             qreal scaleX = targetRect.width() / protoWidth;
             qreal scaleY = targetRect.height() / protoHeight;
 
-            // 计算变换矩阵的平移分量 (dx, dy)
-            // 使得原型路径的 (protoX, protoY) 点在缩放后映射到 targetRect.left() 和 targetRect.top()
             qreal final_dx = targetRect.left() - protoX * scaleX;
             qreal final_dy = targetRect.top() - protoY * scaleY;
 
@@ -401,7 +399,7 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
         }
         
         drag->setPixmap(pixmap);
-        // 设置热点为pixmap的中心点，这样鼠标将位于拖动图形的中心
+  
         drag->setHotSpot(QPoint(dragSize.width()/2, dragSize.height()/2));
         
         drag->exec(Qt::CopyAction);

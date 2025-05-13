@@ -93,6 +93,8 @@ private:
     QAction *m_italicAction;
     QAction *m_underlineAction;
     QPushButton *m_fontColorButton;
+    QPushButton  *m_fillColorButton;
+    QPushButton *m_lineColorButton;
     QComboBox *m_alignCombo;
     
     // 状态栏控件
