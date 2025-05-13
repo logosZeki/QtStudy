@@ -1716,6 +1716,114 @@ void DrawingArea::setSelectedShapeTextAlignment(Qt::Alignment alignment)
     }
 }
 
+
+int DrawingArea::getShapesCount() const
+{
+    return m_shapes.size() + m_connections.size();
+}
+
+void DrawingArea::setDrawingAreaSize(const QSize &size)
+{
+    // 如果尺寸没有变化，直接返回
+    if (size == m_drawingAreaSize)
+        return;
+    
+    // 记录滚动条的相对位置
+    QScrollArea* scrollArea = nullptr;
+    QWidget* parent = parentWidget();
+    while (parent) {
+        scrollArea = qobject_cast<QScrollArea*>(parent);
+        if (scrollArea)
+            break;
+        parent = parent->parentWidget();
+    }
+    
+    QPointF relativePos;
+    if (scrollArea) {
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        // 计算相对位置(0.0-1.0范围)，表示滚动条的百分比位置
+        double hRatio = (hBar->maximum() > 0) ? 
+                       (double)hBar->value() / hBar->maximum() : 0.5;
+        double vRatio = (vBar->maximum() > 0) ? 
+                       (double)vBar->value() / vBar->maximum() : 0.5;
+        relativePos = QPointF(hRatio, vRatio);
+    }
+    
+    // 更新绘图区域尺寸
+    m_drawingAreaSize = size;
+    
+    // 根据缩放比例计算新的窗口部件尺寸
+    QSize newWidgetSize(m_drawingAreaSize.width() * 3 * m_scale, 
+                       m_drawingAreaSize.height() * 3 * m_scale);
+    
+    // 使用setFixedSize设置新尺寸，强制更新布局
+    setFixedSize(newWidgetSize);
+    
+    // 重新设置滚动条位置，保持相对位置不变
+    if (scrollArea) {
+        // 强制立即更新滚动区域几何布局
+        scrollArea->updateGeometry();
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        // 根据相对位置设置新的滚动条值
+        hBar->setValue(qRound(relativePos.x() * hBar->maximum()));
+        vBar->setValue(qRound(relativePos.y() * vBar->maximum()));
+    }
+}
+
+//第一次执行程序时候居中，调整尺寸的时候不要让滚动条居中
+void DrawingArea::centerDrawingArea()
+{
+    // 查找父滚动区域
+    QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parentWidget());
+    if (!scrollArea) {
+        // 如果没有找到直接父滚动区域，尝试在整个父窗口层次结构中查找
+        QWidget* parent = parentWidget();
+        while (parent) {
+            scrollArea = qobject_cast<QScrollArea*>(parent);
+            if (scrollArea) {
+                break;
+            }
+            parent = parent->parentWidget();
+        }
+    }
+    
+    if (scrollArea) {
+        // 获取水平和垂直滚动条
+        QScrollBar* hBar = scrollArea->horizontalScrollBar();
+        QScrollBar* vBar = scrollArea->verticalScrollBar();
+        
+        if (hBar && vBar) {
+            // 计算绘图区域的总尺寸（Widget尺寸）
+            QSize totalSize = size();
+            //qDebug() << "totalSize:" << totalSize;
+            // 计算滚动区域视口的尺寸
+            QSize viewportSize = scrollArea->viewport()->size();
+            //qDebug() << "viewportSize:" << viewportSize;
+            
+            // 计算需要滚动的位置，使绘图区域居中
+            // 这是将widget的中心位置与viewport的中心位置对齐所需的滚动值
+            int hValue = (totalSize.width() - viewportSize.width()) / 2;
+            int vValue = (totalSize.height() - viewportSize.height()) / 2;
+            
+            // 确保滚动值在有效范围内
+            hValue = qMax(0, qMin(hValue, hBar->maximum()));
+            vValue = qMax(0, qMin(vValue, vBar->maximum()));
+            
+            // 设置滚动条位置
+            hBar->setValue(hValue);
+            vBar->setValue(vValue);
+        }
+    }
+    
+    update();
+}
+
+
+
 // 实现导出为PNG的功能
 bool DrawingArea::exportToPng(const QString &filePath)
 {
@@ -2397,110 +2505,6 @@ bool DrawingArea::importFromSvg(const QString &filePath)
     return true;
 }
 
-int DrawingArea::getShapesCount() const
-{
-    return m_shapes.size() + m_connections.size();
-}
-
-void DrawingArea::setDrawingAreaSize(const QSize &size)
-{
-    // 如果尺寸没有变化，直接返回
-    if (size == m_drawingAreaSize)
-        return;
-    
-    // 记录滚动条的相对位置
-    QScrollArea* scrollArea = nullptr;
-    QWidget* parent = parentWidget();
-    while (parent) {
-        scrollArea = qobject_cast<QScrollArea*>(parent);
-        if (scrollArea)
-            break;
-        parent = parent->parentWidget();
-    }
-    
-    QPointF relativePos;
-    if (scrollArea) {
-        QScrollBar* hBar = scrollArea->horizontalScrollBar();
-        QScrollBar* vBar = scrollArea->verticalScrollBar();
-        
-        // 计算相对位置(0.0-1.0范围)，表示滚动条的百分比位置
-        double hRatio = (hBar->maximum() > 0) ? 
-                       (double)hBar->value() / hBar->maximum() : 0.5;
-        double vRatio = (vBar->maximum() > 0) ? 
-                       (double)vBar->value() / vBar->maximum() : 0.5;
-        relativePos = QPointF(hRatio, vRatio);
-    }
-    
-    // 更新绘图区域尺寸
-    m_drawingAreaSize = size;
-    
-    // 根据缩放比例计算新的窗口部件尺寸
-    QSize newWidgetSize(m_drawingAreaSize.width() * 3 * m_scale, 
-                       m_drawingAreaSize.height() * 3 * m_scale);
-    
-    // 使用setFixedSize设置新尺寸，强制更新布局
-    setFixedSize(newWidgetSize);
-    
-    // 重新设置滚动条位置，保持相对位置不变
-    if (scrollArea) {
-        // 强制立即更新滚动区域几何布局
-        scrollArea->updateGeometry();
-        QScrollBar* hBar = scrollArea->horizontalScrollBar();
-        QScrollBar* vBar = scrollArea->verticalScrollBar();
-        
-        // 根据相对位置设置新的滚动条值
-        hBar->setValue(qRound(relativePos.x() * hBar->maximum()));
-        vBar->setValue(qRound(relativePos.y() * vBar->maximum()));
-    }
-}
-
-//todo：第一次执行程序时候居中，调整尺寸的时候不要让滚动条居中
-void DrawingArea::centerDrawingArea()
-{
-    // 查找父滚动区域
-    QScrollArea* scrollArea = qobject_cast<QScrollArea*>(parentWidget());
-    if (!scrollArea) {
-        // 如果没有找到直接父滚动区域，尝试在整个父窗口层次结构中查找
-        QWidget* parent = parentWidget();
-        while (parent) {
-            scrollArea = qobject_cast<QScrollArea*>(parent);
-            if (scrollArea) {
-                break;
-            }
-            parent = parent->parentWidget();
-        }
-    }
-    
-    if (scrollArea) {
-        // 获取水平和垂直滚动条
-        QScrollBar* hBar = scrollArea->horizontalScrollBar();
-        QScrollBar* vBar = scrollArea->verticalScrollBar();
-        
-        if (hBar && vBar) {
-            // 计算绘图区域的总尺寸（Widget尺寸）
-            QSize totalSize = size();
-            //qDebug() << "totalSize:" << totalSize;
-            // 计算滚动区域视口的尺寸
-            QSize viewportSize = scrollArea->viewport()->size();
-            //qDebug() << "viewportSize:" << viewportSize;
-            
-            // 计算需要滚动的位置，使绘图区域居中
-            // 这是将widget的中心位置与viewport的中心位置对齐所需的滚动值
-            int hValue = (totalSize.width() - viewportSize.width()) / 2;
-            int vValue = (totalSize.height() - viewportSize.height()) / 2;
-            
-            // 确保滚动值在有效范围内
-            hValue = qMax(0, qMin(hValue, hBar->maximum()));
-            vValue = qMax(0, qMin(vValue, vBar->maximum()));
-            
-            // 设置滚动条位置
-            hBar->setValue(hValue);
-            vBar->setValue(vValue);
-        }
-    }
-    
-    update();
-}
 
 // 尝试将连接线连接到最近的图形连接点
 void DrawingArea::tryConnectLineToShapes(Connection* connection)
