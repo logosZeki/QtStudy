@@ -63,11 +63,6 @@ private slots:
     void updateStatusBarInfo();
     void onZoomSliderValueChanged(int value);
     void updateZoomSlider();
-    
-    // 添加撤销和重做相关的槽函数
-    void onUndoActionTriggered();
-    void onRedoActionTriggered();
-    void updateUndoRedoActions();
 
 private:
     void createTopToolbar();
@@ -122,10 +117,6 @@ private:
     QLabel *m_shapesCountLabel;
     QLabel *m_zoomLabel;
     QSlider *m_zoomSlider;
-    
-    // 撤销和重做按钮
-    QAction *m_undoAction;
-    QAction *m_redoAction;
 };
 
 #endif // MAINWINDOW_H

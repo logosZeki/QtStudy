@@ -12,7 +12,6 @@
 #include <QMessageBox>
 #include <QDateTime>
 #include <QDir>
-#include <QShortcut>  // 添加快捷键支持
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), m_pageSettingDialog(nullptr)
@@ -41,10 +40,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_drawingArea, &DrawingArea::lineColorChanged, this, &MainWindow::updateColorButtons);
     connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateColorButtons);
     
-    // 连接撤销和重做状态变化信号
-    connect(m_drawingArea, &DrawingArea::undoAvailable, this, &MainWindow::updateUndoRedoActions);
-    connect(m_drawingArea, &DrawingArea::redoAvailable, this, &MainWindow::updateUndoRedoActions);
-    
     // 设置DrawingArea初始缩放比例
     updateZoomSlider();
     
@@ -53,19 +48,6 @@ MainWindow::MainWindow(QWidget *parent)
     
     // 初始化状态栏信息
     updateStatusBarInfo();
-    
-    // 初始化撤销和重做按钮状态
-    updateUndoRedoActions();
-    
-    // 创建撤销和重做的快捷键
-    QShortcut* undoShortcut = new QShortcut(QKeySequence("Ctrl+Z"), this);
-    connect(undoShortcut, &QShortcut::activated, this, &MainWindow::onUndoActionTriggered);
-    
-    QShortcut* redoShortcut1 = new QShortcut(QKeySequence("Ctrl+Shift+Z"), this);
-    connect(redoShortcut1, &QShortcut::activated, this, &MainWindow::onRedoActionTriggered);
-    
-    QShortcut* redoShortcut2 = new QShortcut(QKeySequence("Ctrl+Y"), this);
-    connect(redoShortcut2, &QShortcut::activated, this, &MainWindow::onRedoActionTriggered);
 }
 
 MainWindow::~MainWindow()
@@ -213,8 +195,8 @@ void MainWindow::createMainToolbar()
     m_mainLayout->addWidget(m_mainToolbar);
     
     // 添加撤销和重做按钮
-    m_undoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowBack), tr("撤销"));
-    m_redoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowForward), tr("前进"));
+    QAction* undoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowBack), tr("撤销"));
+    QAction* redoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowForward), tr("重做"));
     
     m_mainToolbar->addSeparator();
     
@@ -964,30 +946,5 @@ void MainWindow::onLineStyleChanged(int index)
         
         // 更新绘图区域
         m_drawingArea->update();
-    }
-}
-
-// 添加撤销操作的槽函数
-void MainWindow::onUndoActionTriggered()
-{
-    if (m_drawingArea->canUndo()) {
-        m_drawingArea->undo();
-    }
-}
-
-// 添加重做操作的槽函数
-void MainWindow::onRedoActionTriggered()
-{
-    if (m_drawingArea->canRedo()) {
-        m_drawingArea->redo();
-    }
-}
-
-// 更新撤销和重做按钮的状态
-void MainWindow::updateUndoRedoActions()
-{
-    if (m_undoAction && m_redoAction) {
-        m_undoAction->setEnabled(m_drawingArea->canUndo());
-        m_redoAction->setEnabled(m_drawingArea->canRedo());
     }
 }

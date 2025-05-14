@@ -18,8 +18,6 @@
 #include "chart/customtextedit.h"
 #include "chart/shape.h"
 #include "chart/connection.h"
-#include "util/command.h"
-#include "util/shapecommands.h"
 
 
 
