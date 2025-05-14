@@ -876,7 +876,8 @@ void CloudShape::paint(QPainter* painter)
 {
     painter->save();
     setupPainter(painter);
-    painter->drawPath(createCloudPath());
+    m_cloudPath= createCloudPath();
+    painter->drawPath(m_cloudPath);
     painter->restore();
     
     // 如果有文本，绘制文本
