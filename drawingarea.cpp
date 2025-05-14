@@ -1287,7 +1287,9 @@ void DrawingArea::pasteShape(const QPoint &pos)
         
         // 如果提供了鼠标位置，则使用鼠标位置
         if (!pos.isNull()) {
-            rect.moveCenter(pos);
+            // 修复：使用mapToScene将视图坐标转换为场景坐标
+            QPoint scenePos = mapToScene(pos);
+            rect.moveCenter(scenePos);
         } else {
             // 否则使用默认偏移（保持向前兼容）
             rect.translate(20, 20);
