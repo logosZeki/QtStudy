@@ -262,7 +262,7 @@ void MainWindow::createMainToolbar()
     m_mainToolbar = new QToolBar(this);
     m_mainToolbar->setMovable(false);
     m_mainToolbar->setIconSize(QSize(16, 16));
-    m_mainToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
+    m_mainToolbar->setStyleSheet("QToolBar { background-color: rgb(255,255,255); border-bottom: 1px solid #e0e0e0; padding: 4px; min-height: 44px; }");
     m_mainLayout->addWidget(m_mainToolbar);
     
     // 添加左侧弹性空间实现水平居中
@@ -461,7 +461,7 @@ void MainWindow::createArrangeToolbar()
     m_arrangeToolbar = new QToolBar(this);
     m_arrangeToolbar->setMovable(false);
     m_arrangeToolbar->setIconSize(QSize(16, 16));
-    m_arrangeToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
+    m_arrangeToolbar->setStyleSheet("QToolBar { background-color: rgb(255,255,255); border-bottom: 1px solid #e0e0e0; padding: 4px; min-height: 44px; }");
     m_mainLayout->addWidget(m_arrangeToolbar);
     
     // 添加左侧弹性空间实现水平居中
@@ -490,7 +490,7 @@ void MainWindow::createExportAndImportToolbar()
     m_exportAndImportToolbar = new QToolBar(this);
     m_exportAndImportToolbar->setMovable(false);
     m_exportAndImportToolbar->setIconSize(QSize(16, 16));
-    m_exportAndImportToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
+    m_exportAndImportToolbar->setStyleSheet("QToolBar { background-color: rgb(255,255,255); border-bottom: 1px solid #e0e0e0; padding: 4px; min-height: 44px; }");
     m_mainLayout->addWidget(m_exportAndImportToolbar);
     
     // 添加左侧弹性空间实现水平居中
