@@ -9,6 +9,7 @@
 #include <QDebug>
 #include <QFont>  // 添加QFont头文件
 #include <QColor>
+#include <QPainterPath>
 #define _USE_MATH_DEFINES
 #include <cmath>
 #ifndef M_PI
@@ -333,12 +334,12 @@ public:
         QPointF& outBottommost, 
         QPointF& outLeftmost, 
         QPointF& outRightmost,
-        int numberOfSamples = 2000) const;
+        int numberOfSamples ) const;
     // 向工厂注册
     static void registerShape();
 private:
     QPainterPath createCloudPath();
-    QPainterPath cloudPath;
+    QPainterPath m_cloudPath;
 };
 
 #endif // SHAPE_H

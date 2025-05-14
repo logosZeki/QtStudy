@@ -869,7 +869,7 @@ CloudShape::CloudShape(const int& basis)
     int width = basis * 1.5;
     int height = basis;
     m_rect = QRect(0, 0, width, height);
-    cloudPath= createCloudPath();
+    m_cloudPath= createCloudPath();
 }
 
 void CloudShape::paint(QPainter* painter)
@@ -894,14 +894,14 @@ QRect CloudShape::textRect() const
 bool CloudShape::contains(const QPoint& point) const
 {
     // 简化云朵的形状判断，使用外接矩形
-    return cloudPath.contains(QPointF(point));
+    return m_cloudPath.contains(QPointF(point));
 }
 
 QPoint CloudShape::getConnectionPoint(ConnectionPoint::Position position) const
 {
 
     QPointF topmost, bottommost, leftmost, rightmost;
-    findExtremePointsOnPath(cloudPath, topmost, bottommost, 
+    findExtremePointsOnPath(m_cloudPath, topmost, bottommost, 
                                       leftmost, rightmost, 
                                       60);
     switch (position) {

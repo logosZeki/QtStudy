@@ -122,17 +122,17 @@ void MainWindow::createTopToolbar()
     m_mainLayout->addWidget(m_topToolbar);
 
     // 添加常用按钮
-    QAction* homeAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DirHomeIcon), tr("首页"));
-    QAction* newAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("新建"));
-    QAction* menuAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_TitleBarMenuButton), tr("菜单"));
+    QAction* homeAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DirHomeIcon), tr("Home page"));
+    QAction* newAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("newly built"));
+    QAction* menuAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_TitleBarMenuButton), tr("Menu"));
     
     m_topToolbar->addSeparator();
     
     // 添加文件名标签
-    QLabel* fileNameLabel = new QLabel(tr("未命名文件"));
+    QLabel* fileNameLabel = new QLabel(tr("Unnamed file"));
     m_topToolbar->addWidget(fileNameLabel);
     
-    QAction* starAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DialogApplyButton), tr("收藏"));
+    QAction* starAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DialogApplyButton), tr("Collection"));
     
     // 添加伸缩空间，保持后面的控件在右侧
     QWidget* spacer = new QWidget();
@@ -140,14 +140,14 @@ void MainWindow::createTopToolbar()
     m_topToolbar->addWidget(spacer);
     
     // 添加分享和用户按钮 - 使用确定存在的图标
-    QAction* shareAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("分享"));
-    QAction* userAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DesktopIcon), tr("用户"));
+    QAction* shareAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("Share"));
+    QAction* userAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DesktopIcon), tr("User"));
     
     // 创建标签栏
     m_tabBar = new QTabBar(this);
-    m_tabBar->addTab(tr("开始"));
-    m_tabBar->addTab(tr("排列"));
-    m_tabBar->addTab(tr("导出和导入"));
+    m_tabBar->addTab(tr("Start"));
+    m_tabBar->addTab(tr("Arrange"));
+    m_tabBar->addTab(tr("Export and Import"));
     m_tabBar->setExpanding(false);
     m_tabBar->setDocumentMode(true);
     m_tabBar->setDrawBase(false);
@@ -230,13 +230,13 @@ void MainWindow::createMainToolbar()
     
     // 添加常用格式按钮 - 使用纯文本代替不存在的图标
     m_boldAction = m_mainToolbar->addAction(tr("B"));
-    m_boldAction->setToolTip(tr("加粗"));
+    m_boldAction->setToolTip(tr("Bold"));
     m_boldAction->setFont(QFont("Arial", 9, QFont::Bold));
     m_boldAction->setCheckable(true);  // 设置为可选中状态
     m_boldAction->setEnabled(false);   // 初始状态下禁用
     
     m_italicAction = m_mainToolbar->addAction(tr("I"));
-    m_italicAction->setToolTip(tr("斜体"));
+    m_italicAction->setToolTip(tr("Italic"));
     QFont italicFont("Arial", 9);
     italicFont.setItalic(true);
     m_italicAction->setFont(italicFont);
@@ -244,7 +244,7 @@ void MainWindow::createMainToolbar()
     m_italicAction->setEnabled(false);   // 初始状态下禁用
     
     m_underlineAction = m_mainToolbar->addAction(tr("U"));
-    m_underlineAction->setToolTip(tr("下划线"));
+    m_underlineAction->setToolTip(tr("Underline"));
     QFont underlineFont("Arial", 9);
     underlineFont.setUnderline(true);
     m_underlineAction->setFont(underlineFont);
@@ -254,8 +254,8 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
     
     // 添加字体颜色按钮
-    m_fontColorButton = new QPushButton(tr("字体颜色"));
-    m_fontColorButton->setToolTip(tr("字体颜色"));
+    m_fontColorButton = new QPushButton(tr("FontColor"));
+    m_fontColorButton->setToolTip(tr("FontColor"));
     m_fontColorButton->setFixedWidth(100);
     m_fontColorButton->setEnabled(false);  // 初始状态下禁用
     m_mainToolbar->addWidget(m_fontColorButton);
@@ -263,9 +263,9 @@ void MainWindow::createMainToolbar()
 
     // 添加对齐设置
     m_alignCombo = new QComboBox();
-    m_alignCombo->addItem(tr("居中对齐"));
-    m_alignCombo->addItem(tr("左对齐"));
-    m_alignCombo->addItem(tr("右对齐"));
+    m_alignCombo->addItem(tr("Center Aligned"));
+    m_alignCombo->addItem(tr("Left Aligned"));
+    m_alignCombo->addItem(tr("Right Aligned"));
     m_alignCombo->setFixedWidth(90);
     m_alignCombo->setEnabled(false);  // 初始状态下禁用
     m_mainToolbar->addWidget(m_alignCombo);
@@ -273,8 +273,8 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
 
     // 创建填充颜色按钮
-    m_fillColorButton = new QPushButton(tr("填充颜色"));
-    m_fillColorButton->setToolTip(tr("填充颜色"));
+    m_fillColorButton = new QPushButton(tr("FillColor"));
+    m_fillColorButton->setToolTip(tr("FillColor"));
     m_fillColorButton->setFixedWidth(100);
     m_mainToolbar->addWidget(m_fillColorButton);
     
@@ -284,7 +284,7 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
 
     // 添加透明度组合框
-    QLabel* transparencyLabel = new QLabel(tr("透明度:"));
+    QLabel* transparencyLabel = new QLabel(tr("transparency:"));
     m_mainToolbar->addWidget(transparencyLabel);
     
     m_transparencyCombo = new QComboBox();
@@ -300,8 +300,8 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
     
     // 创建线条颜色按钮
-    m_lineColorButton = new QPushButton(tr("线条颜色"));
-    m_lineColorButton->setToolTip(tr("线条颜色"));
+    m_lineColorButton = new QPushButton(tr("LineColor"));
+    m_lineColorButton->setToolTip(tr("LineColor"));
     m_lineColorButton->setFixedWidth(100);
     m_mainToolbar->addWidget(m_lineColorButton);
     
@@ -311,7 +311,7 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
 
     // 添加线条粗细下拉框
-    QLabel* lineWidthLabel = new QLabel(tr("线条粗细:"));
+    QLabel* lineWidthLabel = new QLabel(tr("LineWidth:"));
     m_mainToolbar->addWidget(lineWidthLabel);
     
     m_lineWidthCombo = new QComboBox();
@@ -334,15 +334,15 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addWidget(m_lineWidthCombo);
     
     // 添加线条样式下拉框
-    QLabel* lineStyleLabel = new QLabel(tr("线条样式:"));
+    QLabel* lineStyleLabel = new QLabel(tr("LineStyle:"));
     m_mainToolbar->addWidget(lineStyleLabel);
     
     m_lineStyleCombo = new QComboBox();
     // 添加各种线条样式选项
-    m_lineStyleCombo->addItem(tr("实线"));
-    m_lineStyleCombo->addItem(tr("虚线 (短)"));
-    m_lineStyleCombo->addItem(tr("虚线 (长)"));
-    m_lineStyleCombo->addItem(tr("点划线"));
+    m_lineStyleCombo->addItem(tr("Solid line"));
+    m_lineStyleCombo->addItem(tr("Dashed line (short)"));
+    m_lineStyleCombo->addItem(tr("Dashed line (long)"));
+    m_lineStyleCombo->addItem(tr("Dashed line"));
     
     m_lineStyleCombo->setCurrentIndex(0); // 默认选择实线
     m_lineStyleCombo->setFixedWidth(90);
@@ -351,7 +351,7 @@ void MainWindow::createMainToolbar()
     
     // 添加页面设置按钮
     m_pageSettingButton = new QPushButton(tr("Page Setting"));
-    m_pageSettingButton->setToolTip(tr("页面设置"));
+    m_pageSettingButton->setToolTip(tr("Page Setting"));
     m_pageSettingButton->setFixedWidth(110);
     m_mainToolbar->addWidget(m_pageSettingButton);
 
@@ -385,13 +385,13 @@ void MainWindow::createArrangeToolbar()
     
 
     
-    QAction* bringToFrontAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("置于顶层"));
+    QAction* bringToFrontAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("Placed at the top"));
     m_arrangeToolbar->addSeparator();
-    QAction* sendToBackAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("置于底层"));
+    QAction* sendToBackAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("Placed at the bottom"));
     m_arrangeToolbar->addSeparator();
-    QAction* bringForwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("上移一层"));
+    QAction* bringForwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("Move up one level"));
     m_arrangeToolbar->addSeparator();
-    QAction* sendBackwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("下移一层"));
+    QAction* sendBackwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("Move down one level"));
     m_arrangeToolbar->addSeparator();
 }
 
@@ -661,9 +661,9 @@ void MainWindow::exportAsPng()
     
     // 显示导出结果提示
     if (success) {
-        QMessageBox::information(this, tr("导出成功"), tr("流程图已成功导出为PNG图片！"));
+        QMessageBox::information(this, tr("Export successful"), tr("Flowchart has been exported to PNG image successfully!"));
     } else {
-        QMessageBox::critical(this, tr("导出失败"), tr("导出PNG图片时发生错误，请检查文件路径和权限。"));
+        QMessageBox::critical(this, tr("Export failed"), tr("An error occurred while exporting the PNG image. Please check the file path and permissions."));
     }
 }
 
@@ -697,9 +697,9 @@ void MainWindow::exportAsSvg()
     
     // 显示导出结果提示
     if (success) {
-        QMessageBox::information(this, tr("导出成功"), tr("流程图已成功导出为SVG矢量图！"));
+        QMessageBox::information(this, tr("Export successful"), tr("Flowchart has been exported to SVG vector image successfully!"));
     } else {
-        QMessageBox::critical(this, tr("导出失败"), tr("导出SVG文件时发生错误，请检查文件路径和权限。"));
+        QMessageBox::critical(this, tr("Export failed"), tr("An error occurred while exporting the SVG file. Please check the file path and permissions."));
     }
 }
 
@@ -710,9 +710,9 @@ void MainWindow::importFromSvg()
     // 打开文件选择对话框
     QString filePath = QFileDialog::getOpenFileName(
         this,
-        tr("从SVG导入"),
+        tr("Import from SVG"),
         QDir::homePath(),
-        tr("SVG文件 (*.svg)"));
+        tr("SVG File(*.svg)"));
     
     // 如果用户取消了对话框，则返回
     if (filePath.isEmpty()) {
@@ -722,8 +722,8 @@ void MainWindow::importFromSvg()
     // 提示用户确认是否要导入
     QMessageBox::StandardButton reply = QMessageBox::question(
         this, 
-        tr("确认导入"), 
-        tr("导入SVG将清除当前画布上的所有内容，是否继续？"),
+        tr("Confirm import"), 
+        tr("Importing SVG will clear all content on the current canvas. Do you want to continue?"),
         QMessageBox::Yes | QMessageBox::No
     );
     
@@ -736,9 +736,9 @@ void MainWindow::importFromSvg()
     
     // 显示导入结果提示
     if (success) {
-        QMessageBox::information(this, tr("导入成功"), tr("SVG文件已成功导入！"));
+        QMessageBox::information(this, tr("Import successful"), tr("SVG file has been imported successfully!"));
     } else {
-        QMessageBox::critical(this, tr("导入失败"), tr("导入SVG文件时发生错误，请确保文件格式正确。"));
+        QMessageBox::critical(this, tr("Import failed"), tr("An error occurred while importing the SVG file. Please ensure the file format is correct."));
     }
 }
 
@@ -749,7 +749,7 @@ void MainWindow::createStatusBar()
     setStatusBar(m_statusBar);
     
     // 创建显示图形数量的标签
-    m_shapesCountLabel = new QLabel(tr("图形数量: 0"));
+    m_shapesCountLabel = new QLabel(tr("Number of shapes: 0"));
     m_statusBar->addWidget(m_shapesCountLabel);
     
     // 添加一个固定宽度的空白区域
@@ -758,7 +758,7 @@ void MainWindow::createStatusBar()
     m_statusBar->addWidget(spacer);
     
     // 创建显示缩放比例的标签
-    m_zoomLabel = new QLabel(tr("缩放比例: 100%"));
+    m_zoomLabel = new QLabel(tr("Zoom level: 100%"));
     m_statusBar->addWidget(m_zoomLabel);
     
     // 添加一个固定宽度的空白区域
@@ -788,11 +788,11 @@ void MainWindow::updateStatusBarInfo()
         int shapeCount = m_drawingArea->getShapesCount();
         
         // 更新图形数量标签
-        m_shapesCountLabel->setText(tr("图形数量: %1").arg(shapeCount));
+        m_shapesCountLabel->setText(tr("Number of shapes: %1").arg(shapeCount));
         
         // 更新缩放比例标签
         double zoomPercent = m_drawingArea->getScale() * 100.0;
-        m_zoomLabel->setText(tr("缩放比例: %1%").arg(zoomPercent, 0, 'f', 1));
+        m_zoomLabel->setText(tr("Zoom level: %1%").arg(zoomPercent, 0, 'f', 1));
     }
 }
 
@@ -815,7 +815,7 @@ void MainWindow::updateZoomSlider()
         
         // 更新缩放比例标签
         double zoomPercent = currentScale * 100.0;
-        m_zoomLabel->setText(tr("缩放比例: %1%").arg(zoomPercent, 0, 'f', 1));
+        m_zoomLabel->setText(tr("Zoom level: %1%").arg(zoomPercent, 0, 'f', 1));
     }
 }
 
@@ -834,7 +834,7 @@ void MainWindow::onZoomSliderValueChanged(int value)
         
         // 更新缩放比例标签
         double zoomPercent = newScale * 100.0;
-        m_zoomLabel->setText(tr("缩放比例: %1%").arg(zoomPercent, 0, 'f', 1));
+        m_zoomLabel->setText(tr("Zoom level: %1%").arg(zoomPercent, 0, 'f', 1));
     }
 }
 
@@ -844,7 +844,7 @@ void MainWindow::onFillColorButtonClicked()
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->fillColor();
-        QColor color = QColorDialog::getColor(initialColor, this, tr("选择填充颜色"));
+        QColor color = QColorDialog::getColor(initialColor, this, tr("Select fill color"));
         
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeFillColor(color);
@@ -858,7 +858,7 @@ void MainWindow::onLineColorButtonClicked()
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->lineColor();
-        QColor color = QColorDialog::getColor(initialColor, this, tr("选择线条颜色"));
+        QColor color = QColorDialog::getColor(initialColor, this, tr("Select line color"));
         
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeLineColor(color);

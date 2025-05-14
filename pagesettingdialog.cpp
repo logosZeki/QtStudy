@@ -97,10 +97,10 @@ void PageSettingDialog::setupUi()
     QVBoxLayout *settingsLayout = new QVBoxLayout();
     
     // 1. 背景颜色设置组
-    m_colorGroupBox = new QGroupBox(tr("页面背景颜色"));
+    m_colorGroupBox = new QGroupBox(tr("Page background color"));
     QGridLayout *colorLayout = new QGridLayout(m_colorGroupBox);
     
-    m_colorButton = new QPushButton(tr("选择颜色..."));
+    m_colorButton = new QPushButton(tr("Choose color..."));
     m_colorPreview = new QLabel();
     m_colorPreview->setFixedSize(40, 20);
     m_colorPreview->setAutoFillBackground(true);
@@ -109,21 +109,21 @@ void PageSettingDialog::setupUi()
     m_colorPreview->setPalette(pal);
     
     m_recentColorsCombo = new QComboBox();
-    m_recentColorsCombo->addItem(tr("最近使用的颜色"));
+    m_recentColorsCombo->addItem(tr("Recently used colors"));
     for (const QColor &color : m_recentColors) {
         QPixmap pixmap(16, 16);
         pixmap.fill(color);
         m_recentColorsCombo->addItem(QIcon(pixmap), color.name());
     }
     
-    colorLayout->addWidget(new QLabel(tr("当前颜色:")), 0, 0);
+    colorLayout->addWidget(new QLabel(tr("Current color:")), 0, 0);
     colorLayout->addWidget(m_colorPreview, 0, 1);
     colorLayout->addWidget(m_colorButton, 0, 2);
-    colorLayout->addWidget(new QLabel(tr("最近使用:")), 1, 0);
+    colorLayout->addWidget(new QLabel(tr("Recently used:")), 1, 0);
     colorLayout->addWidget(m_recentColorsCombo, 1, 1, 1, 2);
     
     // 2. 页面尺寸设置组
-    m_sizeGroupBox = new QGroupBox(tr("页面尺寸"));
+    m_sizeGroupBox = new QGroupBox(tr("Page size"));
     QGridLayout *sizeLayout = new QGridLayout(m_sizeGroupBox);
     
     // 替换下拉框为单选按钮组
@@ -131,8 +131,8 @@ void PageSettingDialog::setupUi()
     m_a3Radio = new QRadioButton(tr("A3"));
     m_a4Radio = new QRadioButton(tr("A4"));
     m_a5Radio = new QRadioButton(tr("A5"));
-    m_defaultSizeRadio = new QRadioButton(tr("默认尺寸"));
-    m_customSizeRadio = new QRadioButton(tr("自定义尺寸"));
+    m_defaultSizeRadio = new QRadioButton(tr("Default size"));
+    m_customSizeRadio = new QRadioButton(tr("Custom size"));
     
     m_paperSizeGroup->addButton(m_a3Radio, 0);
     m_paperSizeGroup->addButton(m_a4Radio, 1);
@@ -164,28 +164,28 @@ void PageSettingDialog::setupUi()
     paperSizeLayout->addWidget(m_a5Radio);
     paperSizeLayout->addWidget(m_defaultSizeRadio);
     
-    sizeLayout->addWidget(new QLabel(tr("预设尺寸:")), 0, 0);
+    sizeLayout->addWidget(new QLabel(tr("Preset size:")), 0, 0);
     sizeLayout->addLayout(paperSizeLayout, 0, 1, 1, 2);
     sizeLayout->addWidget(m_customSizeRadio, 1, 0, 1, 3);
-    sizeLayout->addWidget(new QLabel(tr("宽度:")), 2, 0);
+    sizeLayout->addWidget(new QLabel(tr("Width:")), 2, 0);
     sizeLayout->addWidget(m_widthSpin, 2, 1);
-    sizeLayout->addWidget(new QLabel(tr("高度:")), 3, 0);
+    sizeLayout->addWidget(new QLabel(tr("Height:")), 3, 0);
     sizeLayout->addWidget(m_heightSpin, 3, 1);
     sizeLayout->addWidget(m_pixelInfoLabel, 4, 0, 1, 3);
     
     // 保留旧的CheckBox，但隐藏，以便兼容旧代码
-    m_customSizeCheck = new QCheckBox(tr("自定义尺寸"));
+    m_customSizeCheck = new QCheckBox(tr("Custom size"));
     m_customSizeCheck->setVisible(false);
     connect(m_customSizeRadio, &QRadioButton::toggled, m_customSizeCheck, &QCheckBox::setChecked);
     
     // 3. 网格控制设置组
-    m_gridGroupBox = new QGroupBox(tr("页面网格控制"));
+    m_gridGroupBox = new QGroupBox(tr("Page grid control"));
     QGridLayout *gridLayout = new QGridLayout(m_gridGroupBox);
     
-    m_showGridCheck = new QCheckBox(tr("显示网格"));
+    m_showGridCheck = new QCheckBox(tr("Show grid"));
     m_showGridCheck->setChecked(m_showGrid);
     
-    m_gridColorButton = new QPushButton(tr("网格颜色..."));
+    m_gridColorButton = new QPushButton(tr("Grid color..."));
     m_gridColorPreview = new QLabel();
     m_gridColorPreview->setFixedSize(40, 20);
     m_gridColorPreview->setAutoFillBackground(true);
@@ -195,10 +195,10 @@ void PageSettingDialog::setupUi()
     
     // 替换网格大小Spinner为下拉框
     m_gridSizeCombo = new QComboBox();
-    m_gridSizeCombo->addItem(tr("小 (10 px)"), 10);
-    m_gridSizeCombo->addItem(tr("正常 (20 px)"), 20);
-    m_gridSizeCombo->addItem(tr("大 (30 px)"), 30);
-    m_gridSizeCombo->addItem(tr("很大 (40 px)"), 40);
+    m_gridSizeCombo->addItem(tr("Small (10 px)"), 10);
+    m_gridSizeCombo->addItem(tr("Normal (20 px)"), 20);
+    m_gridSizeCombo->addItem(tr("Large (30 px)"), 30);
+    m_gridSizeCombo->addItem(tr("Very large (40 px)"), 40);
     
     // 根据当前值设置默认选项
     if (m_gridSize == 10) {
@@ -223,9 +223,9 @@ void PageSettingDialog::setupUi()
     
     // 替换线条粗细Spinner为下拉框
     m_lineThicknessCombo = new QComboBox();
-    m_lineThicknessCombo->addItem(tr("细 (0.5 px)"), 0.5);
-    m_lineThicknessCombo->addItem(tr("正常 (1 px)"), 1);
-    m_lineThicknessCombo->addItem(tr("粗 (2 px)"), 2);
+    m_lineThicknessCombo->addItem(tr("Thin (0.5 px)"), 0.5);
+    m_lineThicknessCombo->addItem(tr("Normal (1 px)"), 1);
+    m_lineThicknessCombo->addItem(tr("Thick (2 px)"), 2);
     
     // 根据当前值设置默认选项
     if (m_gridThickness == 0.5) {
@@ -247,12 +247,12 @@ void PageSettingDialog::setupUi()
     m_gridThicknessSpin->setVisible(false);
     
     gridLayout->addWidget(m_showGridCheck, 0, 0, 1, 3);
-    gridLayout->addWidget(new QLabel(tr("网格颜色:")), 1, 0);
+    gridLayout->addWidget(new QLabel(tr("Grid color:")), 1, 0);
     gridLayout->addWidget(m_gridColorPreview, 1, 1);
     gridLayout->addWidget(m_gridColorButton, 1, 2);
-    gridLayout->addWidget(new QLabel(tr("网格大小:")), 2, 0);
+    gridLayout->addWidget(new QLabel(tr("Grid size:")), 2, 0);
     gridLayout->addWidget(m_gridSizeCombo, 2, 1, 1, 2);
-    gridLayout->addWidget(new QLabel(tr("线条粗细:")), 3, 0);
+    gridLayout->addWidget(new QLabel(tr("Line thickness:")), 3, 0);
     gridLayout->addWidget(m_lineThicknessCombo, 3, 1, 1, 2);
     
     // 将设置组添加到左侧布局
@@ -266,9 +266,9 @@ void PageSettingDialog::setupUi()
     
     // 创建按钮
     QHBoxLayout *buttonLayout = new QHBoxLayout();
-    m_okButton = new QPushButton(tr("确定"));
-    m_cancelButton = new QPushButton(tr("取消"));
-    m_applyButton = new QPushButton(tr("应用"));
+    m_okButton = new QPushButton(tr("OK"));
+    m_cancelButton = new QPushButton(tr("Cancel"));
+    m_applyButton = new QPushButton(tr("Apply"));
     
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_okButton);
@@ -290,9 +290,9 @@ void PageSettingDialog::updatePixelInfoLabel()
     // 使用DrawingArea的实际尺寸(如果可用)
     if (m_drawingArea) {
         QSize drawingAreaSize = m_drawingArea->getDrawingAreaSize();
-        m_pixelInfoLabel->setText(tr("当前尺寸: %1 x %2 px").arg(drawingAreaSize.width()).arg(drawingAreaSize.height()));
+        m_pixelInfoLabel->setText(tr("Current size: %1 x %2 px").arg(drawingAreaSize.width()).arg(drawingAreaSize.height()));
     } else {
-        m_pixelInfoLabel->setText(tr("当前尺寸: %1 x %2 px").arg(m_pageSize.width()).arg(m_pageSize.height()));
+        m_pixelInfoLabel->setText(tr("Current size: %1 x %2 px").arg(m_pageSize.width()).arg(m_pageSize.height()));
     }
 }
 

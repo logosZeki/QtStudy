@@ -30,25 +30,25 @@ ShapeItem::ShapeItem(const QString& type, QWidget* parent)
     
     // 设置工具提示
     if (type == ShapeTypes::Rectangle) {
-        setToolTip(tr("矩形"));
+        setToolTip(tr("Rectangle"));
     } else if (type == ShapeTypes::Circle) {
-        setToolTip(tr("圆形"));
+        setToolTip(tr("Circle"));
     } else if (type == ShapeTypes::Pentagon) {
-        setToolTip(tr("五边形"));
+        setToolTip(tr("Pentagon"));
     } else if (type == ShapeTypes::Ellipse) {
-        setToolTip(tr("椭圆"));
+        setToolTip(tr("Ellipse"));
     } else if (type == ShapeTypes::ArrowLine) {
-        setToolTip(tr("箭头线"));
+        setToolTip(tr("ArrowLine"));
     } else if (type == ShapeTypes::RoundedRectangle) {
-        setToolTip(tr("圆角矩形"));
+        setToolTip(tr("RoundedRectangle"));
     } else if (type == ShapeTypes::Diamond) {
-        setToolTip(tr("菱形"));
+        setToolTip(tr("Diamond"));
     } else if (type == ShapeTypes::Hexagon) {
-        setToolTip(tr("六边形"));
+        setToolTip(tr("Hexagon"));
     } else if (type == ShapeTypes::Octagon) {
-        setToolTip(tr("八边形"));
+        setToolTip(tr("Octagon"));
     } else if (type == ShapeTypes::Cloud) {
-        setToolTip(tr("云朵形"));
+        setToolTip(tr("Cloud"));
     }
     
     // 允许鼠标追踪 (Allow mouse tracking)
@@ -462,7 +462,7 @@ void ToolBar::setupUI()
     
     // 创建标签栏
     m_tabBar = new QTabBar(this);
-    m_tabBar->addTab(tr("图形库"));
+    m_tabBar->addTab(tr("Shape library"));
     m_tabBar->setExpanding(true);  // 让标签填充整个宽度
     m_tabBar->setDocumentMode(true);
     m_tabBar->setDrawBase(false);
@@ -473,7 +473,7 @@ void ToolBar::setupUI()
     
     // 创建搜索框
     m_searchBox = new QLineEdit(this);
-    m_searchBox->setPlaceholderText(tr("请输入搜索内容"));
+    m_searchBox->setPlaceholderText(tr("Please enter search content"));
     m_searchBox->setStyleSheet("QLineEdit { border: 1px solid #e0e0e0; border-radius: 3px; padding: 5px; margin: 8px; }");
     m_layout->addWidget(m_searchBox);
     
@@ -501,7 +501,7 @@ void ToolBar::createGraphicsLibTab()
     layout->setSpacing(10);
     
     // 创建基础图形类别
-    ShapeCategory* basicCategory = new ShapeCategory(tr("基础图形"), m_libraryWidget);
+    ShapeCategory* basicCategory = new ShapeCategory(tr("Basic shapes"), m_libraryWidget);
     basicCategory->addShape(ShapeTypes::Rectangle);
     basicCategory->addShape(ShapeTypes::Circle);
     basicCategory->addShape(ShapeTypes::Ellipse);
@@ -516,7 +516,7 @@ void ToolBar::createGraphicsLibTab()
     layout->addWidget(basicCategory);
     
     // 创建Flowchart流程图类别
-    ShapeCategory* flowchartCategory = new ShapeCategory(tr("Flowchart 流程图"), m_libraryWidget);
+    ShapeCategory* flowchartCategory = new ShapeCategory(tr("Flowchart"), m_libraryWidget);
     flowchartCategory->addShape(ShapeTypes::Rectangle);
     flowchartCategory->addShape(ShapeTypes::Pentagon);
     flowchartCategory->addShape(ShapeTypes::Ellipse);
@@ -527,7 +527,7 @@ void ToolBar::createGraphicsLibTab()
     layout->addWidget(flowchartCategory);
     
     // 创建UML类图类别
-    ShapeCategory* umlCategory = new ShapeCategory(tr("UML 类图"), m_libraryWidget);
+    ShapeCategory* umlCategory = new ShapeCategory(tr("UML Class Diagram"), m_libraryWidget);
     umlCategory->addShape(ShapeTypes::Rectangle);
     umlCategory->addShape(ShapeTypes::ArrowLine);
     // 添加新的UML图形
