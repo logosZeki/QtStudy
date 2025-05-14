@@ -166,6 +166,10 @@ private:
     void selectAllShapes();                 // 全选图形
     Shape* cloneShape(const Shape* sourceShape);  // 克隆图形
     
+    // 新增复制粘贴多选图形的方法
+    void copyMultiSelectedShapes();         // 复制多个选中的图形
+    void cutMultiSelectedShapes();          // 剪切多个选中的图形
+    
     // ArrowLine相关方法
     void createArrowLine(const QPoint& startPoint, const QPoint& endPoint);
     void selectConnection(Connection* connection);
@@ -235,6 +239,15 @@ private:
     
     // 剪切板数据
     Shape* m_copiedShape;                // 复制的图形
+    QVector<Shape*> m_copiedShapes;      // 存储多个复制的图形
+    QVector<QPoint> m_copiedShapesPositions; // 存储多个复制图形的相对位置
+    QVector<Connection*> m_copiedConnections; // 存储复制的连接线
+    QVector<QPoint> m_copiedConnectionsPositions; // 存储复制连接线的相对位置
+    // 存储连接线与图形的绑定关系 (原始索引 -> 新索引)
+    QVector<QPair<int, int>> m_copiedConnectionStartShapes; // 连接线起点与图形的绑定关系
+    QVector<QPair<int, int>> m_copiedConnectionEndShapes; // 连接线终点与图形的绑定关系
+    QVector<ConnectionPoint::Position> m_copiedConnectionStartPoints; // 连接线起点的连接点位置
+    QVector<ConnectionPoint::Position> m_copiedConnectionEndPoints; // 连接线终点的连接点位置
     
     bool m_movingConnectionPoint;          // 是否正在移动连接线端点
     ConnectionPoint* m_activeConnectionPoint; // 当前活动的连接点
@@ -249,22 +262,11 @@ private:
     int m_gridThickness;                   // 网格线条粗细
 
     // 多选相关变量
-    QVector<Shape*> m_selectedShapes;      // 存储多选的图形
     QVector<Shape*> m_multiSelectedShapes;      // 存储多选的图形
-    
-    bool m_isRectSelecting;                // 是否正在框选
     bool m_isMultiRectSelecting;                // 是否正在框选
-
-    QRect m_selectionRect;                 // 框选矩形
     QRect m_multiSelectionRect;                 // 框选矩形
-
-    QPoint m_selectionStart;               // 框选起点
     QPoint m_multiSelectionStart;               // 框选起点
-
-    QVector<QPoint> m_shapesStartPos;      // 批量移动时记录每个图形的起始位置
     QVector<QPoint> m_multyShapesStartPos;      // 批量移动时记录每个图形的起始位置
-
-    QVector<Connection*> m_selectedConnections; // 存储选中的连接线
     QVector<Connection*> m_multySelectedConnections; // 存储选中的连接线
 };
 

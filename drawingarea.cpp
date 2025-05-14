@@ -40,15 +40,22 @@ DrawingArea::DrawingArea(QWidget *parent)
       m_shapeContextMenu(nullptr),
       m_canvasContextMenu(nullptr),
       m_copiedShape(nullptr),
+      m_copiedShapes(),
+      m_copiedShapesPositions(),
       m_movingConnectionPoint(false),
       m_activeConnectionPoint(nullptr),
       m_backgroundColor(Qt::white),
       m_drawingAreaSize(Default_WIDTH, Default_HEIGHT),
       m_showGrid(true),
-      m_gridColor(Qt::lightGray),
+      m_gridColor(QColor(220, 220, 220)),
       m_gridSize(20),
       m_gridThickness(1),
-      m_isMultiRectSelecting(false)
+      m_multiSelectedShapes(),
+      m_multySelectedConnections(),
+      m_multyShapesStartPos(),
+      m_isMultiRectSelecting(false),
+      m_multiSelectionStart(),
+      m_multiSelectionRect()
 {
     // 启用接收拖放 (Enable accepting drops)
     setAcceptDrops(true);
@@ -93,16 +100,34 @@ DrawingArea::DrawingArea(QWidget *parent)
 
 DrawingArea::~DrawingArea()
 {
-    // 清理所有形状 (Clean up all shapes)
-    qDeleteAll(m_shapes);
-    m_shapes.clear();
+    // 清理形状列表
+    for (Shape* shape : m_shapes) {
+        delete shape;
+    }
     
-    // 清理所有连线
-    qDeleteAll(m_connections);
-    m_connections.clear();
+    // 清理连接线列表
+    for (Connection* connection : m_connections) {
+        delete connection;
+    }
     
-    if (m_textEditor) {
-        delete m_textEditor;
+    // 清理当前正在创建的连接线
+    if (m_currentConnection) {
+        delete m_currentConnection;
+    }
+    
+    // 清理复制的形状
+    if (m_copiedShape) {
+        delete m_copiedShape;
+    }
+    
+    // 清理复制的多选形状
+    for (Shape* shape : m_copiedShapes) {
+        delete shape;
+    }
+    
+    // 清理复制的连接线
+    for (Connection* conn : m_copiedConnections) {
+        delete conn;
     }
     
     // 清理右键菜单
@@ -114,9 +139,9 @@ DrawingArea::~DrawingArea()
         delete m_canvasContextMenu;
     }
     
-    // 清理剪切板数据
-    if (m_copiedShape) {
-        delete m_copiedShape;
+    // 清理文本编辑器
+    if (m_textEditor) {
+        m_textEditor->deleteLater();
     }
 }
 
@@ -1065,31 +1090,48 @@ ConnectionPoint* DrawingArea::findNearestConnectionPoint(Shape* shape, const QPo
 
 void DrawingArea::contextMenuEvent(QContextMenuEvent *event)
 {
-    // 如果正在编辑文本，不显示右键菜单
-    if (m_textEditor && m_textEditor->isVisible()) {
+    // 获取右键点击的场景坐标
+    QPoint pos = event->pos();
+    QPoint scenePos = mapToScene(pos);
+    
+    // 检查是否有多选图形
+    if (!m_multiSelectedShapes.isEmpty()) {
+        // 检查是否点击在多选图形上
+        bool clickedOnSelectedShape = false;
+        for (Shape* shape : m_multiSelectedShapes) {
+            if (shape->contains(scenePos)) {
+                clickedOnSelectedShape = true;
+                break;
+            }
+        }
+        
+        if (clickedOnSelectedShape) {
+            // 显示图形右键菜单
+            showShapeContextMenu(pos);
+            event->accept();
+            return;
+        }
+    } 
+    // 检查是否点击在单选图形上
+    else if (m_selectedShape && m_selectedShape->contains(scenePos)) {
+        showShapeContextMenu(pos);
+        event->accept();
         return;
     }
-    
-    // 将事件坐标转换为场景坐标
-    QPoint scenePos = mapToScene(event->pos());
-    
-    // 检查是否在图形上点击
-    bool onShape = false;
-    
-    for (int i = m_shapes.size() - 1; i >= 0; --i) {
-        if (m_shapes[i]->contains(scenePos)) {
-            m_selectedShape = m_shapes[i];
-            onShape = true;
-            update();
-            break;
+    // 如果点击在选中的连接线上
+    else if (m_selectedConnection) {
+        for (Connection* connection : m_connections) {
+            if (connection == m_selectedConnection && connection->contains(scenePos)) {
+                showShapeContextMenu(pos);
+                event->accept();
+                return;
+            }
         }
     }
     
-    if (onShape) {
-        showShapeContextMenu(event->globalPos());
-    } else {
-        showCanvasContextMenu(event->globalPos());
-    }
+    // 如果没有点击在图形或连接线上，显示画布右键菜单
+    showCanvasContextMenu(pos);
+    event->accept();
 }
 
 // 创建右键菜单
@@ -1098,6 +1140,7 @@ void DrawingArea::createContextMenus()
     // 创建图形右键菜单
     m_shapeContextMenu = new QMenu(this);
     
+    // 添加复制、剪切和删除操作
     QAction *copyAction = m_shapeContextMenu->addAction(tr("Copy"));
     copyAction->setShortcut(QKeySequence::Copy);  // 设置Ctrl+C快捷键
     copyAction->setShortcutVisibleInContextMenu(true);  // 在右键菜单中显示快捷键
@@ -1109,33 +1152,39 @@ void DrawingArea::createContextMenus()
     connect(cutAction, &QAction::triggered, this, &DrawingArea::cutSelectedShape);
     
     QAction *deleteAction = m_shapeContextMenu->addAction(tr("Delete"));
-    deleteAction->setShortcuts({QKeySequence::Delete, QKeySequence(Qt::Key_Backspace)});  // 设置Delete和Backspace快捷键
+    deleteAction->setShortcut(QKeySequence(Qt::Key_Delete));  // 设置Delete快捷键
     deleteAction->setShortcutVisibleInContextMenu(true);  // 在右键菜单中显示快捷键
     connect(deleteAction, &QAction::triggered, this, &DrawingArea::deleteSelectedShape);
     
+    // 添加分隔线
     m_shapeContextMenu->addSeparator();
     
-    QAction *moveUpAction = m_shapeContextMenu->addAction(tr("Move up"));
-    connect(moveUpAction, &QAction::triggered, this, &DrawingArea::moveShapeUp);
+    // 添加图层管理操作
+    QMenu *layerMenu = m_shapeContextMenu->addMenu(tr("Layer"));
     
-    QAction *moveDownAction = m_shapeContextMenu->addAction(tr("Move down"));
-    connect(moveDownAction, &QAction::triggered, this, &DrawingArea::moveShapeDown);
+    QAction *bringToFrontAction = layerMenu->addAction(tr("Move Shape To Top"));
+    connect(bringToFrontAction, &QAction::triggered, this, &DrawingArea::moveShapeToTop);
     
-    QAction *moveToTopAction = m_shapeContextMenu->addAction(tr("Top up"));
-    connect(moveToTopAction, &QAction::triggered, this, &DrawingArea::moveShapeToTop);
+    QAction *sendToBackAction = layerMenu->addAction(tr("Move Shape To Bottom"));
+    connect(sendToBackAction, &QAction::triggered, this, &DrawingArea::moveShapeToBottom);
     
-    QAction *moveToBottomAction = m_shapeContextMenu->addAction(tr("Bottom up"));
-    connect(moveToBottomAction, &QAction::triggered, this, &DrawingArea::moveShapeToBottom);
+    QAction *bringForwardAction = layerMenu->addAction(tr("Move Shape Up"));
+    connect(bringForwardAction, &QAction::triggered, this, &DrawingArea::moveShapeUp);
+    
+    QAction *sendBackwardAction = layerMenu->addAction(tr("Move Shape Down"));
+    connect(sendBackwardAction, &QAction::triggered, this, &DrawingArea::moveShapeDown);
     
     // 创建画布右键菜单
     m_canvasContextMenu = new QMenu(this);
     
-    // 添加粘贴选项，但不连接信号，因为我们会在showCanvasContextMenu中动态连接
+    // 添加粘贴操作
     QAction *pasteAction = m_canvasContextMenu->addAction(tr("Paste"));
     pasteAction->setShortcut(QKeySequence::Paste);  // 设置Ctrl+V快捷键
     pasteAction->setShortcutVisibleInContextMenu(true);  // 在右键菜单中显示快捷键
+    // 注意：连接在showCanvasContextMenu中进行，因为需要获取右键点击位置
     
-    QAction *selectAllAction = m_canvasContextMenu->addAction(tr("All Select"));
+    // 添加全选操作
+    QAction *selectAllAction = m_canvasContextMenu->addAction(tr("Select All"));
     selectAllAction->setShortcut(QKeySequence::SelectAll);  // 设置Ctrl+A快捷键
     selectAllAction->setShortcutVisibleInContextMenu(true);  // 在右键菜单中显示快捷键
     connect(selectAllAction, &QAction::triggered, this, &DrawingArea::selectAllShapes);
@@ -1144,34 +1193,71 @@ void DrawingArea::createContextMenus()
 // 显示图形右键菜单
 void DrawingArea::showShapeContextMenu(const QPoint &pos)
 {
-    if (!m_shapeContextMenu || !m_selectedShape) return;
+    if (!m_shapeContextMenu) {
+        createContextMenus();
+    }
     
-    m_shapeContextMenu->exec(pos);
+    QAction *copyAction = m_shapeContextMenu->actions().at(0);
+    QAction *cutAction = m_shapeContextMenu->actions().at(1);
+    QAction *deleteAction = m_shapeContextMenu->actions().at(2);
+    QMenu *layerMenu = m_shapeContextMenu->actions().at(4)->menu();
+    
+    // 断开旧的连接
+    disconnect(copyAction, nullptr, this, nullptr);
+    disconnect(cutAction, nullptr, this, nullptr);
+    disconnect(deleteAction, nullptr, this, nullptr);
+    
+    // 检查是否有多选状态
+    if (!m_multiSelectedShapes.isEmpty()) {
+        // 多选状态下的菜单操作
+        connect(copyAction, &QAction::triggered, this, &DrawingArea::copyMultiSelectedShapes);
+        connect(cutAction, &QAction::triggered, this, &DrawingArea::cutMultiSelectedShapes);
+        connect(deleteAction, &QAction::triggered, this, [this]() {
+            cutMultiSelectedShapes(); // 使用cut但不复制
+        });
+        
+        // 多选状态下禁用图层操作
+        layerMenu->setEnabled(false);
+    } else {
+        // 单选状态下的菜单操作
+        connect(copyAction, &QAction::triggered, this, &DrawingArea::copySelectedShape);
+        connect(cutAction, &QAction::triggered, this, &DrawingArea::cutSelectedShape);
+        connect(deleteAction, &QAction::triggered, this, &DrawingArea::deleteSelectedShape);
+        
+        // 单选状态下启用图层操作
+        layerMenu->setEnabled(true);
+    }
+    
+    // 显示右键菜单
+    m_shapeContextMenu->exec(mapToGlobal(pos));
 }
 
 // 显示画布右键菜单
 void DrawingArea::showCanvasContextMenu(const QPoint &pos)
 {
-    if (!m_canvasContextMenu) return;
+    if (!m_canvasContextMenu) {
+        createContextMenus();
+    }
     
-    // 保存鼠标位置，用于粘贴操作
-    QPoint canvasPos = mapFromGlobal(pos);
+    // 获取右键点击位置（场景坐标）
+    QPoint canvasPos = pos;
     
-    // 获取粘贴操作按钮
+    // 获取粘贴操作
     QAction *pasteAction = m_canvasContextMenu->actions().at(0);
     
-    // 如果没有复制的图形，禁用粘贴选项
-    pasteAction->setEnabled(m_copiedShape != nullptr);
+    // 根据剪贴板内容设置粘贴操作的启用状态
+    pasteAction->setEnabled(m_copiedShape != nullptr || !m_copiedShapes.isEmpty());
     
-    // 断开之前的连接（如果有）
+    // 断开旧的连接
     disconnect(pasteAction, nullptr, this, nullptr);
     
-    // 重新连接，传递鼠标位置
+    // 建立新的连接，传递右键点击位置
     connect(pasteAction, &QAction::triggered, this, [this, canvasPos]() {
         this->pasteShape(canvasPos);
     });
     
-    m_canvasContextMenu->exec(pos);
+    // 显示右键菜单
+    m_canvasContextMenu->exec(mapToGlobal(pos));
 }
 
 // 图层管理方法实现
@@ -1233,6 +1319,12 @@ void DrawingArea::moveShapeToBottom()
 // 复制选中的图形
 void DrawingArea::copySelectedShape()
 {
+    // 如果有多个图形被选中，使用多选复制方法
+    if (!m_multiSelectedShapes.isEmpty()) {
+        copyMultiSelectedShapes();
+        return;
+    }
+    
     if (!m_selectedShape) return;
     
     // 如果已有复制的图形，删除它
@@ -1240,6 +1332,13 @@ void DrawingArea::copySelectedShape()
         delete m_copiedShape;
         m_copiedShape = nullptr;
     }
+    
+    // 清空多选复制的数据（因为当前是单选复制）
+    for (Shape* shape : m_copiedShapes) {
+        delete shape;
+    }
+    m_copiedShapes.clear();
+    m_copiedShapesPositions.clear();
     
     // 使用工厂创建一个同类型的新图形
     QString type = m_selectedShape->type();
@@ -1250,10 +1349,12 @@ void DrawingArea::copySelectedShape()
         // 复制属性
         m_copiedShape->setRect(m_selectedShape->getRect());
         m_copiedShape->setText(m_selectedShape->text());
+        m_copiedShape->setFillColor(m_selectedShape->fillColor());
+        m_copiedShape->setLineColor(m_selectedShape->lineColor());
+        m_copiedShape->setLineWidth(m_selectedShape->lineWidth());
+        m_copiedShape->setLineStyle(m_selectedShape->lineStyle());
+        m_copiedShape->setTransparency(m_selectedShape->transparency());
     }
-    
-    // 注意：目前不支持复制连接线，因为需要额外处理端点引用关系
-    // 如果未来需要支持连接线复制，需要在此处添加相应逻辑
 }
 
 // 剪切选中的图形
@@ -1274,6 +1375,160 @@ void DrawingArea::cutSelectedShape()
 // 粘贴图形
 void DrawingArea::pasteShape(const QPoint &pos)
 {
+    // 处理多选复制的粘贴
+    if (!m_copiedShapes.isEmpty() || !m_copiedConnections.isEmpty()) {
+        // 清除当前选择
+        m_selectedShape = nullptr;
+        m_multiSelectedShapes.clear();
+        m_selectedConnection = nullptr;
+        m_multySelectedConnections.clear();
+        
+        QPoint pastePos = pos.isNull() ? mapFromGlobal(QCursor::pos()) : pos;
+        QPoint scenePos = mapToScene(pastePos);
+        
+        // 创建并粘贴每个复制的图形
+        for (int i = 0; i < m_copiedShapes.size(); ++i) {
+            Shape* sourceShape = m_copiedShapes[i];
+            QPoint relativePos = m_copiedShapesPositions[i];
+            
+            // 使用工厂创建一个同类型的新图形
+            QString type = sourceShape->type();
+            int basis = sourceShape->getRect().width() / 2;
+            Shape* newShape = ShapeFactory::instance().createShape(type, basis);
+            
+            if (newShape) {
+                // 复制属性
+                QRect rect = sourceShape->getRect();
+                
+                // 计算新位置（中心点 + 相对位置）
+                rect.moveCenter(scenePos + relativePos);
+                
+                newShape->setRect(rect);
+                newShape->setText(sourceShape->text());
+                newShape->setFillColor(sourceShape->fillColor());
+                newShape->setLineColor(sourceShape->lineColor());
+                newShape->setLineWidth(sourceShape->lineWidth());
+                newShape->setLineStyle(sourceShape->lineStyle());
+                newShape->setTransparency(sourceShape->transparency());
+                
+                // 添加到图形列表和多选列表
+                m_shapes.append(newShape);
+                m_multiSelectedShapes.append(newShape);
+            }
+        }
+        
+        // 创建并粘贴每个复制的连接线
+        for (int i = 0; i < m_copiedConnections.size(); ++i) {
+            Connection* sourceConn = m_copiedConnections[i];
+            QPoint relativePos = m_copiedConnectionsPositions[i];
+            
+            // 获取原始连接线的起点和终点
+            QPoint origStartPos = sourceConn->getStartPosition();
+            QPoint origEndPos = sourceConn->getEndPosition();
+            
+            // 计算起点和终点的相对位置（相对于连接线中心点）
+            QPoint origCenter = (origStartPos + origEndPos) / 2;
+            QPoint startRelativePos = origStartPos - origCenter;
+            QPoint endRelativePos = origEndPos - origCenter;
+            
+            // 计算新的中心点位置
+            QPoint newCenter = scenePos + relativePos;
+            
+            // 计算新的起点和终点位置
+            QPoint newStartPos = newCenter + startRelativePos;
+            QPoint newEndPos = newCenter + endRelativePos;
+            
+            // 查找此连接线的起点和终点连接关系
+            int startShapeIndex = -1;
+            int endShapeIndex = -1;
+            ConnectionPoint::Position startPosition = ConnectionPoint::Free;
+            ConnectionPoint::Position endPosition = ConnectionPoint::Free;
+            
+            // 查找连接线的索引
+            for (int j = 0; j < m_copiedConnectionStartShapes.size(); ++j) {
+                if (m_copiedConnectionStartShapes[j].first == i) {
+                    startShapeIndex = m_copiedConnectionStartShapes[j].second;
+                    if (j >= 0 && j < m_copiedConnectionStartPoints.size()) {
+                        startPosition = m_copiedConnectionStartPoints[j];
+                    }
+                    break;
+                }
+            }
+            
+            for (int j = 0; j < m_copiedConnectionEndShapes.size(); ++j) {
+                if (m_copiedConnectionEndShapes[j].first == i) {
+                    endShapeIndex = m_copiedConnectionEndShapes[j].second;
+                    if (j >= 0 && j < m_copiedConnectionEndPoints.size()) {
+                        endPosition = m_copiedConnectionEndPoints[j];
+                    }
+                    break;
+                }
+            }
+            
+            // 创建新的连接点
+            ConnectionPoint* startPoint = nullptr;
+            ConnectionPoint* endPoint = nullptr;
+            
+            // 如果起点连接到图形
+            if (startShapeIndex >= 0 && startShapeIndex < m_multiSelectedShapes.size()) {
+                Shape* startShape = m_multiSelectedShapes[startShapeIndex];
+                // 获取对应位置的连接点
+                QVector<ConnectionPoint*> points = startShape->getConnectionPoints();
+                for (ConnectionPoint* point : points) {
+                    if (point->getPositionType() == startPosition) {
+                        startPoint = point;
+                        break;
+                    }
+                }
+            } else {
+                // 如果不连接到图形，创建自由连接点
+                startPoint = new ConnectionPoint(newStartPos);
+            }
+            
+            // 如果终点连接到图形
+            if (endShapeIndex >= 0 && endShapeIndex < m_multiSelectedShapes.size()) {
+                Shape* endShape = m_multiSelectedShapes[endShapeIndex];
+                // 获取对应位置的连接点
+                QVector<ConnectionPoint*> points = endShape->getConnectionPoints();
+                for (ConnectionPoint* point : points) {
+                    if (point->getPositionType() == endPosition) {
+                        endPoint = point;
+                        break;
+                    }
+                }
+            } else {
+                // 如果不连接到图形，创建自由连接点
+                endPoint = new ConnectionPoint(newEndPos);
+            }
+            
+            // 创建新的连接线
+            ArrowLine* newConnection = new ArrowLine(newStartPos, newEndPos);
+            
+            // 设置连接线的端点
+            if (startPoint) {
+                newConnection->setStartPoint(startPoint);
+            }
+            if (endPoint) {
+                newConnection->setEndPoint(endPoint);
+            }
+            
+            // 添加到连接线列表和多选列表
+            m_connections.append(newConnection);
+            m_multySelectedConnections.append(newConnection);
+            newConnection->setSelected(true);
+        }
+        
+        // 发送多选状态变化信号
+        if (!m_multiSelectedShapes.isEmpty() || !m_multySelectedConnections.isEmpty()) {
+            emit multiSelectionChanged(true);
+            emit shapesCountChanged(getShapesCount());
+            update();
+        }
+        
+        return;
+    }
+    
+    // 单个图形的粘贴处理（原有逻辑）
     if (!m_copiedShape) return;
     
     // 使用工厂创建一个同类型的新图形
@@ -1287,7 +1542,7 @@ void DrawingArea::pasteShape(const QPoint &pos)
         
         // 如果提供了鼠标位置，则使用鼠标位置
         if (!pos.isNull()) {
-            // 修复：使用mapToScene将视图坐标转换为场景坐标
+            // 使用mapToScene将视图坐标转换为场景坐标
             QPoint scenePos = mapToScene(pos);
             rect.moveCenter(scenePos);
         } else {
@@ -1297,10 +1552,27 @@ void DrawingArea::pasteShape(const QPoint &pos)
         
         newShape->setRect(rect);
         newShape->setText(m_copiedShape->text());
+        newShape->setFillColor(m_copiedShape->fillColor());
+        newShape->setLineColor(m_copiedShape->lineColor());
+        newShape->setLineWidth(m_copiedShape->lineWidth());
+        newShape->setLineStyle(m_copiedShape->lineStyle());
+        newShape->setTransparency(m_copiedShape->transparency());
         
         // 添加到图形列表
         m_shapes.append(newShape);
+        
+        // 清除多选状态
+        m_multiSelectedShapes.clear();
+        m_multySelectedConnections.clear();
+        m_selectedConnection = nullptr;
+        // 选中新粘贴的图形
         m_selectedShape = newShape;
+        
+        // 发送信号
+        emit shapeSelectionChanged(true);
+        emit multiSelectionChanged(false);
+        emit shapesCountChanged(getShapesCount());
+        
         update();
     }
 }
@@ -1384,18 +1656,30 @@ void DrawingArea::keyPressEvent(QKeyEvent *event)
         // Ctrl+A 全选
         selectAllShapes();
     } else if (event->matches(QKeySequence::Copy)) {
-        // Ctrl+C 复制
-        copySelectedShape();
+        // Ctrl+C 复制（根据选择状态决定使用单选复制或多选复制）
+        if (!m_multiSelectedShapes.isEmpty()) {
+            copyMultiSelectedShapes();
+        } else {
+            copySelectedShape();
+        }
     } else if (event->matches(QKeySequence::Cut)) {
-        // Ctrl+X 剪切
-        cutSelectedShape();
+        // Ctrl+X 剪切（根据选择状态决定使用单选剪切或多选剪切）
+        if (!m_multiSelectedShapes.isEmpty()) {
+            cutMultiSelectedShapes();
+        } else {
+            cutSelectedShape();
+        }
     } else if (event->matches(QKeySequence::Paste)) {
         // Ctrl+V 粘贴
         // 使用鼠标当前位置
         pasteShape(mapFromGlobal(QCursor::pos()));
     } else if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
         // Delete/Backspace 删除
-        deleteSelectedShape();
+        if (!m_multiSelectedShapes.isEmpty()) {
+            cutMultiSelectedShapes(); // 使用cut但不复制
+        } else {
+            deleteSelectedShape();
+        }
     } else {
         QWidget::keyPressEvent(event);
     }
@@ -2555,6 +2839,182 @@ void DrawingArea::drawMultiSelectionRect(QPainter* painter)
     
     painter->drawRect(viewRect);
     painter->restore();
+}
+
+// 复制多个选中的图形
+void DrawingArea::copyMultiSelectedShapes()
+{
+    if (m_multiSelectedShapes.isEmpty() && m_multySelectedConnections.isEmpty()) {
+        return;
+    }
+    
+    // 清理之前复制的图形
+    for (Shape* shape : m_copiedShapes) {
+        delete shape;
+    }
+    m_copiedShapes.clear();
+    m_copiedShapesPositions.clear();
+    
+    // 清理之前复制的连接线
+    for (Connection* conn : m_copiedConnections) {
+        delete conn;
+    }
+    m_copiedConnections.clear();
+    m_copiedConnectionsPositions.clear();
+    
+    // 清除之前存储的连接关系
+    m_copiedConnectionStartShapes.clear();
+    m_copiedConnectionEndShapes.clear();
+    m_copiedConnectionStartPoints.clear();
+    m_copiedConnectionEndPoints.clear();
+    
+    // 计算多选图形的中心点
+    QPoint centerPoint(0, 0);
+    int totalElements = 0;
+    
+    // 计算所有图形的中心点总和
+    for (Shape* shape : m_multiSelectedShapes) {
+        centerPoint += shape->getRect().center();
+        totalElements++;
+    }
+    
+    // 加上所有选中连接线的中心点
+    for (Connection* conn : m_multySelectedConnections) {
+        QPoint startPos = conn->getStartPosition();
+        QPoint endPos = conn->getEndPosition();
+        centerPoint += (startPos + endPos) / 2;
+        totalElements++;
+    }
+    
+    // 计算总体中心点
+    if (totalElements > 0) {
+        centerPoint /= totalElements;
+    }
+    
+    // 复制每个选中的图形
+    for (Shape* shape : m_multiSelectedShapes) {
+        // 使用工厂创建一个同类型的新图形
+        QString type = shape->type();
+        int basis = shape->getRect().width() / 2;
+        Shape* copiedShape = ShapeFactory::instance().createShape(type, basis);
+        
+        if (copiedShape) {
+            // 复制属性
+            copiedShape->setRect(shape->getRect());
+            copiedShape->setText(shape->text());
+            copiedShape->setFillColor(shape->fillColor());
+            copiedShape->setLineColor(shape->lineColor());
+            copiedShape->setLineWidth(shape->lineWidth());
+            copiedShape->setLineStyle(shape->lineStyle());
+            copiedShape->setTransparency(shape->transparency());
+            
+            // 保存相对位置（相对于中心点）
+            QPoint relativePos = shape->getRect().center() - centerPoint;
+            
+            // 添加到复制列表
+            m_copiedShapes.append(copiedShape);
+            m_copiedShapesPositions.append(relativePos);
+        }
+    }
+    
+    // 复制每个选中的连接线
+    for (int i = 0; i < m_multySelectedConnections.size(); ++i) {
+        Connection* conn = m_multySelectedConnections[i];
+        QPoint startPos = conn->getStartPosition();
+        QPoint endPos = conn->getEndPosition();
+        
+        // 创建一个新的连接线对象
+        ArrowLine* copiedConnection = new ArrowLine(startPos, endPos);
+        
+        if (copiedConnection) {
+            // 保存连接线的相对位置（中点相对于总中心点）
+            QPoint connCenter = (startPos + endPos) / 2;
+            QPoint relativePos = connCenter - centerPoint;
+            
+            // 添加到复制列表
+            m_copiedConnections.append(copiedConnection);
+            m_copiedConnectionsPositions.append(relativePos);
+            
+            // 保存连接关系
+            int startShapeIndex = -1;
+            int endShapeIndex = -1;
+            ConnectionPoint::Position startPosition = ConnectionPoint::Free;
+            ConnectionPoint::Position endPosition = ConnectionPoint::Free;
+            
+            // 检查起点是否连接到图形
+            if (conn->getStartPoint() && conn->getStartPoint()->getOwner()) {
+                Shape* startShape = conn->getStartPoint()->getOwner();
+                // 查找起点图形在选中图形中的索引
+                startShapeIndex = m_multiSelectedShapes.indexOf(startShape);
+                // 记录连接点位置
+                startPosition = conn->getStartPoint()->getPositionType();
+            }
+            
+            // 检查终点是否连接到图形
+            if (conn->getEndPoint() && conn->getEndPoint()->getOwner()) {
+                Shape* endShape = conn->getEndPoint()->getOwner();
+                // 查找终点图形在选中图形中的索引
+                endShapeIndex = m_multiSelectedShapes.indexOf(endShape);
+                // 记录连接点位置
+                endPosition = conn->getEndPoint()->getPositionType();
+            }
+            
+            // 存储连接关系
+            m_copiedConnectionStartShapes.append(qMakePair(i, startShapeIndex));
+            m_copiedConnectionEndShapes.append(qMakePair(i, endShapeIndex));
+            m_copiedConnectionStartPoints.append(startPosition);
+            m_copiedConnectionEndPoints.append(endPosition);
+        }
+    }
+}
+
+// 剪切多个选中的图形
+void DrawingArea::cutMultiSelectedShapes()
+{
+    if (m_multiSelectedShapes.isEmpty()) {
+        return;
+    }
+    
+    // 先复制
+    copyMultiSelectedShapes();
+    
+    // 删除选中的图形及相关的连接线
+    QVector<Connection*> connectionsToRemove;
+    
+    // 收集所有需要删除的连接线
+    for (Shape* shape : m_multiSelectedShapes) {
+        for (Connection* connection : m_connections) {
+            if ((connection->getStartPoint() && connection->getStartPoint()->getOwner() == shape) || 
+                (connection->getEndPoint() && connection->getEndPoint()->getOwner() == shape)) {
+                if (!connectionsToRemove.contains(connection)) {
+                    connectionsToRemove.append(connection);
+                }
+            }
+        }
+    }
+    
+    // 删除连接线
+    for (Connection* connection : connectionsToRemove) {
+        m_connections.removeOne(connection);
+        delete connection;
+    }
+    
+    // 删除图形
+    for (Shape* shape : m_multiSelectedShapes) {
+        m_shapes.removeOne(shape);
+        delete shape;
+    }
+    
+    // 清除选择
+    m_multiSelectedShapes.clear();
+    m_selectedShape = nullptr;
+    
+    // 发送信号
+    emit shapeSelectionChanged(false);
+    emit multiSelectionChanged(false);
+    emit shapesCountChanged(getShapesCount());
+    
+    update();
 }
 
 
