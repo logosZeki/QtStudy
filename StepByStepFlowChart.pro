@@ -20,11 +20,15 @@ SOURCES += \
     chart/shape.cpp \
     chart/shapefactory.cpp \
     drawingarea.cpp \
+    drawingarea_integr.cpp \
+    drawingarea_undo.cpp \
     main.cpp \
     mainwindow.cpp \
     pagesettingdialog.cpp \
     toolbar.cpp \
-    util/Utils.cpp
+    util/Utils.cpp \
+    util/command.cpp \
+    util/shapecommands.cpp
 
 HEADERS += \
     chart/customtextedit.h \
@@ -35,7 +39,9 @@ HEADERS += \
     mainwindow.h \
     pagesettingdialog.h \
     toolbar.h \
-    util/Utils.h
+    util/Utils.h \
+    util/command.h \
+    util/shapecommands.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

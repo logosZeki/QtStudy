@@ -13,6 +13,7 @@
 
 #include "chart/shape.h" //因为要用到Shape里的枚举
 #include "util/Utils.h"
+#include "util/command.h" // 添加命令头文件
 
 // 添加前向声明
 class Shape;
@@ -96,6 +97,16 @@ public:
     bool exportToSvg(const QString &filePath);
     bool importFromSvg(const QString &filePath);
     
+    // 前进和撤回相关方法
+    bool canUndo() const;
+    bool canRedo() const;
+    void undo();
+    void redo();
+    
+    // 形状管理方法（添加和删除，被命令类使用）
+    void addShape(Shape* shape);
+    void removeShape(Shape* shape);
+    
 signals:
     // 图形选择状态改变的信号
     void selectionChanged();
@@ -106,6 +117,10 @@ signals:
     void scaleChanged(qreal scale);  // 新增的缩放比例变化信号
     void shapesCountChanged(int count);  // 新增的图形数量变化信号
     void multiSelectionChanged(bool hasMultiSelection); // 新增的多选状态变化信号
+    
+    // 添加与撤销重做相关的信号
+    void undoAvailable(bool available);
+    void redoAvailable(bool available);
     
 public slots:
     // 应用页面设置
@@ -248,7 +263,7 @@ private:
     QColor m_gridColor;                    // 网格颜色
     int m_gridSize;                        // 网格大小
     int m_gridThickness;                   // 网格线条粗细
-
+    
     // 多选相关变量
     QVector<Shape*> m_multiSelectedShapes;      // 存储多选的图形
     bool m_isMultiRectSelecting;                // 是否正在框选
@@ -256,6 +271,10 @@ private:
     QPoint m_multiSelectionStart;               // 框选起点
     QVector<QPoint> m_multyShapesStartPos;      // 批量移动时记录每个图形的起始位置
     QVector<Connection*> m_multySelectedConnections; // 存储选中的连接线
+    
+    // 重新实现撤销和重做相关变量
+    QPoint m_moveStartPos;                // 移动开始位置，用于记录移动操作
+    QRect m_resizeStartRect;              // 调整大小前的矩形，用于记录调整操作
 };
 
 #endif // DRAWINGAREA_H
