@@ -717,9 +717,7 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
             startRectMultiSelection(event->pos());
         }
     }
-    else if (event->button() == Qt::RightButton) {
-        // 右键点击处理...
-    }
+
 }
 
 void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
@@ -730,6 +728,7 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
     // 结束框选过程
     if (m_isMultiRectSelecting && event->button() == Qt::LeftButton) {
         finishRectMultiSelection();
+		update();
         return;
     }
     
@@ -1060,11 +1059,6 @@ ConnectionPoint* DrawingArea::findNearestConnectionPoint(Shape* shape, const QPo
         }
     }
     
-    // // 设置一个最大距离阈值，如果太远就不连接
-    // const double MAX_DISTANCE = Shape::CONNECTION_POINT_SIZE*1.2;
-    // if (minDistance > MAX_DISTANCE) {
-    //     return nullptr;
-    // }
     
     return nearest;
 }
@@ -2454,7 +2448,6 @@ void DrawingArea::finishRectMultiSelection()
     
     selectMultiShapesInRect(m_multiSelectionRect);
     m_isMultiRectSelecting = false;
-    update();
 }
 
 // 判断图形是否完全包含在选择矩形内
