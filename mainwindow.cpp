@@ -16,6 +16,9 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), m_pageSettingDialog(nullptr)
 {
+    // 设置无边框窗口
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    
     setupUi();
     
     // 设置窗口标题和大小
@@ -68,6 +71,9 @@ void MainWindow::setupUi()
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
 
+    // 创建自定义标题栏
+    createTitleBar();
+    
     // 创建顶部工具栏
     createTopToolbar();
     
@@ -112,12 +118,94 @@ void MainWindow::setupUi()
     createStatusBar();
 }
 
+void MainWindow::createTitleBar()
+{
+    // 创建自定义标题栏
+    QWidget* titleBar = new QWidget(this);
+    titleBar->setFixedHeight(30);
+    titleBar->setStyleSheet("background-color: rgb(238, 238, 238);");
+    
+    QHBoxLayout* layout = new QHBoxLayout(titleBar);
+    layout->setContentsMargins(10, 0, 10, 0);
+    
+    // 添加标题标签
+    QLabel* titleLabel = new QLabel(tr("Flowchart Designer"), this);
+    titleLabel->setStyleSheet("font-size: 12px; font-weight: bold;");
+    
+    // 添加最小化、最大化和关闭按钮
+    QPushButton* minButton = new QPushButton("—", this);
+    minButton->setFixedSize(30, 24);
+    minButton->setStyleSheet("QPushButton { border: none; background-color: rgb(238, 238, 238); }"
+                            "QPushButton:hover { background-color: #e0e0e0; }");
+    
+    QPushButton* maxButton = new QPushButton("□", this);
+    maxButton->setFixedSize(30, 24);
+    maxButton->setStyleSheet("QPushButton { border: none; background-color: rgb(238, 238, 238); }"
+                            "QPushButton:hover { background-color: #e0e0e0; }");
+    
+    QPushButton* closeButton = new QPushButton("×", this);
+    closeButton->setFixedSize(30, 24);
+    closeButton->setStyleSheet("QPushButton { border: none; background-color: rgb(238, 238, 238); }"
+                             "QPushButton:hover { background-color: #ff6961; color: white; }");
+    
+    // 添加到布局
+    layout->addWidget(titleLabel);
+    layout->addStretch();
+    layout->addWidget(minButton);
+    layout->addWidget(maxButton);
+    layout->addWidget(closeButton);
+    
+    // 添加到主布局
+    m_mainLayout->addWidget(titleBar);
+    
+    // 连接按钮信号
+    connect(minButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
+    connect(maxButton, &QPushButton::clicked, this, [this]() {
+        if (isMaximized()) {
+            showNormal();
+        } else {
+            showMaximized();
+        }
+    });
+    connect(closeButton, &QPushButton::clicked, this, &MainWindow::close);
+    
+    // 使标题栏可拖动
+    titleBar->installEventFilter(this);
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    static QPoint lastPos;
+    
+    if (event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            lastPos = mouseEvent->globalPos();
+        }
+        return true;
+    } else if (event->type() == QEvent::MouseMove) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->buttons() & Qt::LeftButton) {
+            move(pos() + mouseEvent->globalPos() - lastPos);
+            lastPos = mouseEvent->globalPos();
+        }
+        return true;
+    }
+    
+    return QMainWindow::eventFilter(watched, event);
+}
+
 void MainWindow::createTopToolbar()
 {
     // 创建一个水平布局用于居中标签栏
     QHBoxLayout *centerLayout = new QHBoxLayout();
     centerLayout->setContentsMargins(0, 0, 0, 0);
     centerLayout->setSpacing(0);
+    
+    // 创建一个容器Widget来设置背景色
+    QWidget *containerWidget = new QWidget(this);
+    containerWidget->setStyleSheet("background-color: rgb(238, 238, 238);");
+    containerWidget->setLayout(centerLayout);
     
     // 创建标签栏
     m_tabBar = new QTabBar(this);
@@ -127,9 +215,10 @@ void MainWindow::createTopToolbar()
     m_tabBar->setExpanding(false);
     m_tabBar->setDocumentMode(true);
     m_tabBar->setDrawBase(false);
-    m_tabBar->setStyleSheet("QTabBar::tab { padding: 6px 16px; border: none; }"
-                           "QTabBar::tab:selected { border-bottom: 2px solid #1a73e8; color: #1a73e8; }"
-                           "QTabBar::tab:hover:!selected { background-color: #f5f5f5; }");
+    m_tabBar->setStyleSheet("QTabBar { background-color: rgb(238, 238, 238); }"
+                          "QTabBar::tab { padding: 12px 16px; border: none; background-color: rgb(238, 238, 238); }"
+                          "QTabBar::tab:selected { border-bottom: 2px solid #1a73e8; color: #1a73e8; }"
+                          "QTabBar::tab:hover:!selected { background-color: #f5f5f5; }");
     
     // 连接标签切换信号
     connect(m_tabBar, &QTabBar::currentChanged, this, &MainWindow::onTabBarClicked);
@@ -139,8 +228,8 @@ void MainWindow::createTopToolbar()
     centerLayout->addWidget(m_tabBar);
     centerLayout->addStretch();
     
-    // 将水平布局添加到主布局中
-    m_mainLayout->addLayout(centerLayout);
+    // 将容器添加到主布局中
+    m_mainLayout->addWidget(containerWidget);
 }
 
 void MainWindow::onTabBarClicked(int index)

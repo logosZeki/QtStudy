@@ -70,7 +70,10 @@ private:
     void createArrangeToolbar();
     void createExportAndImportToolbar();
     void createStatusBar();
+    void createTitleBar();
     void setupUi();
+    
+    bool eventFilter(QObject *watched, QEvent *event) override;
     
 private:
     ToolBar *m_toolBar;
