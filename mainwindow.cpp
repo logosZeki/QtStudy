@@ -265,6 +265,11 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
     m_mainLayout->addWidget(m_mainToolbar);
     
+    // 添加左侧弹性空间实现水平居中
+    QWidget* leftSpacer = new QWidget();
+    leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_mainToolbar->addWidget(leftSpacer);
+    
     // 添加撤销和重做按钮
     QAction* undoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowBack), tr("Undo"));
     QAction* redoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowForward), tr("Redo"));
@@ -425,6 +430,11 @@ void MainWindow::createMainToolbar()
     m_pageSettingButton->setToolTip(tr("Page Setting"));
     m_pageSettingButton->setFixedWidth(110);
     m_mainToolbar->addWidget(m_pageSettingButton);
+    
+    // 添加右侧弹性空间实现水平居中
+    QWidget* rightSpacer = new QWidget();
+    rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_mainToolbar->addWidget(rightSpacer);
 
     // 连接页面设置按钮的点击信号
     connect(m_pageSettingButton, &QPushButton::clicked, this, &MainWindow::showPageSettingDialog);
@@ -454,7 +464,10 @@ void MainWindow::createArrangeToolbar()
     m_arrangeToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
     m_mainLayout->addWidget(m_arrangeToolbar);
     
-
+    // 添加左侧弹性空间实现水平居中
+    QWidget* leftSpacer = new QWidget();
+    leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_arrangeToolbar->addWidget(leftSpacer);
     
     QAction* bringToFrontAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("Placed at the top"));
     m_arrangeToolbar->addSeparator();
@@ -464,6 +477,11 @@ void MainWindow::createArrangeToolbar()
     m_arrangeToolbar->addSeparator();
     QAction* sendBackwardAction = m_arrangeToolbar->addAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), tr("Move down one level"));
     m_arrangeToolbar->addSeparator();
+    
+    // 添加右侧弹性空间实现水平居中
+    QWidget* rightSpacer = new QWidget();
+    rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_arrangeToolbar->addWidget(rightSpacer);
 }
 
 void MainWindow::createExportAndImportToolbar()
@@ -474,6 +492,11 @@ void MainWindow::createExportAndImportToolbar()
     m_exportAndImportToolbar->setIconSize(QSize(16, 16));
     m_exportAndImportToolbar->setStyleSheet("QToolBar { background-color: #f9f9f9; border-bottom: 1px solid #e0e0e0; padding: 4px; }");
     m_mainLayout->addWidget(m_exportAndImportToolbar);
+    
+    // 添加左侧弹性空间实现水平居中
+    QWidget* leftSpacer = new QWidget();
+    leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_exportAndImportToolbar->addWidget(leftSpacer);
     
     // 添加导出工具栏的按钮和控件
     QPushButton* exportAsPngButton = new QPushButton(tr("导出为PNG"));
@@ -490,6 +513,11 @@ void MainWindow::createExportAndImportToolbar()
     // 添加导入工具栏的按钮和控件
     QPushButton* importFromSvgButton = new QPushButton(tr("从SVG导入"));
     m_exportAndImportToolbar->addWidget(importFromSvgButton);
+    
+    // 添加右侧弹性空间实现水平居中
+    QWidget* rightSpacer = new QWidget();
+    rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_exportAndImportToolbar->addWidget(rightSpacer);
 
     // 连接导出按钮的信号到相应的槽函数
     connect(exportAsPngButton, &QPushButton::clicked, this, &MainWindow::exportAsPng);
