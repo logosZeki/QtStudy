@@ -105,6 +105,7 @@ signals:
     void lineColorChanged(const QColor& color);
     void scaleChanged(qreal scale);  // 新增的缩放比例变化信号
     void shapesCountChanged(int count);  // 新增的图形数量变化信号
+    void multiSelectionChanged(bool hasMultiSelection); // 新增的多选状态变化信号
     
 public slots:
     // 应用页面设置
@@ -177,6 +178,15 @@ private:
     
     // 获取滚动视图的滚动条
     QScrollBar* findParentScrollBar(Qt::Orientation orientation = Qt::Horizontal) const;
+
+    // 多选功能相关方法
+    void startRectSelection(const QPoint& point);
+    void updateRectSelection(const QPoint& point);
+    void finishRectSelection();
+    void selectShapesInRect(const QRect& rect);
+    void clearSelection();
+    void drawSelectionRect(QPainter* painter);
+    bool isShapeCompletelyInRect(Shape* shape, const QRect& rect) const;
     
 private:
     QVector<Shape*> m_shapes;
@@ -225,6 +235,14 @@ private:
     QColor m_gridColor;                    // 网格颜色
     int m_gridSize;                        // 网格大小
     int m_gridThickness;                   // 网格线条粗细
+
+    // 多选相关变量
+    QVector<Shape*> m_selectedShapes;      // 存储多选的图形
+    bool m_isRectSelecting;                // 是否正在框选
+    QRect m_selectionRect;                 // 框选矩形
+    QPoint m_selectionStart;               // 框选起点
+    QVector<QPoint> m_shapesStartPos;      // 批量移动时记录每个图形的起始位置
+    QVector<Connection*> m_selectedConnections; // 存储选中的连接线
 };
 
 #endif // DRAWINGAREA_H

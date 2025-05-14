@@ -26,12 +26,29 @@
 
 
 DrawingArea::DrawingArea(QWidget *parent)
-    : QWidget(parent), m_selectedShape(nullptr), m_dragging(false),
-      m_activeHandle(Shape::None), m_resizing(false), m_textEditor(nullptr),
-      m_currentConnection(nullptr), m_hoveredShape(nullptr),
-      m_shapeContextMenu(nullptr), m_canvasContextMenu(nullptr), m_copiedShape(nullptr),
-      m_selectedConnection(nullptr), m_movingConnectionPoint(false), m_activeConnectionPoint(nullptr),
-      m_connectionDragPoint(0, 0), m_scale(1.0), m_isPanning(false), m_viewOffset(0, 0)
+    : QWidget(parent),
+      m_selectedShape(nullptr),
+      m_dragging(false),
+      m_scale(1.0),
+      m_isPanning(false),
+      m_activeHandle(Shape::None),
+      m_resizing(false),
+      m_textEditor(nullptr),
+      m_currentConnection(nullptr),
+      m_hoveredShape(nullptr),
+      m_selectedConnection(nullptr),
+      m_shapeContextMenu(nullptr),
+      m_canvasContextMenu(nullptr),
+      m_copiedShape(nullptr),
+      m_movingConnectionPoint(false),
+      m_activeConnectionPoint(nullptr),
+      m_backgroundColor(Qt::white),
+      m_drawingAreaSize(Default_WIDTH, Default_HEIGHT),
+      m_showGrid(true),
+      m_gridColor(Qt::lightGray),
+      m_gridSize(20),
+      m_gridThickness(1),
+      m_isRectSelecting(false)
 {
     // 启用接收拖放 (Enable accepting drops)
     setAcceptDrops(true);
@@ -175,6 +192,26 @@ void DrawingArea::paintEvent(QPaintEvent *event)
             // 绘制调整大小的手柄
             shape->drawResizeHandles(&painter);
         }
+        
+        // 绘制多选状态下被选中的图形
+        if (m_selectedShapes.contains(shape)) {
+            // 临时禁用抗锯齿以获得更细的线条
+            painter.setRenderHint(QPainter::Antialiasing, false);
+            
+            QPen dashPen(Qt::blue, 0); // 使用0宽度的笔
+            QVector<qreal> dashes;
+            dashes << 2 << 2;
+            dashPen.setDashPattern(dashes);
+            dashPen.setStyle(Qt::CustomDashLine);
+            painter.setPen(dashPen);
+            painter.setBrush(Qt::NoBrush);
+            
+            // 绘制选中框，不绘制调整大小的手柄
+            painter.drawRect(shape->getRect());
+            
+            // 重新启用抗锯齿
+            painter.setRenderHint(QPainter::Antialiasing, true);
+        }
     }
     
     // 绘制所有连线 - 移到形状绘制之后，确保连接线始终显示在最上层
@@ -194,6 +231,11 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     
     // 恢复变换状态
     painter.restore();
+    
+    // 绘制选择框（如果正在框选）
+    if (m_isRectSelecting) {
+        drawSelectionRect(&painter);
+    }
 }
 
 void DrawingArea::dragEnterEvent(QDragEnterEvent *event)
@@ -269,6 +311,12 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
     // 更新鼠标位置
     m_lastMousePos = event->pos();
     
+    // 处理框选更新
+    if (m_isRectSelecting) {
+        updateRectSelection(event->pos());
+        return;
+    }
+    
     // 拉住拉线拖动时的操作
     if (m_currentConnection) {
         m_temporaryEndPoint = scenePos;
@@ -338,7 +386,7 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
         return;
     }
     
-    // 移动形状或整条线
+    // 移动形状或整条线或多个选中的图形
     if (m_dragging) {
         // 计算拖动偏移
         QPoint delta = event->pos() - m_dragStart;
@@ -346,11 +394,17 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
         QPoint sceneDelta = mapToScene(delta) - mapToScene(QPoint(0, 0));
         
         if (m_selectedShape) {
-            // 移动形状
+            // 移动单个图形
             QRect newRect = m_selectedShape->getRect();
             newRect.moveTo(m_shapeStart + sceneDelta);
             m_selectedShape->setRect(newRect);
-            
+        } else if (!m_selectedShapes.isEmpty()) {
+            // 批量移动多个图形
+            for (int i = 0; i < m_selectedShapes.size(); ++i) {
+                QRect newRect = m_selectedShapes[i]->getRect();
+                newRect.moveTo(m_shapesStartPos[i] + sceneDelta);
+                m_selectedShapes[i]->setRect(newRect);
+            }
         } else if (m_selectedConnection) {
             // 移动整条线
             Connection* conn = m_selectedConnection;
@@ -460,12 +514,6 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
     
     // 如果鼠标不在任何形状或手柄上，设置为标准光标
     setCursor(Qt::ArrowCursor);
-    
-    // 如果之前有悬停的形状，现在鼠标已经移出，需要清除悬停状态
-    if (m_hoveredShape) {
-        m_hoveredShape = nullptr;
-        update();
-    }
 }
 
 void DrawingArea::mousePressEvent(QMouseEvent *event)
@@ -553,45 +601,114 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
             }
         }
         
+        // 检查是否点击了多选中的图形之一
+        if (!m_selectedShapes.isEmpty()) {
+            bool clickedSelectedShape = false;
+            
+            for (int i = 0; i < m_selectedShapes.size(); ++i) {
+                if (m_selectedShapes[i]->contains(scenePos)) {
+                    // 准备拖动所有选中的图形
+                    m_dragging = true;
+                    m_dragStart = event->pos();
+                    
+                    // 记录所有图形的起始位置，用于计算拖动偏移
+                    m_shapesStartPos.clear();
+                    for (int j = 0; j < m_selectedShapes.size(); ++j) {
+                        m_shapesStartPos.append(m_selectedShapes[j]->getRect().topLeft());
+                    }
+                    
+                    clickedSelectedShape = true;
+                    break;
+                }
+            }
+            
+            if (clickedSelectedShape) {
+                return;
+            }
+        }
+        
         // 检查是否点击了现有的形状
         Shape* oldSelectedShape = m_selectedShape;  // 记录旧的选中图形
         
         for (int i = m_shapes.size() - 1; i >= 0; --i) {
             if (m_shapes[i]->contains(scenePos)) {
-                // 取消当前选中的连接线
-                if (m_selectedConnection) {
-                    m_selectedConnection->setSelected(false);
-                    m_selectedConnection = nullptr;
+                // 如果按住Ctrl键，则进行多选
+                if (event->modifiers() & Qt::ControlModifier) {
+                    // 如果点击已选中的图形，则取消其选择
+                    if (m_shapes[i] == m_selectedShape) {
+                        m_selectedShape = nullptr;
+                        emit shapeSelectionChanged(false);
+                    } else if (m_selectedShapes.contains(m_shapes[i])) {
+                        m_selectedShapes.removeOne(m_shapes[i]);
+                        if (m_selectedShapes.isEmpty()) {
+                            emit multiSelectionChanged(false);
+                        }
+                    } else {
+                        // 如果有单选中的图形，先转换到多选模式
+                        if (m_selectedShape) {
+                            m_selectedShapes.append(m_selectedShape);
+                            m_selectedShape = nullptr;
+                        }
+                        
+                        // 添加到多选列表
+                        m_selectedShapes.append(m_shapes[i]);
+                        emit multiSelectionChanged(true);
+                    }
+                } else {
+                    // 取消当前选中的连接线
+                    if (m_selectedConnection) {
+                        m_selectedConnection->setSelected(false);
+                        m_selectedConnection = nullptr;
+                    }
+                    
+                    // 清除多选状态
+                    if (!m_selectedShapes.isEmpty()) {
+                        m_selectedShapes.clear();
+                        emit multiSelectionChanged(false);
+                    }
+                    
+                    // 选中单个形状并准备拖动
+                    m_selectedShape = m_shapes[i];
+                    m_dragging = true;
+                    m_dragStart = event->pos();
+                    m_shapeStart = m_selectedShape->getRect().topLeft();
+                    
+                    // 如果选中的图形改变，发出信号
+                    if (oldSelectedShape != m_selectedShape) {
+                        emit shapeSelectionChanged(true);
+                    }
                 }
-                
-                // 选中形状并准备拖动
-                m_selectedShape = m_shapes[i];
-                m_dragging = true;
-                m_dragStart = event->pos();
-                m_shapeStart = m_selectedShape->getRect().topLeft();
                 
                 update();
-                
-                // 如果选中的图形改变，发出信号
-                if (oldSelectedShape != m_selectedShape) {
-                    emit shapeSelectionChanged(true);
-                }
-                
                 return;
             }
         }
         
-        // 如果点击空白区域，取消选中当前形状和连接线
-        if (m_selectedShape) {
-            m_selectedShape = nullptr;
-            update();
-            emit shapeSelectionChanged(false);  // 发出选择变化信号
-        }
-        
-        if (m_selectedConnection) {
-            m_selectedConnection->setSelected(false);
-            m_selectedConnection = nullptr;
-            update();
+        // 如果点击空白区域且没有按Ctrl键，则清除当前选择
+        if (!(event->modifiers() & Qt::ControlModifier)) {
+            // 清除单选
+            if (m_selectedShape) {
+                m_selectedShape = nullptr;
+                update();
+                emit shapeSelectionChanged(false);
+            }
+            
+            // 清除多选
+            if (!m_selectedShapes.isEmpty()) {
+                m_selectedShapes.clear();
+                update();
+                emit multiSelectionChanged(false);
+            }
+            
+            // 清除选中的连接线
+            if (m_selectedConnection) {
+                m_selectedConnection->setSelected(false);
+                m_selectedConnection = nullptr;
+                update();
+            }
+            
+            // 开始框选
+            startRectSelection(event->pos());
         }
     }
     else if (event->button() == Qt::RightButton) {
@@ -603,6 +720,12 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
 {
     // 将鼠标坐标转换为场景坐标
     QPoint scenePos = mapToScene(event->pos());
+    
+    // 结束框选过程
+    if (m_isRectSelecting && event->button() == Qt::LeftButton) {
+        finishRectSelection();
+        return;
+    }
     
     // 完成连接创建
     if (m_currentConnection && event->button() == Qt::LeftButton) {
@@ -669,36 +792,29 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
             }
         }
         
+        // 完成拖动操作
         m_movingConnectionPoint = false;
         m_activeConnectionPoint = nullptr;
-        m_connectionDragPoint = QPoint(0, 0);
         setCursor(Qt::ArrowCursor);
         update();
-        
-        // 发出选择状态变化信号
-        emit shapeSelectionChanged(m_selectedShape != nullptr);
-        
         return;
     }
     
-    // 结束调整大小
+    // 结束调整大小操作
     if (m_resizing && event->button() == Qt::LeftButton) {
         m_resizing = false;
         m_activeHandle = Shape::None;
-        
-        // 发出选择状态变化信号
-        emit shapeSelectionChanged(m_selectedShape != nullptr);
-        
+        setCursor(Qt::ArrowCursor);
+        update();
         return;
     }
     
-    // 如果正在拖动，结束拖动
-    if (m_dragging) {
+    // 结束拖动操作
+    if (m_dragging && event->button() == Qt::LeftButton) {
         m_dragging = false;
-        
-        // 发出选择状态变化信号
-        emit shapeSelectionChanged(m_selectedShape != nullptr);
-        
+        m_shapesStartPos.clear(); // 清除批量移动时记录的起始位置
+        setCursor(Qt::ArrowCursor);
+        update();
         return;
     }
 }
@@ -2302,6 +2418,142 @@ void DrawingArea::setSelectedShapeLineStyle(int style)
         m_selectedShape->setLineStyle(style);
         update();
     }
+}
+
+// 开始框选
+void DrawingArea::startRectSelection(const QPoint& point)
+{
+    m_isRectSelecting = true;
+    m_selectionStart = mapToScene(point);
+    m_selectionRect = QRect(m_selectionStart, QSize(0, 0));
+    update();
+}
+
+// 更新框选矩形
+void DrawingArea::updateRectSelection(const QPoint& point)
+{
+    if (!m_isRectSelecting)
+        return;
+    
+    QPoint currentPos = mapToScene(point);
+    m_selectionRect = QRect(m_selectionStart, currentPos).normalized();
+    update();
+}
+
+// 完成框选过程
+void DrawingArea::finishRectSelection()
+{
+    if (!m_isRectSelecting)
+        return;
+    
+    selectShapesInRect(m_selectionRect);
+    m_isRectSelecting = false;
+    update();
+}
+
+// 判断图形是否完全包含在选择矩形内
+bool DrawingArea::isShapeCompletelyInRect(Shape* shape, const QRect& rect) const
+{
+    // 使用shape的contains方法来判断矩形的四个角是否都在图形内
+    QRect shapeRect = shape->getRect();
+    return rect.contains(shapeRect);
+}
+
+// 选择矩形内的所有图形
+void DrawingArea::selectShapesInRect(const QRect& rect)
+{
+    // 清除之前的选择
+    clearSelection();
+    
+    // 遍历所有图形，检查是否完全在选择框内
+    for (int i = 0; i < m_shapes.size(); ++i) {
+        if (isShapeCompletelyInRect(m_shapes[i], rect)) {
+            m_selectedShapes.append(m_shapes[i]);
+        }
+    }
+    
+    // 遍历所有连接线，检查是否完全在选择框内
+    for (int i = 0; i < m_connections.size(); ++i) {
+        Connection* conn = m_connections[i];
+        QPoint startPos = conn->getStartPosition();
+        QPoint endPos = conn->getEndPosition();
+        
+        // 如果连接线的两个端点都在选择框内，就选中它
+        if (rect.contains(startPos) && rect.contains(endPos)) {
+            m_selectedConnections.append(conn);
+            conn->setSelected(true);
+        }
+    }
+    
+    // 如果只选中了一个图形，则设置为单选
+    if (m_selectedShapes.size() == 1) {
+        m_selectedShape = m_selectedShapes.first();
+        m_selectedShapes.clear();
+        emit shapeSelectionChanged(true);
+    } else if (m_selectedShapes.size() > 1) {
+        // 多选状态
+        m_selectedShape = nullptr;
+        emit multiSelectionChanged(true);
+    } else if (m_selectedConnections.size() == 1) {
+        // 如果只选中了一条连接线
+        selectConnection(m_selectedConnections.first());
+        m_selectedConnections.clear();
+    } else if (m_selectedShapes.isEmpty() && m_selectedConnections.isEmpty()) {
+        // 没有选中任何东西
+        emit shapeSelectionChanged(false);
+        emit multiSelectionChanged(false);
+    } else {
+        // 选中了多条连接线或图形和连接线混合
+        emit multiSelectionChanged(true);
+    }
+}
+
+// 清除所有选择状态
+void DrawingArea::clearSelection()
+{
+    // 清除单选
+    m_selectedShape = nullptr;
+    
+    // 清除多选的图形
+    m_selectedShapes.clear();
+    
+    // 清除选中的连接线
+    for (Connection* conn : m_selectedConnections) {
+        conn->setSelected(false);
+    }
+    m_selectedConnections.clear();
+    
+    // 清除当前选中的连接线
+    if (m_selectedConnection) {
+        m_selectedConnection->setSelected(false);
+        m_selectedConnection = nullptr;
+    }
+    
+    // 发送信号
+    emit shapeSelectionChanged(false);
+    emit multiSelectionChanged(false);
+}
+
+// 绘制选择矩形
+void DrawingArea::drawSelectionRect(QPainter* painter)
+{
+    if (!m_isRectSelecting)
+        return;
+    
+    // 设置半透明蓝色填充和边框
+    QColor fillColor(0, 120, 215, 40);
+    QColor borderColor(0, 120, 215);
+    
+    painter->save();
+    painter->setBrush(fillColor);
+    painter->setPen(QPen(borderColor, 1, Qt::DashLine));
+    
+    // 将场景坐标转换为视图坐标
+    QRect viewRect(mapFromScene(m_selectionRect.topLeft()), 
+                  mapFromScene(m_selectionRect.bottomRight()));
+    
+    painter->drawRect(viewRect);
+    painter->restore();
 }
 
 
