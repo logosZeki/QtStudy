@@ -238,11 +238,22 @@ private:
 
     // 多选相关变量
     QVector<Shape*> m_selectedShapes;      // 存储多选的图形
+    QVector<Shape*> m_multiSelectedShapes;      // 存储多选的图形
+    
     bool m_isRectSelecting;                // 是否正在框选
+    bool m_isMultiRectSelecting;                // 是否正在框选
+
     QRect m_selectionRect;                 // 框选矩形
+    QRect m_multiSelectionRect;                 // 框选矩形
+
     QPoint m_selectionStart;               // 框选起点
+    QPoint m_multiSelectionStart;               // 框选起点
+
     QVector<QPoint> m_shapesStartPos;      // 批量移动时记录每个图形的起始位置
+    QVector<QPoint> m_multyShapesStartPos;      // 批量移动时记录每个图形的起始位置
+
     QVector<Connection*> m_selectedConnections; // 存储选中的连接线
+    QVector<Connection*> m_multySelectedConnections; // 存储选中的连接线
 };
 
 #endif // DRAWINGAREA_H
