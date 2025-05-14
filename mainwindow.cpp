@@ -114,6 +114,10 @@ void MainWindow::setupUi()
 
 void MainWindow::createTopToolbar()
 {
+    // 创建一个水平布局用于居中标签栏
+    QHBoxLayout *centerLayout = new QHBoxLayout();
+    centerLayout->setContentsMargins(0, 0, 0, 0);
+    centerLayout->setSpacing(0);
     
     // 创建标签栏
     m_tabBar = new QTabBar(this);
@@ -130,7 +134,13 @@ void MainWindow::createTopToolbar()
     // 连接标签切换信号
     connect(m_tabBar, &QTabBar::currentChanged, this, &MainWindow::onTabBarClicked);
     
-    m_mainLayout->addWidget(m_tabBar);
+    // 将标签栏放入水平布局中，并添加弹簧使其居中
+    centerLayout->addStretch();
+    centerLayout->addWidget(m_tabBar);
+    centerLayout->addStretch();
+    
+    // 将水平布局添加到主布局中
+    m_mainLayout->addLayout(centerLayout);
 }
 
 void MainWindow::onTabBarClicked(int index)
