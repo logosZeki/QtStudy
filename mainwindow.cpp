@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupUi();
     
     // 设置窗口标题和大小
-    setWindowTitle(tr("流程图设计器"));
+    setWindowTitle(tr("Flowchart Designer"));
     resize(1900, 1000);
     //showMaximized();
 
@@ -114,34 +114,6 @@ void MainWindow::setupUi()
 
 void MainWindow::createTopToolbar()
 {
-    // 创建顶部工具栏
-    m_topToolbar = new QToolBar(this);
-    m_topToolbar->setMovable(false);
-    m_topToolbar->setIconSize(QSize(16, 16));
-    m_topToolbar->setStyleSheet("QToolBar { background-color: white; border-bottom: 1px solid #e0e0e0; padding: 2px; }");
-    m_mainLayout->addWidget(m_topToolbar);
-
-    // 添加常用按钮
-    QAction* homeAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DirHomeIcon), tr("Home page"));
-    QAction* newAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("newly built"));
-    QAction* menuAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_TitleBarMenuButton), tr("Menu"));
-    
-    m_topToolbar->addSeparator();
-    
-    // 添加文件名标签
-    QLabel* fileNameLabel = new QLabel(tr("Unnamed file"));
-    m_topToolbar->addWidget(fileNameLabel);
-    
-    QAction* starAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DialogApplyButton), tr("Collection"));
-    
-    // 添加伸缩空间，保持后面的控件在右侧
-    QWidget* spacer = new QWidget();
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    m_topToolbar->addWidget(spacer);
-    
-    // 添加分享和用户按钮 - 使用确定存在的图标
-    QAction* shareAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("Share"));
-    QAction* userAction = m_topToolbar->addAction(style()->standardIcon(QStyle::SP_DesktopIcon), tr("User"));
     
     // 创建标签栏
     m_tabBar = new QTabBar(this);
@@ -195,8 +167,8 @@ void MainWindow::createMainToolbar()
     m_mainLayout->addWidget(m_mainToolbar);
     
     // 添加撤销和重做按钮
-    QAction* undoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowBack), tr("撤销"));
-    QAction* redoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowForward), tr("重做"));
+    QAction* undoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowBack), tr("Undo"));
+    QAction* redoAction = m_mainToolbar->addAction(style()->standardIcon(QStyle::SP_ArrowForward), tr("Redo"));
     
     m_mainToolbar->addSeparator();
     
