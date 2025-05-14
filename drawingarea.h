@@ -180,12 +180,24 @@ private:
     QScrollBar* findParentScrollBar(Qt::Orientation orientation = Qt::Horizontal) const;
 
     // 多选功能相关方法
-    void startRectSelection(const QPoint& point);
-    void updateRectSelection(const QPoint& point);
-    void finishRectSelection();
-    void selectShapesInRect(const QRect& rect);
-    void clearSelection();
-    void drawSelectionRect(QPainter* painter);
+    //void startRectSelection(const QPoint& point);
+    void startRectMultiSelection(const QPoint& point);
+    
+    //void updateRectSelection(const QPoint& point);
+    void updateRectMultiSelection(const QPoint& point);
+
+    //void finishRectSelection();
+    void finishRectMultiSelection();
+
+    //void selectShapesInRect(const QRect& rect);
+    void selectMultiShapesInRect(const QRect& rect);
+
+    //void clearSelection();
+    void clearMultySelection();
+
+    //void drawSelectionRect(QPainter* painter);
+    void drawMultiSelectionRect(QPainter* painter);
+    
     bool isShapeCompletelyInRect(Shape* shape, const QRect& rect) const;
     
 private:

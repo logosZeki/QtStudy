@@ -234,7 +234,7 @@ void DrawingArea::paintEvent(QPaintEvent *event)
     
     // 绘制选择框（如果正在框选）
     if (m_isMultiRectSelecting) {
-        drawSelectionRect(&painter);
+        drawMultiSelectionRect(&painter);
     }
 }
 
@@ -313,7 +313,7 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
     
     // 处理框选更新
     if (m_isMultiRectSelecting) {
-        updateRectSelection(event->pos());
+        updateRectMultiSelection(event->pos());
         return;
     }
     
@@ -714,7 +714,7 @@ void DrawingArea::mousePressEvent(QMouseEvent *event)
             }
             
             // 开始框选
-            startRectSelection(event->pos());
+            startRectMultiSelection(event->pos());
         }
     }
     else if (event->button() == Qt::RightButton) {
@@ -729,7 +729,7 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
     
     // 结束框选过程
     if (m_isMultiRectSelecting && event->button() == Qt::LeftButton) {
-        finishRectSelection();
+        finishRectMultiSelection();
         return;
     }
     
@@ -2427,7 +2427,7 @@ void DrawingArea::setSelectedShapeLineStyle(int style)
 }
 
 // 开始框选
-void DrawingArea::startRectSelection(const QPoint& point)
+void DrawingArea::startRectMultiSelection(const QPoint& point)
 {
     m_isMultiRectSelecting = true;
     m_multiSelectionStart = mapToScene(point);
@@ -2436,7 +2436,7 @@ void DrawingArea::startRectSelection(const QPoint& point)
 }
 
 // 更新框选矩形
-void DrawingArea::updateRectSelection(const QPoint& point)
+void DrawingArea::updateRectMultiSelection(const QPoint& point)
 {
     if (!m_isMultiRectSelecting)
         return;
@@ -2447,12 +2447,12 @@ void DrawingArea::updateRectSelection(const QPoint& point)
 }
 
 // 完成框选过程
-void DrawingArea::finishRectSelection()
+void DrawingArea::finishRectMultiSelection()
 {
     if (!m_isMultiRectSelecting)
         return;
     
-    selectShapesInRect(m_multiSelectionRect);
+    selectMultiShapesInRect(m_multiSelectionRect);
     m_isMultiRectSelecting = false;
     update();
 }
@@ -2466,10 +2466,10 @@ bool DrawingArea::isShapeCompletelyInRect(Shape* shape, const QRect& rect) const
 }
 
 // 选择矩形内的所有图形
-void DrawingArea::selectShapesInRect(const QRect& rect)
+void DrawingArea::selectMultiShapesInRect(const QRect& rect)
 {
     // 清除之前的选择
-    clearSelection();
+    clearMultySelection();
     
     // 遍历所有图形，检查是否完全在选择框内
     for (int i = 0; i < m_shapes.size(); ++i) {
@@ -2515,7 +2515,7 @@ void DrawingArea::selectShapesInRect(const QRect& rect)
 }
 
 // 清除所有选择状态
-void DrawingArea::clearSelection()
+void DrawingArea::clearMultySelection()
 {
     // 清除单选
     m_selectedShape = nullptr;
@@ -2541,7 +2541,7 @@ void DrawingArea::clearSelection()
 }
 
 // 绘制选择矩形
-void DrawingArea::drawSelectionRect(QPainter* painter)
+void DrawingArea::drawMultiSelectionRect(QPainter* painter)
 {
     if (!m_isMultiRectSelecting)
         return;
