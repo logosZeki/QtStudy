@@ -1630,15 +1630,26 @@ void DrawingArea::deleteSelectedShape()
 // 全选图形
 void DrawingArea::selectAllShapes()
 {
-    // 目前DrawingArea只支持单选一个形状
-    // 如果形状列表不为空，选择第一个形状
-    if (!m_shapes.isEmpty()) {
-        m_selectedShape = m_shapes.first();
-        update();
+    // 清除之前的选择
+    clearMultySelection();
+    
+    // 将所有图形添加到多选列表中
+    for (int i = 0; i < m_shapes.size(); ++i) {
+        m_multiSelectedShapes.append(m_shapes[i]);
     }
     
-    // 注意：如果将来需要支持多选，可以在此处扩展功能
-    // 例如添加一个m_multiSelectedShapes向量来存储多个选中的形状
+    // 将所有连接线添加到多选列表中
+    for (int i = 0; i < m_connections.size(); ++i) {
+        m_multySelectedConnections.append(m_connections[i]);
+        m_connections[i]->setSelected(true);
+    }
+    
+    // 如果有图形或连接线被选中，发送多选信号
+    if (!m_multiSelectedShapes.isEmpty() || !m_multySelectedConnections.isEmpty()) {
+        emit multiSelectionChanged(true);
+    }
+    
+    update();
 }
 
 // 键盘事件处理
