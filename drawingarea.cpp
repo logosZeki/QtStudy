@@ -316,8 +316,8 @@ void DrawingArea::dropEvent(QDropEvent *event)
             m_shapes.append(newShape);
             
             // 发送图形数量变化信号
-            emit shapesCountChanged(getShapesCount());
-            
+            emit shapesCountChanged(getShapesCount());        
+
             // 发送形状选择变化信号，使工具栏的格式按钮可用
             emit shapeSelectionChanged(true);
             
@@ -912,14 +912,15 @@ if (!m_selectedShape) return;
     QColor transparentFillColor = fillColor; 
     transparentFillColor.setAlphaF(0.0); // 编辑框背景全透明
     
-
-    // 设置编辑器样式，使用带有透明度的背景色
+    // 设置编辑器样式，使用带有透明度的背景色，同时显式设置字体
     // 使用 rgba() 格式，其中 %4 为 alpha 值
-    QString styleSheet = QString("background-color: rgba(%1, %2, %3, %4); border: none;")
+    QString styleSheet = QString("background-color: rgba(%1, %2, %3, %4); border: none; font-family: '%5'; font-size: %6pt;")
                             .arg(transparentFillColor.red())
                             .arg(transparentFillColor.green())
                             .arg(transparentFillColor.blue())
-                            .arg(transparentFillColor.alphaF()); // 使用alphaF获取0.0-1.0的alpha值
+                            .arg(transparentFillColor.alphaF()) // 使用alphaF获取0.0-1.0的alpha值
+                            .arg(m_selectedShape->fontFamily())
+                            .arg(m_selectedShape->fontSize());
     m_textEditor->setStyleSheet(styleSheet);
     
     // 标记形状为编辑状态
@@ -2096,9 +2097,30 @@ void DrawingArea::setSelectedShapeFontFamily(const QString& family)
 {
     if (m_selectedShape) {
         m_selectedShape->setFontFamily(family);
+        
+        // 通过文档设置字体族
         QFont font = m_selectedShape->getFont();
-        m_textEditor->setFont(font);// 更新文本编辑器的字体
-        //m_textEditor->setFontFamily(family);  
+        m_textEditor->setFont(font);
+        
+        // 确保使用文档级别的字体设置
+        QTextDocument *doc = m_textEditor->document();
+        QFont docFont = doc->defaultFont();
+        docFont.setFamily(family);
+        doc->setDefaultFont(docFont);
+        
+        // 在样式表中显式设置字体族
+        QColor fillColor = m_selectedShape->fillColor();
+        QColor transparentFillColor = fillColor; 
+        transparentFillColor.setAlphaF(0.0); // 编辑框背景全透明
+        
+        QString styleSheet = QString("background-color: rgba(%1, %2, %3, %4); border: none; font-family: '%5';")
+                                .arg(transparentFillColor.red())
+                                .arg(transparentFillColor.green())
+                                .arg(transparentFillColor.blue())
+                                .arg(transparentFillColor.alphaF())
+                                .arg(family);
+        m_textEditor->setStyleSheet(styleSheet);
+        
         update();  // 更新绘图区域以显示变化
     }
 }
@@ -2107,9 +2129,30 @@ void DrawingArea::setSelectedShapeFontSize(int size)
 {
     if (m_selectedShape) {
         m_selectedShape->setFontSize(size);
+        
+        // 通过文档设置字体大小
         QFont font = m_selectedShape->getFont();
-        m_textEditor->setFont(font);// 更新文本编辑器的字体
-        //m_textEditor->setFontPointSize(size);  // 更新文本编辑器的字体大小
+        m_textEditor->setFont(font);
+        
+        // 确保使用文档级别的字体设置
+        QTextDocument *doc = m_textEditor->document();
+        QFont docFont = doc->defaultFont();
+        docFont.setPointSize(size);
+        doc->setDefaultFont(docFont);
+        
+        // 在样式表中显式设置字体大小
+        QColor fillColor = m_selectedShape->fillColor();
+        QColor transparentFillColor = fillColor; 
+        transparentFillColor.setAlphaF(0.0); // 编辑框背景全透明
+        
+        QString styleSheet = QString("background-color: rgba(%1, %2, %3, %4); border: none; font-size: %5pt;")
+                                .arg(transparentFillColor.red())
+                                .arg(transparentFillColor.green())
+                                .arg(transparentFillColor.blue())
+                                .arg(transparentFillColor.alphaF())
+                                .arg(size);
+        m_textEditor->setStyleSheet(styleSheet);
+        
         update();  // 更新绘图区域以显示变化
     }
 }
