@@ -173,6 +173,10 @@ void MainWindow::setupUi()
 
     // 创建自定义标题栏
     createTitleBar();
+
+    // 创建工具栏和绘图区域
+    m_toolBar = new ToolBar(this);
+    m_drawingArea = new DrawingArea(this);
     
     // 创建顶部工具栏
     createTopToolbar();
@@ -192,9 +196,7 @@ void MainWindow::setupUi()
     m_contentLayout->setSpacing(0);
     m_mainLayout->addLayout(m_contentLayout);
 
-    // 创建工具栏和绘图区域
-    m_toolBar = new ToolBar(this);
-    m_drawingArea = new DrawingArea(this);
+
 
     // 创建滚动区域来容纳绘图区域
     QScrollArea *scrollArea = new QScrollArea();
