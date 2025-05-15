@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+﻿#include "mainwindow.h"
 #include "toolbar.h"
 #include "drawingarea.h"
 #include "pagesettingdialog.h"
@@ -16,65 +16,39 @@
 #include <QGraphicsEffect>
 #include <QPropertyAnimation>
 #include <QToolButton>
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), m_pageSettingDialog(nullptr)
 {
-    // 设置无边框窗口
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
-    
     setupUi();
-    
-    // 设置窗口标题和大小
     setWindowTitle(tr("Flowchart Designer"));
     resize(1900, 1000);
-    
-    // 连接DrawingArea的shapeSelectionChanged信号到updateFontControls槽
     connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateFontControls);
-    
-    // 连接DrawingArea的shapeSelectionChanged信号到updateArrangeControls槽
     connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateArrangeControls);
-    
-    // 连接DrawingArea的颜色变化信号到updateColorButtons槽
     connect(m_drawingArea, &DrawingArea::fontColorChanged, this, &MainWindow::updateColorButtons);
     connect(m_drawingArea, &DrawingArea::fillColorChanged, this, &MainWindow::updateColorButtons);
     connect(m_drawingArea, &DrawingArea::lineColorChanged, this, &MainWindow::updateColorButtons);
     connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateColorButtons);
-    
-    // 连接状态栏更新信号
     connect(m_drawingArea, &DrawingArea::selectionChanged, this, &MainWindow::updateStatusBarInfo);
     connect(m_drawingArea, &DrawingArea::scaleChanged, this, &MainWindow::updateZoomSlider);
     connect(m_drawingArea, &DrawingArea::shapesCountChanged, this, &MainWindow::updateStatusBarInfo);
-    
-    // 设置DrawingArea初始缩放比例
     updateZoomSlider();
-    
-    // 初始化字体控件状态
     updateFontControls();
-    
-    // 初始化状态栏信息
     updateStatusBarInfo();
 }
-
 MainWindow::~MainWindow()
 {
     if (m_pageSettingDialog) {
         delete m_pageSettingDialog;
     }
 }
-
 void MainWindow::setupUi()
 {
-    // 创建中央部件
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
-
-    // 创建主垂直布局
     m_mainLayout = new QVBoxLayout(m_centralWidget);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
-
-    // 设置应用程序整体样式表
     setStyleSheet(R"(
         QWidget {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
@@ -170,35 +144,19 @@ void MainWindow::setupUi()
             width: 0px;
         }
     )");
-
-    // 创建自定义标题栏
     createTitleBar();
-
-    // 创建工具栏和绘图区域
     m_toolBar = new ToolBar(this);
     m_drawingArea = new DrawingArea(this);
-    
-    // 创建顶部工具栏
     createTopToolbar();
-    
-    // 创建各个选项卡对应的工具栏
-    createMainToolbar();       // 开始
-    createArrangeToolbar();    // 排列
-    createExportAndImportToolbar();     // 导出和导入
-    
-    // 默认只显示"开始"选项卡对应的工具栏
+    createMainToolbar();       
+    createArrangeToolbar();    
+    createExportAndImportToolbar();     
     m_arrangeToolbar->hide();
     m_exportAndImportToolbar->hide();
-
-    // 创建内容区域水平布局
     m_contentLayout = new QHBoxLayout();
     m_contentLayout->setContentsMargins(0, 0, 0, 0);
     m_contentLayout->setSpacing(0);
     m_mainLayout->addLayout(m_contentLayout);
-
-
-
-    // 创建滚动区域来容纳绘图区域
     QScrollArea *scrollArea = new QScrollArea();
     scrollArea->setWidget(m_drawingArea);
     scrollArea->setWidgetResizable(false);
@@ -206,72 +164,49 @@ void MainWindow::setupUi()
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     scrollArea->setFrameShape(QFrame::NoFrame);
     scrollArea->setStyleSheet("QScrollArea { border: none; background-color: #f5f5f7; }");
-
-    // 设置工具栏固定宽度
     m_toolBar->setFixedWidth(249);
     m_toolBar->setStyleSheet("QWidget { background-color: #f5f5f7; border-right: 1px solid #e0e0e0; }");
-
-    // 添加到布局
     m_contentLayout->addWidget(m_toolBar);
     m_contentLayout->addWidget(scrollArea, 1);
-    
-    // 创建状态栏
     createStatusBar();
 }
-
 void MainWindow::createTitleBar()
 {
-    // 创建自定义标题栏
     QWidget* titleBar = new QWidget(this);
     titleBar->setFixedHeight(30);
     titleBar->setStyleSheet("background-color: #f5f5f7; border-bottom: 1px solid #e5e5e5;");
-    
     QHBoxLayout* layout = new QHBoxLayout(titleBar);
     layout->setContentsMargins(10, 0, 10, 0);
-    
-    // 添加标题标签
     QLabel* titleLabel = new QLabel(tr("Flowchart Designer"), this);
     titleLabel->setStyleSheet("font-size: 13px; font-weight: 500; color: #333;");
-    
-    // 添加最小化、最大化和关闭按钮 - Apple样式
     QPushButton* closeButton = new QPushButton("", this);
     closeButton->setFixedSize(12, 12);
     closeButton->setStyleSheet(
         "QPushButton { background-color: #fc615d; border-radius: 6px; border: none; }"
         "QPushButton:hover { background-color: #fc615d; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 10 10\"><path d=\"M3.5,6.5 L3.5,6.5 L1.5,4.5 M3.5,4.5 L1.5,6.5 M6.5,6.5 L8.5,4.5 M6.5,4.5 L8.5,6.5\" stroke=\"black\" stroke-width=\"1.15\" fill=\"none\" /></svg>'); }"
     );
-    
     QPushButton* minButton = new QPushButton("", this);
     minButton->setFixedSize(12, 12);
     minButton->setStyleSheet(
         "QPushButton { background-color: #fdbc40; border-radius: 6px; border: none; }"
         "QPushButton:hover { background-color: #fdbc40; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 10 10\"><path d=\"M2.5,5 L7.5,5\" stroke=\"black\" stroke-width=\"1.15\" fill=\"none\" /></svg>'); }"
     );
-    
     QPushButton* maxButton = new QPushButton("", this);
     maxButton->setFixedSize(12, 12);
     maxButton->setStyleSheet(
         "QPushButton { background-color: #34c749; border-radius: 6px; border: none; }"
         "QPushButton:hover { background-color: #34c749; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 10 10\"><path d=\"M2.5,2.5 L7.5,2.5 L7.5,7.5 L2.5,7.5 L2.5,2.5 Z\" stroke=\"black\" stroke-width=\"1.15\" fill=\"none\" /></svg>'); }"
     );
-    
-    // 创建一个水平布局来包含这些按钮
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(8);
     buttonLayout->setContentsMargins(0, 0, 0, 0);
     buttonLayout->addWidget(closeButton);
     buttonLayout->addWidget(minButton);
     buttonLayout->addWidget(maxButton);
-    
-    // 添加到布局
     layout->addLayout(buttonLayout);
     layout->addWidget(titleLabel, 0, Qt::AlignCenter);
     layout->addStretch();
-    
-    // 添加到主布局
     m_mainLayout->addWidget(titleBar);
-    
-    // 连接按钮信号
     connect(minButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
     connect(maxButton, &QPushButton::clicked, this, [this]() {
         if (isMaximized()) {
@@ -281,15 +216,11 @@ void MainWindow::createTitleBar()
         }
     });
     connect(closeButton, &QPushButton::clicked, this, &MainWindow::close);
-    
-    // 使标题栏可拖动
     titleBar->installEventFilter(this);
 }
-
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
     static QPoint lastPos;
-    
     if (event->type() == QEvent::MouseButtonPress) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         if (mouseEvent->button() == Qt::LeftButton) {
@@ -304,7 +235,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         }
         return true;
     } else if (event->type() == QEvent::MouseButtonDblClick) {
-        // 如果是双击事件，并且发生在标题栏上，则切换窗口的最大化状态
         QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
         if (mouseEvent->button() == Qt::LeftButton) {
             if (isMaximized()) {
@@ -315,23 +245,16 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
             return true;
         }
     }
-    
     return QMainWindow::eventFilter(watched, event);
 }
-
 void MainWindow::createTopToolbar()
 {
-    // 创建一个水平布局用于居中标签栏
     QHBoxLayout *centerLayout = new QHBoxLayout();
     centerLayout->setContentsMargins(0, 0, 0, 0);
     centerLayout->setSpacing(0);
-    
-    // 创建一个容器Widget来设置背景色
     QWidget *containerWidget = new QWidget(this);
     containerWidget->setStyleSheet("background-color: #f5f5f7;");
     containerWidget->setLayout(centerLayout);
-    
-    // 创建标签栏 - Apple风格
     m_tabBar = new QTabBar(this);
     m_tabBar->addTab(tr("Start"));
     m_tabBar->addTab(tr("Arrange"));
@@ -345,46 +268,34 @@ void MainWindow::createTopToolbar()
         "QTabBar::tab:selected { color: #007aff; border-bottom: 2px solid #007aff; }"
         "QTabBar::tab:hover:!selected { color: #333; }"
     );
-    
-    // 连接标签切换信号
     connect(m_tabBar, &QTabBar::currentChanged, this, &MainWindow::onTabBarClicked);
-    
-    // 将标签栏放入水平布局中，并添加弹簧使其居中
     centerLayout->addStretch();
     centerLayout->addWidget(m_tabBar);
     centerLayout->addStretch();
-    
-    // 将容器添加到主布局中
     m_mainLayout->addWidget(containerWidget);
 }
-
 void MainWindow::onTabBarClicked(int index)
 {
-    // 隐藏所有工具栏
     m_mainToolbar->hide();
     m_arrangeToolbar->hide();
     m_exportAndImportToolbar->hide();
-    
-    // 根据选中的标签显示对应的工具栏
     switch (index) {
-    case 0: // 开始
+    case 0: 
         m_mainToolbar->show();
         break;
-    case 1: // 排列
+    case 1: 
         m_arrangeToolbar->show();
         break;
-    case 2: // 导出和导入
+    case 2: 
         m_exportAndImportToolbar->show();
         break;
     default:
-        m_mainToolbar->show(); // 默认显示主工具栏
+        m_mainToolbar->show(); 
         break;
     }
 }
-
 void MainWindow::createMainToolbar()
 {
-    // 主工具栏 (对应"开始"选项卡) - Apple风格
     m_mainToolbar = new QToolBar(this);
     m_mainToolbar->setMovable(false);
     m_mainToolbar->setIconSize(QSize(16, 16));
@@ -401,22 +312,17 @@ void MainWindow::createMainToolbar()
         "QToolBar QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
     m_mainLayout->addWidget(m_mainToolbar);
-    
-    // 添加左侧弹性空间
     QWidget* leftSpacer = new QWidget();
     leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_mainToolbar->addWidget(leftSpacer);
-    
-    // 添加字体设置 - Apple风格
     m_fontCombo = new QComboBox();
     m_fontCombo->addItem(tr("San Francisco"));
-    m_fontCombo->addItem(tr("微软雅黑"));
-    m_fontCombo->addItem(tr("宋体"));
+    m_fontCombo->addItem(tr("寰蒋闆呴粦"));
+    m_fontCombo->addItem(tr("瀹嬩綋"));
     m_fontCombo->addItems(QFontDatabase().families());
     m_fontCombo->setFixedWidth(120);
     m_fontCombo->setEnabled(false);
     m_mainToolbar->addWidget(m_fontCombo);
-
     m_fontSizeCombo = new QComboBox();
     for (int i = 9; i <= 18; i++) {
         m_fontSizeCombo->addItem(QString("%1 px").arg(i));
@@ -426,21 +332,16 @@ void MainWindow::createMainToolbar()
     m_fontSizeCombo->addItem(tr("32 px"));
     m_fontSizeCombo->addItem(tr("40 px"));
     m_fontSizeCombo->addItem(tr("64 px"));
-    
     m_fontSizeCombo->setFixedWidth(90);
     m_fontSizeCombo->setEnabled(false);
     m_mainToolbar->addWidget(m_fontSizeCombo);
-    
     m_mainToolbar->addSeparator();
-    
-    // 添加常用格式按钮 - Apple风格
     m_boldAction = new QAction(tr("B"), this);
     m_boldAction->setToolTip(tr("Bold"));
     QFont boldFont("SF Pro Text", 13, QFont::Bold);
     m_boldAction->setFont(boldFont);
     m_boldAction->setCheckable(true);
     m_boldAction->setEnabled(false);
-    
     m_italicAction = new QAction(tr("I"), this);
     m_italicAction->setToolTip(tr("Italic"));
     QFont italicFont("SF Pro Text", 13);
@@ -448,7 +349,6 @@ void MainWindow::createMainToolbar()
     m_italicAction->setFont(italicFont);
     m_italicAction->setCheckable(true);
     m_italicAction->setEnabled(false);
-    
     m_underlineAction = new QAction(tr("U"), this);
     m_underlineAction->setToolTip(tr("Underline"));
     QFont underlineFont("SF Pro Text", 13);
@@ -456,25 +356,15 @@ void MainWindow::createMainToolbar()
     m_underlineAction->setFont(underlineFont);
     m_underlineAction->setCheckable(true);
     m_underlineAction->setEnabled(false);
-    
-    // 直接将这些操作添加到工具栏，而不是使用QToolButton
     m_mainToolbar->addAction(m_boldAction);
     m_mainToolbar->addAction(m_italicAction);
     m_mainToolbar->addAction(m_underlineAction);
-    
     m_mainToolbar->addSeparator();
-    
-    // 添加字体颜色按钮 - Apple风格
     m_fontColorButton = Utils::getAutoChangeColorsButton(this, tr("Font"), 54, 38, 28, 8);
     m_fontColorIndicator = m_fontColorButton->findChild<QFrame*>("colorIndicator");
     m_mainToolbar->addWidget(m_fontColorButton);
-    
-    // 设置字体颜色按钮的初始状态
-    Utils::updateColorButton(m_fontColorButton, QColor(0, 0, 0)); // 默认黑色
-    
+    Utils::updateColorButton(m_fontColorButton, QColor(0, 0, 0)); 
     m_mainToolbar->addSeparator();
-
-    // 添加对齐设置 - Apple风格
     m_alignCombo = new QComboBox();
     m_alignCombo->addItem(tr("Center"));
     m_alignCombo->addItem(tr("Left"));
@@ -482,24 +372,15 @@ void MainWindow::createMainToolbar()
     m_alignCombo->setFixedWidth(90);
     m_alignCombo->setEnabled(false);
     m_mainToolbar->addWidget(m_alignCombo);
-    
     m_mainToolbar->addSeparator();
-
-    // 创建填充颜色按钮 - Apple风格
     m_fillColorButton = Utils::getAutoChangeColorsButton(this, tr("Fill"), 54, 38, 28, 8);
     m_fillColorIndicator = m_fillColorButton->findChild<QFrame*>("colorIndicator");
     m_mainToolbar->addWidget(m_fillColorButton);
-    
-    // 连接填充颜色按钮的点击信号
     connect(m_fillColorButton, &QPushButton::clicked, this, &MainWindow::onFillColorButtonClicked);
-    
     m_mainToolbar->addSeparator();
-
-    // 添加透明度组合框 - Apple风格
     QLabel* transparencyLabel = new QLabel(tr("Opacity:"));
     transparencyLabel->setStyleSheet("color: #555;");
     m_mainToolbar->addWidget(transparencyLabel);
-    
     m_transparencyCombo = new QComboBox();
     for (int i = 0; i <= 100; i += 10) {
         m_transparencyCombo->addItem(QString("%1%").arg(i));
@@ -508,24 +389,15 @@ void MainWindow::createMainToolbar()
     m_transparencyCombo->setFixedWidth(70);
     m_transparencyCombo->setEnabled(false);
     m_mainToolbar->addWidget(m_transparencyCombo);
-    
     m_mainToolbar->addSeparator();
-    
-    // 创建线条颜色按钮 - Apple风格
     m_lineColorButton = Utils::getAutoChangeColorsButton(this, tr("Line"), 54, 38, 28, 8);
     m_lineColorIndicator = m_lineColorButton->findChild<QFrame*>("colorIndicator");
     m_mainToolbar->addWidget(m_lineColorButton);
-    
-    // 连接线条颜色按钮的点击信号
     connect(m_lineColorButton, &QPushButton::clicked, this, &MainWindow::onLineColorButtonClicked);
-    
     m_mainToolbar->addSeparator();
-
-    // 添加线条粗细下拉框 - Apple风格
     QLabel* lineWidthLabel = new QLabel(tr("Width:"));
     lineWidthLabel->setStyleSheet("color: #555;");
     m_mainToolbar->addWidget(lineWidthLabel);
-    
     m_lineWidthCombo = new QComboBox();
     m_lineWidthCombo->addItem(tr("0px"));
     m_lineWidthCombo->addItem(tr("0.5px"));
@@ -538,29 +410,22 @@ void MainWindow::createMainToolbar()
     m_lineWidthCombo->addItem(tr("6px"));
     m_lineWidthCombo->addItem(tr("8px"));
     m_lineWidthCombo->addItem(tr("10px"));
-    
     m_lineWidthCombo->setCurrentIndex(3);
     m_lineWidthCombo->setFixedWidth(70);
     m_lineWidthCombo->setEnabled(false);
     m_mainToolbar->addWidget(m_lineWidthCombo);
-    
-    // 添加线条样式下拉框 - Apple风格
     QLabel* lineStyleLabel = new QLabel(tr("Style:"));
     lineStyleLabel->setStyleSheet("color: #555;");
     m_mainToolbar->addWidget(lineStyleLabel);
-    
     m_lineStyleCombo = new QComboBox();
     m_lineStyleCombo->addItem(tr("Solid"));
     m_lineStyleCombo->addItem(tr("Dash S"));
     m_lineStyleCombo->addItem(tr("Dash L"));
     m_lineStyleCombo->addItem(tr("Dash"));
-    
     m_lineStyleCombo->setCurrentIndex(0);
     m_lineStyleCombo->setFixedWidth(70);
     m_lineStyleCombo->setEnabled(false);
     m_mainToolbar->addWidget(m_lineStyleCombo);
-    
-    // 添加页面设置按钮 - Apple风格
     m_pageSettingButton = new QPushButton(tr("Page Setup"));
     m_pageSettingButton->setToolTip(tr("Page Setup"));
     m_pageSettingButton->setFixedHeight(30);
@@ -573,16 +438,10 @@ void MainWindow::createMainToolbar()
         "QPushButton:disabled { background-color: rgba(0, 122, 255, 0.5); color: rgba(255, 255, 255, 0.5); }"
     );
     m_mainToolbar->addWidget(m_pageSettingButton);
-    
-    // 添加右侧弹性空间
     QWidget* rightSpacer = new QWidget();
     rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_mainToolbar->addWidget(rightSpacer);
-
-    // 连接页面设置按钮的点击信号
     connect(m_pageSettingButton, &QPushButton::clicked, this, &MainWindow::showPageSettingDialog);
-    
-    // 连接字体控件的信号
     connect(m_fontCombo, &QComboBox::currentTextChanged, this, &MainWindow::onFontFamilyChanged);
     connect(m_fontSizeCombo, &QComboBox::currentTextChanged, this, &MainWindow::onFontSizeChanged);
     connect(m_boldAction, &QAction::triggered, this, &MainWindow::onBoldActionTriggered);
@@ -597,10 +456,8 @@ void MainWindow::createMainToolbar()
     connect(m_lineStyleCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
             this, &MainWindow::onLineStyleChanged);
 }
-
 void MainWindow::createArrangeToolbar()
 {
-    // 排列工具栏 (对应"排列"选项卡) - Apple风格
     m_arrangeToolbar = new QToolBar(this);
     m_arrangeToolbar->setMovable(false);
     m_arrangeToolbar->setIconSize(QSize(16, 16));
@@ -614,14 +471,9 @@ void MainWindow::createArrangeToolbar()
         "QToolBar QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
     m_mainLayout->addWidget(m_arrangeToolbar);
-    
-    // 添加左侧弹性空间
     QWidget* leftSpacer = new QWidget();
     leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_arrangeToolbar->addWidget(leftSpacer);
-    
-    // 创建按钮并设置Apple风格
-    // 置于顶层按钮
     m_bringToFrontButton = new QPushButton(tr("Move Shape To Top"));
     m_bringToFrontButton->setIcon(QIcon::fromTheme("go-top"));
     m_bringToFrontButton->setFixedHeight(30);
@@ -631,10 +483,7 @@ void MainWindow::createArrangeToolbar()
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
     m_arrangeToolbar->addWidget(m_bringToFrontButton);
-    
     m_arrangeToolbar->addSeparator();
-    
-    // 置于底层按钮
     m_sendToBackButton = new QPushButton(tr("Move Shape To Bottom"));
     m_sendToBackButton->setIcon(QIcon::fromTheme("go-bottom"));
     m_sendToBackButton->setFixedHeight(30);
@@ -644,10 +493,7 @@ void MainWindow::createArrangeToolbar()
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
     m_arrangeToolbar->addWidget(m_sendToBackButton);
-    
     m_arrangeToolbar->addSeparator();
-    
-    // 上移一层按钮
     m_bringForwardButton = new QPushButton(tr("Move Shape Up"));
     m_bringForwardButton->setIcon(QIcon::fromTheme("go-up"));
     m_bringForwardButton->setFixedHeight(30);
@@ -657,10 +503,7 @@ void MainWindow::createArrangeToolbar()
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
     m_arrangeToolbar->addWidget(m_bringForwardButton);
-    
     m_arrangeToolbar->addSeparator();
-    
-    // 下移一层按钮
     m_sendBackwardButton = new QPushButton(tr("Move Shape Down"));
     m_sendBackwardButton->setIcon(QIcon::fromTheme("go-down"));
     m_sendBackwardButton->setFixedHeight(30);
@@ -670,100 +513,78 @@ void MainWindow::createArrangeToolbar()
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
     m_arrangeToolbar->addWidget(m_sendBackwardButton);
-    
-    // 添加X、Y、W、H控制
     m_arrangeToolbar->addSeparator();
-    
-    // X坐标
     QLabel* xLabel = new QLabel("X");
     xLabel->setAlignment(Qt::AlignCenter);
     xLabel->setFixedWidth(20);
     m_arrangeToolbar->addWidget(xLabel);
-    
     m_xSpinBox = new QSpinBox();
     m_xSpinBox->setRange(0, 9999);
     m_xSpinBox->setSuffix("px");
     m_xSpinBox->setFixedWidth(80);
     m_xSpinBox->setEnabled(false);
-    m_xSpinBox->setSingleStep(10); // 设置步长为10px
+    m_xSpinBox->setSingleStep(10); 
     m_xSpinBox->setStyleSheet(
         "QSpinBox { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
         "QSpinBox:disabled { color: rgba(0, 0, 0, 0.25); background-color: #f8f8f8; }"
     );
     m_arrangeToolbar->addWidget(m_xSpinBox);
-    
-    // Y坐标
     QLabel* yLabel = new QLabel("Y");
     yLabel->setAlignment(Qt::AlignCenter);
     yLabel->setFixedWidth(20);
     m_arrangeToolbar->addWidget(yLabel);
-    
     m_ySpinBox = new QSpinBox();
     m_ySpinBox->setRange(0, 9999);
     m_ySpinBox->setSuffix("px");
     m_ySpinBox->setFixedWidth(80);
     m_ySpinBox->setEnabled(false);
-    m_ySpinBox->setSingleStep(10); // 设置步长为10px
+    m_ySpinBox->setSingleStep(10); 
     m_ySpinBox->setStyleSheet(
         "QSpinBox { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
         "QSpinBox:disabled { color: rgba(0, 0, 0, 0.25); background-color: #f8f8f8; }"
     );
     m_arrangeToolbar->addWidget(m_ySpinBox);
-    
-    // 宽度
     QLabel* wLabel = new QLabel("W");
     wLabel->setAlignment(Qt::AlignCenter);
     wLabel->setFixedWidth(20);
     m_arrangeToolbar->addWidget(wLabel);
-    
     m_widthSpinBox = new QSpinBox();
     m_widthSpinBox->setRange(1, 9999);
     m_widthSpinBox->setSuffix("px");
     m_widthSpinBox->setFixedWidth(80);
     m_widthSpinBox->setEnabled(false);
-    m_widthSpinBox->setSingleStep(10); // 设置步长为10px
+    m_widthSpinBox->setSingleStep(10); 
     m_widthSpinBox->setStyleSheet(
         "QSpinBox { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
         "QSpinBox:disabled { color: rgba(0, 0, 0, 0.25); background-color: #f8f8f8; }"
     );
     m_arrangeToolbar->addWidget(m_widthSpinBox);
-    
-    // 高度
     QLabel* hLabel = new QLabel("H");
     hLabel->setAlignment(Qt::AlignCenter);
     hLabel->setFixedWidth(20);
     m_arrangeToolbar->addWidget(hLabel);
-    
     m_heightSpinBox = new QSpinBox();
     m_heightSpinBox->setRange(1, 9999);
     m_heightSpinBox->setSuffix("px");
     m_heightSpinBox->setFixedWidth(80);
     m_heightSpinBox->setEnabled(false);
-    m_heightSpinBox->setSingleStep(10); // 设置步长为10px
+    m_heightSpinBox->setSingleStep(10); 
     m_heightSpinBox->setStyleSheet(
         "QSpinBox { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
         "QSpinBox:disabled { color: rgba(0, 0, 0, 0.25); background-color: #f8f8f8; }"
     );
     m_arrangeToolbar->addWidget(m_heightSpinBox);
-    
-    // 添加右侧弹性空间
     QWidget* rightSpacer = new QWidget();
     rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_arrangeToolbar->addWidget(rightSpacer);
-    
-    // 添加按钮信号连接
     connect(m_bringToFrontButton, &QPushButton::clicked, m_drawingArea, &DrawingArea::moveShapeToTop);
     connect(m_sendToBackButton, &QPushButton::clicked, m_drawingArea, &DrawingArea::moveShapeToBottom);
     connect(m_bringForwardButton, &QPushButton::clicked, m_drawingArea, &DrawingArea::moveShapeUp);
     connect(m_sendBackwardButton, &QPushButton::clicked, m_drawingArea, &DrawingArea::moveShapeDown);
-    
-    // 初始化按钮状态为禁用
     m_bringToFrontButton->setEnabled(false);
     m_sendToBackButton->setEnabled(false);
     m_bringForwardButton->setEnabled(false);
     m_sendBackwardButton->setEnabled(false);
-    
-    // 添加图形位置尺寸控件信号连接
     connect(m_xSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), 
             this, &MainWindow::onXCoordChanged);
     connect(m_ySpinBox, QOverload<int>::of(&QSpinBox::valueChanged), 
@@ -772,17 +593,13 @@ void MainWindow::createArrangeToolbar()
             this, &MainWindow::onWidthChanged);
     connect(m_heightSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), 
             this, &MainWindow::onHeightChanged);
-    
-    // 连接DrawingArea的位置和尺寸变化信号
     connect(m_drawingArea, &DrawingArea::shapePositionChanged, 
             this, &MainWindow::updateShapePositionSizeControls);
     connect(m_drawingArea, &DrawingArea::shapeSizeChanged, 
             this, &MainWindow::updateShapePositionSizeControls);
 }
-
 void MainWindow::createExportAndImportToolbar()
 {
-    // 导出工具栏 (对应"导出"选项卡) - Apple风格
     m_exportAndImportToolbar = new QToolBar(this);
     m_exportAndImportToolbar->setMovable(false);
     m_exportAndImportToolbar->setIconSize(QSize(16, 16));
@@ -796,13 +613,9 @@ void MainWindow::createExportAndImportToolbar()
         "QToolBar QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
     m_mainLayout->addWidget(m_exportAndImportToolbar);
-    
-    // 添加左侧弹性空间
     QWidget* leftSpacer = new QWidget();
     leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_exportAndImportToolbar->addWidget(leftSpacer);
-    
-    // 添加导出工具栏的按钮和控件 - Apple风格
     QPushButton* exportAsPngButton = new QPushButton(tr("Export PNG"));
     exportAsPngButton->setIcon(QIcon::fromTheme("image-x-generic"));
     exportAsPngButton->setFixedHeight(30);
@@ -811,7 +624,6 @@ void MainWindow::createExportAndImportToolbar()
         "QPushButton:hover { background-color: #e5e5e5; }"
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
-    
     QPushButton* exportAsPdfButton = new QPushButton(tr("Export PDF"));
     exportAsPdfButton->setIcon(QIcon::fromTheme("application-pdf"));
     exportAsPdfButton->setFixedHeight(30);
@@ -820,7 +632,6 @@ void MainWindow::createExportAndImportToolbar()
         "QPushButton:hover { background-color: #e5e5e5; }"
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
-    
     QPushButton* exportAsSvgButton = new QPushButton(tr("Export SVG"));
     exportAsSvgButton->setIcon(QIcon::fromTheme("image-svg+xml"));
     exportAsSvgButton->setFixedHeight(30);
@@ -829,15 +640,12 @@ void MainWindow::createExportAndImportToolbar()
         "QPushButton:hover { background-color: #e5e5e5; }"
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
-
     m_exportAndImportToolbar->addWidget(exportAsPngButton);
     m_exportAndImportToolbar->addSeparator();
     m_exportAndImportToolbar->addWidget(exportAsPdfButton);
     m_exportAndImportToolbar->addSeparator();
     m_exportAndImportToolbar->addWidget(exportAsSvgButton);
     m_exportAndImportToolbar->addSeparator();
-
-    // 添加导入工具栏的按钮和控件 - Apple风格
     QPushButton* importFromSvgButton = new QPushButton(tr("Import SVG"));
     importFromSvgButton->setIcon(QIcon::fromTheme("document-open"));
     importFromSvgButton->setFixedHeight(30);
@@ -849,25 +657,17 @@ void MainWindow::createExportAndImportToolbar()
         "QPushButton:disabled { background-color: rgba(0, 122, 255, 0.5); color: rgba(255, 255, 255, 0.5); }"
     );
     m_exportAndImportToolbar->addWidget(importFromSvgButton);
-    
-    // 添加右侧弹性空间
     QWidget* rightSpacer = new QWidget();
     rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_exportAndImportToolbar->addWidget(rightSpacer);
-
-    // 连接导出按钮的信号到相应的槽函数
     connect(exportAsPngButton, &QPushButton::clicked, this, &MainWindow::exportAsPng);
     connect(exportAsSvgButton, &QPushButton::clicked, this, &MainWindow::exportAsSvg);
     connect(importFromSvgButton, &QPushButton::clicked, this, &MainWindow::importFromSvg);
 }
-
 void MainWindow::showPageSettingDialog()
 {
-    // 如果对话框不存在，则创建
     if (!m_pageSettingDialog) {
         m_pageSettingDialog = new PageSettingDialog(this, m_drawingArea);
-        
-        // 设置对话框样式为Apple风格
         m_pageSettingDialog->setStyleSheet(
             "QDialog { background-color: #f5f5f7; }"
             "QLabel { font-size: 13px; }"
@@ -881,39 +681,26 @@ void MainWindow::showPageSettingDialog()
             "QCheckBox { spacing: 8px; }"
             "QCheckBox::indicator { width: 16px; height: 16px; }"
         );
-        
-        // 连接应用信号到相应的槽
         connect(m_pageSettingDialog, &PageSettingDialog::settingsApplied, 
                 this, &MainWindow::applyPageSettings);
     }
-    
-    // 设置对话框的初始值为绘图区域当前的设置
     m_pageSettingDialog->setModal(true);
     m_pageSettingDialog->exec();
 }
-
 void MainWindow::applyPageSettings()
 {
     if (!m_pageSettingDialog || !m_drawingArea) return;
-    
-    // 从对话框获取设置并应用到绘图区域
     m_drawingArea->setBackgroundColor(m_pageSettingDialog->getBackgroundColor());
     m_drawingArea->setPageSize(m_pageSettingDialog->getPageSize());
     m_drawingArea->setShowGrid(m_pageSettingDialog->getShowGrid());
     m_drawingArea->setGridColor(m_pageSettingDialog->getGridColor());
     m_drawingArea->setGridSize(m_pageSettingDialog->getGridSize());
     m_drawingArea->setGridThickness(m_pageSettingDialog->getGridThickness());
-    
-    // 应用设置后更新绘图区域
     m_drawingArea->applyPageSettings();
 }
-
-// 实现字体相关的槽函数
 void MainWindow::updateFontControls()
 {
     Shape* selectedShape = m_drawingArea->getSelectedShape();
-    
-    // 启用或禁用控件，取决于是否有选中的图形
     bool hasSelection = (selectedShape != nullptr);
     m_fontCombo->setEnabled(hasSelection);
     m_fontSizeCombo->setEnabled(hasSelection);
@@ -922,50 +709,32 @@ void MainWindow::updateFontControls()
     m_underlineAction->setEnabled(hasSelection);
     m_fontColorButton->setEnabled(hasSelection);
     m_alignCombo->setEnabled(hasSelection);
-    
-    // 也更新填充颜色和线条颜色按钮的状态
     m_fillColorButton->setEnabled(hasSelection);
     m_lineColorButton->setEnabled(hasSelection);
-    
-    // 如果有选中的图形，更新指示器显示选中图形的颜色
-    // 如果没有选中图形，将指示器颜色重置为白色
     if (hasSelection) {
-        // 更新所有颜色按钮
         updateColorButtons();
     } else {
-        // 无选中图形时重置为白色
         Utils::updateColorButton(m_fontColorButton, QColor(255, 255, 255));
         Utils::updateColorButton(m_fillColorButton, QColor(255, 255, 255));
         Utils::updateColorButton(m_lineColorButton, QColor(255, 255, 255));
     }
-    
-    // 也更新透明度、线条粗细和线条样式下拉框的状态
     m_transparencyCombo->setEnabled(hasSelection);
     m_lineWidthCombo->setEnabled(hasSelection);
     m_lineStyleCombo->setEnabled(hasSelection);
-    
-    // 如果有选中图形，更新控件显示当前设置
     if (hasSelection) {
-        // 更新字体类型下拉框
         QString fontFamily = selectedShape->fontFamily();
         int fontFamilyIndex = m_fontCombo->findText(fontFamily);
         if (fontFamilyIndex >= 0) {
             m_fontCombo->setCurrentIndex(fontFamilyIndex);
         }
-        
-        // 更新字体大小下拉框
         int fontSize = selectedShape->fontSize();
         int fontSizeIndex = m_fontSizeCombo->findText(QString("%1 px").arg(fontSize));
         if (fontSizeIndex >= 0) {
             m_fontSizeCombo->setCurrentIndex(fontSizeIndex);
         }
-        
-        // 更新粗体、斜体、下划线按钮状态
         m_boldAction->setChecked(selectedShape->isFontBold());
         m_italicAction->setChecked(selectedShape->isFontItalic());
         m_underlineAction->setChecked(selectedShape->isFontUnderline());
-        
-        // 更新对齐方式下拉框
         Qt::Alignment alignment = selectedShape->textAlignment();
         if (alignment & Qt::AlignCenter) {
             m_alignCombo->setCurrentIndex(0);
@@ -974,17 +743,11 @@ void MainWindow::updateFontControls()
         } else if (alignment & Qt::AlignRight) {
             m_alignCombo->setCurrentIndex(2);
         }
-        
-        // 更新透明度组合框
         int transparency = selectedShape->transparency();
-        int transparencyIndex = transparency / 10; // 0-10之间的索引
+        int transparencyIndex = transparency / 10; 
         m_transparencyCombo->setCurrentIndex(transparencyIndex);
-        
-        // 更新线条粗细下拉框
         qreal lineWidth = selectedShape->lineWidth();
         int lineWidthIndex = 0;
-        
-        // 查找最接近的线条粗细选项
         if (lineWidth <= 0) lineWidthIndex = 0;
         else if (lineWidth <= 0.5) lineWidthIndex = 1;
         else if (lineWidth <= 1) lineWidthIndex = 2;
@@ -996,111 +759,80 @@ void MainWindow::updateFontControls()
         else if (lineWidth <= 6) lineWidthIndex = 8;
         else if (lineWidth <= 8) lineWidthIndex = 9;
         else lineWidthIndex = 10;
-        
         m_lineWidthCombo->setCurrentIndex(lineWidthIndex);
-        
-        // 更新线条样式下拉框
         int lineStyle = selectedShape->lineStyle();
         m_lineStyleCombo->setCurrentIndex(lineStyle);
     }
 }
-
 void MainWindow::onFontFamilyChanged(const QString& family)
 {
-    // 应用新的字体族到选中的图形
     m_drawingArea->setSelectedShapeFontFamily(family);
 }
-
 void MainWindow::onFontSizeChanged(const QString& sizeText)
 {
-    // 从字符串中提取字体大小数值（去掉"px"后缀）
     bool ok;
     int size = sizeText.split(" ").first().toInt(&ok);
     if (ok) {
-        // 应用新的字体大小到选中的图形
         m_drawingArea->setSelectedShapeFontSize(size);
     }
 }
-
 void MainWindow::onBoldActionTriggered()
 {
-    // 应用加粗状态到选中的图形
     m_drawingArea->setSelectedShapeFontBold(m_boldAction->isChecked());
 }
-
 void MainWindow::onItalicActionTriggered()
 {
-    // 应用斜体状态到选中的图形
     m_drawingArea->setSelectedShapeFontItalic(m_italicAction->isChecked());
 }
-
 void MainWindow::onUnderlineActionTriggered()
 {
-    // 应用下划线状态到选中的图形
     m_drawingArea->setSelectedShapeFontUnderline(m_underlineAction->isChecked());
 }
-
 void MainWindow::onFontColorButtonClicked()
 {
-    // 打开颜色选择对话框，应用新的字体颜色到选中的图形
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->fontColor();
         QColor color = QColorDialog::getColor(initialColor, this, tr("Select Font Color"));
-        
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeFontColor(color);
-            // 手动更新颜色指示器
             Utils::updateColorButton(m_fontColorButton, color);
         }
     }
 }
-
 void MainWindow::onAlignmentChanged(int index)
 {
-    // 根据索引设置不同的对齐方式
     Qt::Alignment alignment;
     switch (index) {
-    case 0:  // 居中对齐
+    case 0:  
         alignment = Qt::AlignCenter;
         break;
-    case 1:  // 左对齐，并垂直居中
+    case 1:  
         alignment = Qt::AlignLeft | Qt::AlignVCenter; 
         break;
-    case 2:  // 右对齐
+    case 2:  
         alignment = Qt::AlignRight | Qt::AlignVCenter;
         break;
     default:
         alignment = Qt::AlignCenter;
         break;
     }
-    
-    // 应用对齐设置到选中的图形
     m_drawingArea->setSelectedShapeTextAlignment(alignment);
 }
-
 void MainWindow::updateFontColorButton(const QColor& color)
 {
-    // 如果没有选中图形，直接更新按钮颜色
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (!selectedShape) {
         Utils::updateColorButton(m_fontColorButton, color);
         return;
     }
-    
-    // 如果有选中图形，调用updateColorButtons来统一处理所有颜色按钮
     updateColorButtons();
 }
-
 void MainWindow::exportAsPng()
 {
     if (!m_drawingArea) return;
-    
-    // 获取当前日期时间，格式化为字符串作为默认文件名
     QString defaultFileName = QString("FlowChart_%1").arg(
         QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
-    
-    // 打开文件保存对话框 - Apple风格
     QFileDialog dialog(this, tr("Export as PNG"));
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setFileMode(QFileDialog::AnyFile);
@@ -1108,8 +840,6 @@ void MainWindow::exportAsPng()
     dialog.setDirectory(QDir::homePath());
     dialog.selectFile(defaultFileName);
     dialog.setDefaultSuffix("png");
-    
-    // 设置对话框样式
     dialog.setStyleSheet(
         "QFileDialog { background-color: #f5f5f7; }"
         "QPushButton { border-radius: 4px; padding: 6px 12px; }"
@@ -1117,24 +847,14 @@ void MainWindow::exportAsPng()
         "QPushButton[text=\"Cancel\"] { background-color: #f5f5f7; border: 1px solid #ccc; }"
         "QComboBox, QLineEdit { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
     );
-    
-    // 如果用户取消了对话框，则返回
     if (!dialog.exec()) {
         return;
     }
-    
-    // 获取选择的文件路径
     QString filePath = dialog.selectedFiles().first();
-    
-    // 确保文件路径以.png结尾
     if (!filePath.endsWith(".png", Qt::CaseInsensitive)) {
         filePath += ".png";
     }
-    
-    // 调用绘图区域的导出方法
     bool success = m_drawingArea->exportToPng(filePath);
-    
-    // 显示导出结果提示 - Apple风格
     if (success) {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Export Successful"));
@@ -1165,16 +885,11 @@ void MainWindow::exportAsPng()
         msgBox.exec();
     }
 }
-
 void MainWindow::exportAsSvg()
 {
     if (!m_drawingArea) return;
-    
-    // 获取当前日期时间，格式化为字符串作为默认文件名
     QString defaultFileName = QString("FlowChart_%1").arg(
         QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
-    
-    // 打开文件保存对话框 - Apple风格
     QFileDialog dialog(this, tr("Export as SVG"));
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setFileMode(QFileDialog::AnyFile);
@@ -1182,8 +897,6 @@ void MainWindow::exportAsSvg()
     dialog.setDirectory(QDir::homePath());
     dialog.selectFile(defaultFileName);
     dialog.setDefaultSuffix("svg");
-    
-    // 设置对话框样式
     dialog.setStyleSheet(
         "QFileDialog { background-color: #f5f5f7; }"
         "QPushButton { border-radius: 4px; padding: 6px 12px; }"
@@ -1191,24 +904,14 @@ void MainWindow::exportAsSvg()
         "QPushButton[text=\"Cancel\"] { background-color: #f5f5f7; border: 1px solid #ccc; }"
         "QComboBox, QLineEdit { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
     );
-    
-    // 如果用户取消了对话框，则返回
     if (!dialog.exec()) {
         return;
     }
-    
-    // 获取选择的文件路径
     QString filePath = dialog.selectedFiles().first();
-    
-    // 确保文件路径以.svg结尾
     if (!filePath.endsWith(".svg", Qt::CaseInsensitive)) {
         filePath += ".svg";
     }
-    
-    // 调用绘图区域的导出方法
     bool success = m_drawingArea->exportToSvg(filePath);
-    
-    // 显示导出结果提示 - Apple风格
     if (success) {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Export Successful"));
@@ -1239,18 +942,13 @@ void MainWindow::exportAsSvg()
         msgBox.exec();
     }
 }
-
 void MainWindow::importFromSvg()
 {
     if (!m_drawingArea) return;
-    
-    // 打开文件选择对话框 - Apple风格
     QFileDialog dialog(this, tr("Import from SVG"));
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setNameFilter(tr("SVG Files (*.svg)"));
     dialog.setDirectory(QDir::homePath());
-    
-    // 设置对话框样式
     dialog.setStyleSheet(
         "QFileDialog { background-color: #f5f5f7; }"
         "QPushButton { border-radius: 4px; padding: 6px 12px; }"
@@ -1258,16 +956,10 @@ void MainWindow::importFromSvg()
         "QPushButton[text=\"Cancel\"] { background-color: #f5f5f7; border: 1px solid #ccc; }"
         "QComboBox, QLineEdit { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
     );
-    
-    // 如果用户取消了对话框，则返回
     if (!dialog.exec()) {
         return;
     }
-    
-    // 获取选择的文件路径
     QString filePath = dialog.selectedFiles().first();
-    
-    // 提示用户确认是否要导入 - Apple风格
     QMessageBox confirmBox;
     confirmBox.setWindowTitle(tr("Confirm Import"));
     confirmBox.setText(tr("Importing SVG will clear all content on the current canvas. Do you want to continue?"));
@@ -1281,15 +973,10 @@ void MainWindow::importFromSvg()
         "QPushButton[text=\"Yes\"] { background-color: #007aff; color: white; }"
         "QPushButton[text=\"No\"] { background-color: #f5f5f7; border: 1px solid #ccc; }"
     );
-    
     if (confirmBox.exec() == QMessageBox::No) {
         return;
     }
-    
-    // 调用绘图区域的导入方法
     bool success = m_drawingArea->importFromSvg(filePath);
-    
-    // 显示导入结果提示 - Apple风格
     if (success) {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Import Successful"));
@@ -1320,29 +1007,21 @@ void MainWindow::importFromSvg()
         msgBox.exec();
     }
 }
-
 void MainWindow::createStatusBar()
 {
-    // 创建状态栏 - Apple风格
     m_statusBar = new QStatusBar(this);
     m_statusBar->setStyleSheet(
         "QStatusBar { background-color: #f5f5f7; border-top: 1px solid #e0e0e0; padding: 3px; }"
         "QStatusBar QLabel { color: #555; }"
-        "QStatusBar::item { border: none; }" // 移除状态栏项目之间的分隔线
+        "QStatusBar::item { border: none; }" 
     );
     setStatusBar(m_statusBar);
-    
-    // 创建显示图形数量的标签
     m_shapesCountLabel = new QLabel(tr("Number of shapes: 0"));
     m_shapesCountLabel->setStyleSheet("font-size: 12px;");
     m_statusBar->addWidget(m_shapesCountLabel);
-    
-    // 添加一个固定宽度的空白区域
     QWidget* spacer = new QWidget();
     spacer->setFixedWidth(20);
     m_statusBar->addWidget(spacer);
-    
-    // 创建显示缩放比例的按钮
     m_zoomLabel = new QPushButton(tr("Zoom level:100%"));
     m_zoomLabel->setStyleSheet(
         "QPushButton { font-size: 12px; color: #555; background-color: #f5f5f7; border: none; text-align: left; padding: 0px 5px; }"
@@ -1351,23 +1030,15 @@ void MainWindow::createStatusBar()
     m_zoomLabel->setToolTip(tr("Click to reset zoom"));
     m_zoomLabel->setCursor(Qt::PointingHandCursor);
     m_statusBar->addWidget(m_zoomLabel);
-    
-    // 连接按钮点击信号到重置缩放的槽函数
     connect(m_zoomLabel, &QPushButton::clicked, this, [this]() {
         if (m_drawingArea) {
-            // 设置缩放比例为1.0（100%）
             m_drawingArea->setScale(1.0);
-            // 更新缩放滑块和标签
             updateZoomSlider();
         }
     });
-    
-    // 添加一个固定宽度的空白区域
     QWidget* sliderSpacer = new QWidget();
     sliderSpacer->setFixedWidth(10);
     m_statusBar->addWidget(sliderSpacer);
-    
-    // 创建缩放滑块 - Apple风格
     m_zoomSlider = new QSlider(Qt::Horizontal);
     m_zoomSlider->setMinimumWidth(150);
     m_zoomSlider->setMaximumWidth(200);
@@ -1376,143 +1047,91 @@ void MainWindow::createStatusBar()
     m_zoomSlider->setTickInterval(10);
     m_zoomSlider->setTickPosition(QSlider::TicksBelow);
     m_statusBar->addWidget(m_zoomSlider);
-    
-    // 连接缩放滑块值改变信号
     connect(m_zoomSlider, &QSlider::valueChanged, this, &MainWindow::onZoomSliderValueChanged);
 }
-
 void MainWindow::updateStatusBarInfo()
 {
-    // 更新图形数量信息
     if (m_drawingArea) {
-        // 获取图形数量 (包括所有图形和连接线)
         int shapeCount = m_drawingArea->getShapesCount();
-        
-        // 更新图形数量标签
         m_shapesCountLabel->setText(tr("Number of shapes: %1").arg(shapeCount));
-        
-        // 更新缩放比例标签
         double zoomPercent = m_drawingArea->getScale() * 100.0;
         m_zoomLabel->setText(tr("Zoom level: %1%").arg(zoomPercent, 0, 'f', 1));
     }
 }
-
 void MainWindow::updateZoomSlider()
 {
     if (m_drawingArea && m_zoomSlider) {
-        // 获取 DrawingArea 的当前缩放比例
         qreal currentScale = m_drawingArea->getScale();
         qreal minScale = m_drawingArea->MIN_SCALE;
         qreal maxScale = m_drawingArea->MAX_SCALE;
-        
-        // 计算滑块位置 (将缩放比例映射到滑块范围)
-        // 滑块范围: 0 - 100
         int sliderPos = static_cast<int>((currentScale - minScale) / (maxScale - minScale) * 100);
-        
-        // 更新滑块位置 (阻断信号以避免无限循环)
         m_zoomSlider->blockSignals(true);
         m_zoomSlider->setValue(sliderPos);
         m_zoomSlider->blockSignals(false);
-        
-        // 更新缩放比例标签
         double zoomPercent = currentScale * 100.0;
         m_zoomLabel->setText(tr("Zoom level: %1%").arg(zoomPercent, 0, 'f', 1));
     }
 }
-
 void MainWindow::onZoomSliderValueChanged(int value)
 {
     if (m_drawingArea) {
-        // 获取 DrawingArea 的缩放范围
         qreal minScale = m_drawingArea->MIN_SCALE;
         qreal maxScale = m_drawingArea->MAX_SCALE;
-        
-        // 将滑块值映射回缩放比例
         qreal newScale = minScale + (value / 100.0) * (maxScale - minScale);
-        
-        // 设置 DrawingArea 的缩放比例
         m_drawingArea->setScale(newScale);
-        
-        // 更新缩放比例标签
         double zoomPercent = newScale * 100.0;
         m_zoomLabel->setText(tr("Zoom level: %1%").arg(zoomPercent, 0, 'f', 1));
     }
 }
-
-// 填充颜色按钮的点击槽函数
 void MainWindow::onFillColorButtonClicked()
 {
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->fillColor();
         QColor color = QColorDialog::getColor(initialColor, this, tr("Select Fill Color"));
-        
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeFillColor(color);
-            // 手动更新颜色指示器
             Utils::updateColorButton(m_fillColorButton, color);
         }
     }
 }
-
-// 线条颜色按钮的点击槽函数
 void MainWindow::onLineColorButtonClicked()
 {
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->lineColor();
         QColor color = QColorDialog::getColor(initialColor, this, tr("Select Line Color"));
-        
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeLineColor(color);
-            // 手动更新颜色指示器
             Utils::updateColorButton(m_lineColorButton, color);
         }
     }
 }
-
-// 更新颜色按钮的显示
 void MainWindow::updateColorButtons()
 {
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (!selectedShape) {
         return;
     }
-    
-    // 更新字体颜色按钮
     QColor fontColor = selectedShape->fontColor();
     Utils::updateColorButton(m_fontColorButton, fontColor);
-    
-    // 更新填充颜色按钮
     QColor fillColor = selectedShape->fillColor();
     Utils::updateColorButton(m_fillColorButton, fillColor);
-    
-    // 更新线条颜色按钮
     QColor lineColor = selectedShape->lineColor();
     Utils::updateColorButton(m_lineColorButton, lineColor);
 }
-
 void MainWindow::onTransparencyChanged(int index)
 {
-    // 计算透明度值（0-100）
     int transparency = index * 10;
-    
-    // 获取当前选中的图形
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
-        // 设置透明度
         selectedShape->setTransparency(transparency);
-        
-        // 更新绘图区域
         m_drawingArea->update();
     }
 }
-
 void MainWindow::onLineWidthChanged(int index)
 {
-    // 获取线条粗细值
     qreal lineWidth = 0.0;
-    
     switch (index) {
     case 0: lineWidth = 0.0; break;
     case 1: lineWidth = 0.5; break;
@@ -1527,101 +1146,66 @@ void MainWindow::onLineWidthChanged(int index)
     case 10: lineWidth = 10.0; break;
     default: lineWidth = 1.0;
     }
-    
-    // 获取当前选中的图形
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
-        // 设置线条粗细
         selectedShape->setLineWidth(lineWidth);
-        
-        // 更新绘图区域
         m_drawingArea->update();
     }
 }
-
 void MainWindow::onLineStyleChanged(int index)
 {
-    // 获取当前选中的图形
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
-        // 设置线条样式
         selectedShape->setLineStyle(index);
-        
-        // 更新绘图区域
         m_drawingArea->update();
     }
 }
-
-// 实现Arrange栏按钮状态更新
 void MainWindow::updateArrangeControls()
 {
     Shape* selectedShape = m_drawingArea->getSelectedShape();
-    
-    // 启用或禁用控件，取决于是否有选中的图形
     bool hasSelection = (selectedShape != nullptr);
-    
-    // 更新Arrange栏按钮状态
     m_bringToFrontButton->setEnabled(hasSelection);
     m_sendToBackButton->setEnabled(hasSelection);
     m_bringForwardButton->setEnabled(hasSelection);
     m_sendBackwardButton->setEnabled(hasSelection);
-    
-    // 同时更新位置和尺寸控件状态
     updateShapePositionSizeControls();
 }
-
-// 更新图形位置和尺寸控件状态
 void MainWindow::updateShapePositionSizeControls()
 {
     Shape* selectedShape = m_drawingArea->getSelectedShape();
-    
-    // 使能或禁用控件
     bool hasSelection = (selectedShape != nullptr);
     m_xSpinBox->setEnabled(hasSelection);
     m_ySpinBox->setEnabled(hasSelection);
     m_widthSpinBox->setEnabled(hasSelection);
     m_heightSpinBox->setEnabled(hasSelection);
-    
     if (hasSelection) {
-        // 获取图形的位置和尺寸
         QRect rect = selectedShape->getRect();
-        
-        // 暂时阻断信号以避免循环
         m_xSpinBox->blockSignals(true);
         m_ySpinBox->blockSignals(true);
         m_widthSpinBox->blockSignals(true);
         m_heightSpinBox->blockSignals(true);
-        
-        // 更新控件值
         m_xSpinBox->setValue(rect.x());
         m_ySpinBox->setValue(rect.y());
         m_widthSpinBox->setValue(rect.width());
         m_heightSpinBox->setValue(rect.height());
-        
-        // 恢复信号
         m_xSpinBox->blockSignals(false);
         m_ySpinBox->blockSignals(false);
         m_widthSpinBox->blockSignals(false);
         m_heightSpinBox->blockSignals(false);
     }
 }
-
-// 位置和尺寸控件槽函数实现
 void MainWindow::onXCoordChanged(int value)
 {
     m_drawingArea->setSelectedShapeX(value);
 }
-
 void MainWindow::onYCoordChanged(int value)
 {
     m_drawingArea->setSelectedShapeY(value);
 }
-
 void MainWindow::onWidthChanged(int value)
 {
     m_drawingArea->setSelectedShapeWidth(value);
 }
-
 void MainWindow::onHeightChanged(int value)
 {
     m_drawingArea->setSelectedShapeHeight(value);
