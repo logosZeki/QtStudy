@@ -606,7 +606,7 @@ void MainWindow::createArrangeToolbar()
     
     // 创建按钮并设置Apple风格
     // 置于顶层按钮
-    QPushButton* bringToFrontButton = new QPushButton(tr("Bring to Front"));
+    QPushButton* bringToFrontButton = new QPushButton(tr("Move Shape To Top"));
     bringToFrontButton->setIcon(QIcon::fromTheme("go-top"));
     bringToFrontButton->setFixedHeight(30);
     bringToFrontButton->setStyleSheet(
@@ -619,7 +619,7 @@ void MainWindow::createArrangeToolbar()
     m_arrangeToolbar->addSeparator();
     
     // 置于底层按钮
-    QPushButton* sendToBackButton = new QPushButton(tr("Send to Back"));
+    QPushButton* sendToBackButton = new QPushButton(tr("Move Shape To Bottom"));
     sendToBackButton->setIcon(QIcon::fromTheme("go-bottom"));
     sendToBackButton->setFixedHeight(30);
     sendToBackButton->setStyleSheet(
@@ -632,7 +632,7 @@ void MainWindow::createArrangeToolbar()
     m_arrangeToolbar->addSeparator();
     
     // 上移一层按钮
-    QPushButton* bringForwardButton = new QPushButton(tr("Bring Forward"));
+    QPushButton* bringForwardButton = new QPushButton(tr("Move Shape Up"));
     bringForwardButton->setIcon(QIcon::fromTheme("go-up"));
     bringForwardButton->setFixedHeight(30);
     bringForwardButton->setStyleSheet(
@@ -645,7 +645,7 @@ void MainWindow::createArrangeToolbar()
     m_arrangeToolbar->addSeparator();
     
     // 下移一层按钮
-    QPushButton* sendBackwardButton = new QPushButton(tr("Send Backward"));
+    QPushButton* sendBackwardButton = new QPushButton(tr("Move Shape Down"));
     sendBackwardButton->setIcon(QIcon::fromTheme("go-down"));
     sendBackwardButton->setFixedHeight(30);
     sendBackwardButton->setStyleSheet(
