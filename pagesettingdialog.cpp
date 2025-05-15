@@ -28,7 +28,7 @@ PageSettingDialog::PageSettingDialog(QWidget *parent, DrawingArea* drawingArea)
     , m_pageSizeModified(false)
     , m_drawingArea(drawingArea)
 {
-    setWindowTitle(tr("页面设置"));
+    setWindowTitle(tr("Page Settings"));
     setMinimumSize(400, 500);
 
     initDefaultValues();
@@ -499,7 +499,7 @@ void PageSettingDialog::updateRecentColors(const QColor &color)
     
     // 更新下拉框
     m_recentColorsCombo->clear();
-    m_recentColorsCombo->addItem(tr("最近使用的颜色"));
+    m_recentColorsCombo->addItem(tr("Recently used colors"));
     for (const QColor &recentColor : m_recentColors) {
         QPixmap pixmap(16, 16);
         pixmap.fill(recentColor);

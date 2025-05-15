@@ -1046,7 +1046,7 @@ void MainWindow::onFontColorButtonClicked()
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->fontColor();
-        QColor color = QColorDialog::getColor(initialColor, this, tr("选择字体颜色"));
+        QColor color = QColorDialog::getColor(initialColor, this, tr("Select Font Color"));
         
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeFontColor(color);
@@ -1348,7 +1348,7 @@ void MainWindow::createStatusBar()
         "QPushButton { font-size: 12px; color: #555; background-color: #f5f5f7; border: none; text-align: left; padding: 0px 5px; }"
         "QPushButton:hover { background-color: #e0e0e0; }"
     );
-    m_zoomLabel->setToolTip(tr("重置缩放"));
+    m_zoomLabel->setToolTip(tr("Click to reset zoom"));
     m_zoomLabel->setCursor(Qt::PointingHandCursor);
     m_statusBar->addWidget(m_zoomLabel);
     
@@ -1445,7 +1445,7 @@ void MainWindow::onFillColorButtonClicked()
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->fillColor();
-        QColor color = QColorDialog::getColor(initialColor, this, tr("选择填充颜色"));
+        QColor color = QColorDialog::getColor(initialColor, this, tr("Select Fill Color"));
         
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeFillColor(color);
@@ -1461,7 +1461,7 @@ void MainWindow::onLineColorButtonClicked()
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->lineColor();
-        QColor color = QColorDialog::getColor(initialColor, this, tr("选择线条颜色"));
+        QColor color = QColorDialog::getColor(initialColor, this, tr("Select Line Color"));
         
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeLineColor(color);
