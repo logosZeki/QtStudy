@@ -303,6 +303,17 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
             lastPos = mouseEvent->globalPos();
         }
         return true;
+    } else if (event->type() == QEvent::MouseButtonDblClick) {
+        // 如果是双击事件，并且发生在标题栏上，则切换窗口的最大化状态
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            if (isMaximized()) {
+                showNormal();
+            } else {
+                showMaximized();
+            }
+            return true;
+        }
     }
     
     return QMainWindow::eventFilter(watched, event);
@@ -1317,6 +1328,7 @@ void MainWindow::createStatusBar()
     m_statusBar->setStyleSheet(
         "QStatusBar { background-color: #f5f5f7; border-top: 1px solid #e0e0e0; padding: 3px; }"
         "QStatusBar QLabel { color: #555; }"
+        "QStatusBar::item { border: none; }" // 移除状态栏项目之间的分隔线
     );
     setStatusBar(m_statusBar);
     

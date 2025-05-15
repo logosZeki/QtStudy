@@ -507,7 +507,6 @@ void ToolBar::createGraphicsLibTab()
     basicCategory->addShape(ShapeTypes::Ellipse);
     basicCategory->addShape(ShapeTypes::Pentagon);
     basicCategory->addShape(ShapeTypes::ArrowLine);
-    // 添加新的图形
     basicCategory->addShape(ShapeTypes::RoundedRectangle);
     basicCategory->addShape(ShapeTypes::Diamond);
     basicCategory->addShape(ShapeTypes::Hexagon);
@@ -517,22 +516,12 @@ void ToolBar::createGraphicsLibTab()
     
     // 创建Flowchart流程图类别
     ShapeCategory* flowchartCategory = new ShapeCategory(tr("Flowchart"), m_libraryWidget);
-    flowchartCategory->addShape(ShapeTypes::Rectangle);
     flowchartCategory->addShape(ShapeTypes::Pentagon);
-    flowchartCategory->addShape(ShapeTypes::Ellipse);
-    flowchartCategory->addShape(ShapeTypes::ArrowLine);
-    // 添加新的流程图图形
+    flowchartCategory->addShape(ShapeTypes::Octagon);
+    flowchartCategory->addShape(ShapeTypes::Hexagon);
     flowchartCategory->addShape(ShapeTypes::RoundedRectangle);
     flowchartCategory->addShape(ShapeTypes::Diamond);
     layout->addWidget(flowchartCategory);
-    
-    // 创建UML类图类别
-    ShapeCategory* umlCategory = new ShapeCategory(tr("UML Class Diagram"), m_libraryWidget);
-    umlCategory->addShape(ShapeTypes::Rectangle);
-    umlCategory->addShape(ShapeTypes::ArrowLine);
-    // 添加新的UML图形
-    umlCategory->addShape(ShapeTypes::Cloud);
-    layout->addWidget(umlCategory);
     
     // 添加弹簧占用剩余空间
     layout->addStretch();
