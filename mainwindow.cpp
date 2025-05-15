@@ -660,6 +660,81 @@ void MainWindow::createArrangeToolbar()
     );
     m_arrangeToolbar->addWidget(m_sendBackwardButton);
     
+    // 添加X、Y、W、H控制
+    m_arrangeToolbar->addSeparator();
+    
+    // X坐标
+    QLabel* xLabel = new QLabel("X");
+    xLabel->setAlignment(Qt::AlignCenter);
+    xLabel->setFixedWidth(20);
+    m_arrangeToolbar->addWidget(xLabel);
+    
+    m_xSpinBox = new QSpinBox();
+    m_xSpinBox->setRange(0, 9999);
+    m_xSpinBox->setSuffix("px");
+    m_xSpinBox->setFixedWidth(80);
+    m_xSpinBox->setEnabled(false);
+    m_xSpinBox->setSingleStep(10); // 设置步长为10px
+    m_xSpinBox->setStyleSheet(
+        "QSpinBox { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
+        "QSpinBox:disabled { color: rgba(0, 0, 0, 0.25); background-color: #f8f8f8; }"
+    );
+    m_arrangeToolbar->addWidget(m_xSpinBox);
+    
+    // Y坐标
+    QLabel* yLabel = new QLabel("Y");
+    yLabel->setAlignment(Qt::AlignCenter);
+    yLabel->setFixedWidth(20);
+    m_arrangeToolbar->addWidget(yLabel);
+    
+    m_ySpinBox = new QSpinBox();
+    m_ySpinBox->setRange(0, 9999);
+    m_ySpinBox->setSuffix("px");
+    m_ySpinBox->setFixedWidth(80);
+    m_ySpinBox->setEnabled(false);
+    m_ySpinBox->setSingleStep(10); // 设置步长为10px
+    m_ySpinBox->setStyleSheet(
+        "QSpinBox { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
+        "QSpinBox:disabled { color: rgba(0, 0, 0, 0.25); background-color: #f8f8f8; }"
+    );
+    m_arrangeToolbar->addWidget(m_ySpinBox);
+    
+    // 宽度
+    QLabel* wLabel = new QLabel("W");
+    wLabel->setAlignment(Qt::AlignCenter);
+    wLabel->setFixedWidth(20);
+    m_arrangeToolbar->addWidget(wLabel);
+    
+    m_widthSpinBox = new QSpinBox();
+    m_widthSpinBox->setRange(1, 9999);
+    m_widthSpinBox->setSuffix("px");
+    m_widthSpinBox->setFixedWidth(80);
+    m_widthSpinBox->setEnabled(false);
+    m_widthSpinBox->setSingleStep(10); // 设置步长为10px
+    m_widthSpinBox->setStyleSheet(
+        "QSpinBox { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
+        "QSpinBox:disabled { color: rgba(0, 0, 0, 0.25); background-color: #f8f8f8; }"
+    );
+    m_arrangeToolbar->addWidget(m_widthSpinBox);
+    
+    // 高度
+    QLabel* hLabel = new QLabel("H");
+    hLabel->setAlignment(Qt::AlignCenter);
+    hLabel->setFixedWidth(20);
+    m_arrangeToolbar->addWidget(hLabel);
+    
+    m_heightSpinBox = new QSpinBox();
+    m_heightSpinBox->setRange(1, 9999);
+    m_heightSpinBox->setSuffix("px");
+    m_heightSpinBox->setFixedWidth(80);
+    m_heightSpinBox->setEnabled(false);
+    m_heightSpinBox->setSingleStep(10); // 设置步长为10px
+    m_heightSpinBox->setStyleSheet(
+        "QSpinBox { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }"
+        "QSpinBox:disabled { color: rgba(0, 0, 0, 0.25); background-color: #f8f8f8; }"
+    );
+    m_arrangeToolbar->addWidget(m_heightSpinBox);
+    
     // 添加右侧弹性空间
     QWidget* rightSpacer = new QWidget();
     rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -676,6 +751,22 @@ void MainWindow::createArrangeToolbar()
     m_sendToBackButton->setEnabled(false);
     m_bringForwardButton->setEnabled(false);
     m_sendBackwardButton->setEnabled(false);
+    
+    // 添加图形位置尺寸控件信号连接
+    connect(m_xSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), 
+            this, &MainWindow::onXCoordChanged);
+    connect(m_ySpinBox, QOverload<int>::of(&QSpinBox::valueChanged), 
+            this, &MainWindow::onYCoordChanged);
+    connect(m_widthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), 
+            this, &MainWindow::onWidthChanged);
+    connect(m_heightSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), 
+            this, &MainWindow::onHeightChanged);
+    
+    // 连接DrawingArea的位置和尺寸变化信号
+    connect(m_drawingArea, &DrawingArea::shapePositionChanged, 
+            this, &MainWindow::updateShapePositionSizeControls);
+    connect(m_drawingArea, &DrawingArea::shapeSizeChanged, 
+            this, &MainWindow::updateShapePositionSizeControls);
 }
 
 void MainWindow::createExportAndImportToolbar()
@@ -1447,4 +1538,64 @@ void MainWindow::updateArrangeControls()
     m_sendToBackButton->setEnabled(hasSelection);
     m_bringForwardButton->setEnabled(hasSelection);
     m_sendBackwardButton->setEnabled(hasSelection);
+    
+    // 同时更新位置和尺寸控件状态
+    updateShapePositionSizeControls();
+}
+
+// 更新图形位置和尺寸控件状态
+void MainWindow::updateShapePositionSizeControls()
+{
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    
+    // 使能或禁用控件
+    bool hasSelection = (selectedShape != nullptr);
+    m_xSpinBox->setEnabled(hasSelection);
+    m_ySpinBox->setEnabled(hasSelection);
+    m_widthSpinBox->setEnabled(hasSelection);
+    m_heightSpinBox->setEnabled(hasSelection);
+    
+    if (hasSelection) {
+        // 获取图形的位置和尺寸
+        QRect rect = selectedShape->getRect();
+        
+        // 暂时阻断信号以避免循环
+        m_xSpinBox->blockSignals(true);
+        m_ySpinBox->blockSignals(true);
+        m_widthSpinBox->blockSignals(true);
+        m_heightSpinBox->blockSignals(true);
+        
+        // 更新控件值
+        m_xSpinBox->setValue(rect.x());
+        m_ySpinBox->setValue(rect.y());
+        m_widthSpinBox->setValue(rect.width());
+        m_heightSpinBox->setValue(rect.height());
+        
+        // 恢复信号
+        m_xSpinBox->blockSignals(false);
+        m_ySpinBox->blockSignals(false);
+        m_widthSpinBox->blockSignals(false);
+        m_heightSpinBox->blockSignals(false);
+    }
+}
+
+// 位置和尺寸控件槽函数实现
+void MainWindow::onXCoordChanged(int value)
+{
+    m_drawingArea->setSelectedShapeX(value);
+}
+
+void MainWindow::onYCoordChanged(int value)
+{
+    m_drawingArea->setSelectedShapeY(value);
+}
+
+void MainWindow::onWidthChanged(int value)
+{
+    m_drawingArea->setSelectedShapeWidth(value);
+}
+
+void MainWindow::onHeightChanged(int value)
+{
+    m_drawingArea->setSelectedShapeHeight(value);
 }

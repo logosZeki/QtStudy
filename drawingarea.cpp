@@ -3129,5 +3129,67 @@ void DrawingArea::cutMultiSelectedShapes()
     update();
 }
 
+// 设置选中图形的X坐标
+void DrawingArea::setSelectedShapeX(int x)
+{
+    if (!m_selectedShape) return;
+    
+    QRect rect = m_selectedShape->getRect();
+    rect.moveLeft(x);
+    m_selectedShape->setRect(rect);
+    update();
+    
+    // 发出位置变化信号
+    emit shapePositionChanged(rect.topLeft());
+}
+
+// 设置选中图形的Y坐标
+void DrawingArea::setSelectedShapeY(int y)
+{
+    if (!m_selectedShape) return;
+    
+    QRect rect = m_selectedShape->getRect();
+    rect.moveTop(y);
+    m_selectedShape->setRect(rect);
+    update();
+    
+    // 发出位置变化信号
+    emit shapePositionChanged(rect.topLeft());
+}
+
+// 设置选中图形的宽度
+void DrawingArea::setSelectedShapeWidth(int width)
+{
+    if (!m_selectedShape) return;
+    
+    // 确保宽度至少为1
+    width = qMax(1, width);
+    
+    QRect rect = m_selectedShape->getRect();
+    rect.setWidth(width);
+    m_selectedShape->setRect(rect);
+    update();
+    
+    // 发出尺寸变化信号
+    emit shapeSizeChanged(rect.size());
+}
+
+// 设置选中图形的高度
+void DrawingArea::setSelectedShapeHeight(int height)
+{
+    if (!m_selectedShape) return;
+    
+    // 确保高度至少为1
+    height = qMax(1, height);
+    
+    QRect rect = m_selectedShape->getRect();
+    rect.setHeight(height);
+    m_selectedShape->setRect(rect);
+    update();
+    
+    // 发出尺寸变化信号
+    emit shapeSizeChanged(rect.size());
+}
+
 
 

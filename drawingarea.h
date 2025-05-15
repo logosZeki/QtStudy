@@ -96,6 +96,12 @@ public:
     void setSelectedShapeLineWidth(qreal width);
     void setSelectedShapeLineStyle(int style);
     
+    // 图形位置和尺寸设置方法
+    void setSelectedShapeX(int x);
+    void setSelectedShapeY(int y);
+    void setSelectedShapeWidth(int width);
+    void setSelectedShapeHeight(int height);
+    
     // 导出功能
     bool exportToPng(const QString &filePath);
     // SVG导出与导入功能
@@ -112,6 +118,8 @@ signals:
     void scaleChanged(qreal scale);  // 新增的缩放比例变化信号
     void shapesCountChanged(int count);  // 新增的图形数量变化信号
     void multiSelectionChanged(bool hasMultiSelection); // 新增的多选状态变化信号
+    void shapePositionChanged(const QPoint& topLeft);
+    void shapeSizeChanged(const QSize& size);
     
 public slots:
     // 应用页面设置

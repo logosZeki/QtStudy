@@ -67,6 +67,13 @@ private slots:
     void updateStatusBarInfo();
     void onZoomSliderValueChanged(int value);
     void updateZoomSlider();
+    
+    // 图形属性位置和尺寸控制槽函数
+    void onXCoordChanged(int value);
+    void onYCoordChanged(int value);
+    void onWidthChanged(int value);
+    void onHeightChanged(int value);
+    void updateShapePositionSizeControls();
 
 private:
     void createTopToolbar();
@@ -133,6 +140,12 @@ private:
     QLabel *m_shapesCountLabel;
     QLabel *m_zoomLabel;
     QSlider *m_zoomSlider;
+    
+    // 图形位置和尺寸控制
+    QSpinBox* m_xSpinBox;
+    QSpinBox* m_ySpinBox;
+    QSpinBox* m_widthSpinBox;
+    QSpinBox* m_heightSpinBox;
 };
 
 #endif // MAINWINDOW_H
