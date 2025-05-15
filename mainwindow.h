@@ -138,7 +138,7 @@ private:
     // 状态栏控件
     QStatusBar *m_statusBar;
     QLabel *m_shapesCountLabel;
-    QLabel *m_zoomLabel;
+    QPushButton *m_zoomLabel;
     QSlider *m_zoomSlider;
     
     // 图形位置和尺寸控制

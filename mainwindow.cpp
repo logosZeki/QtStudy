@@ -1342,10 +1342,25 @@ void MainWindow::createStatusBar()
     spacer->setFixedWidth(20);
     m_statusBar->addWidget(spacer);
     
-    // 创建显示缩放比例的标签
-    m_zoomLabel = new QLabel(tr("Zoom: 100%"));
-    m_zoomLabel->setStyleSheet("font-size: 12px;");
+    // 创建显示缩放比例的按钮
+    m_zoomLabel = new QPushButton(tr("Zoom level:100%"));
+    m_zoomLabel->setStyleSheet(
+        "QPushButton { font-size: 12px; color: #555; background-color: #f5f5f7; border: none; text-align: left; padding: 0px 5px; }"
+        "QPushButton:hover { background-color: #e0e0e0; }"
+    );
+    m_zoomLabel->setToolTip(tr("重置缩放"));
+    m_zoomLabel->setCursor(Qt::PointingHandCursor);
     m_statusBar->addWidget(m_zoomLabel);
+    
+    // 连接按钮点击信号到重置缩放的槽函数
+    connect(m_zoomLabel, &QPushButton::clicked, this, [this]() {
+        if (m_drawingArea) {
+            // 设置缩放比例为1.0（100%）
+            m_drawingArea->setScale(1.0);
+            // 更新缩放滑块和标签
+            updateZoomSlider();
+        }
+    });
     
     // 添加一个固定宽度的空白区域
     QWidget* sliderSpacer = new QWidget();
