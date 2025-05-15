@@ -411,6 +411,9 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
         m_selectedShape->resize(m_activeHandle, sceneDelta);
         m_dragStart = event->pos();
         
+        // 发出尺寸变化信号
+        emit shapeSizeChanged(m_selectedShape->getRect().size());
+        
         update();
         return;
     }
@@ -427,6 +430,9 @@ void DrawingArea::mouseMoveEvent(QMouseEvent *event)
             QRect newRect = m_selectedShape->getRect();
             newRect.moveTo(m_shapeStart + sceneDelta);
             m_selectedShape->setRect(newRect);
+            
+            // 发出位置变化信号
+            emit shapePositionChanged(newRect.topLeft());
         } else if (!m_multiSelectedShapes.isEmpty()) {
             // 批量移动多个图形
             for (int i = 0; i < m_multiSelectedShapes.size(); ++i) {
@@ -839,6 +845,12 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         m_resizing = false;
         m_activeHandle = Shape::None;
         setCursor(Qt::ArrowCursor);
+        
+        // 发出尺寸变化信号以更新控件
+        if (m_selectedShape) {
+            emit shapeSizeChanged(m_selectedShape->getRect().size());
+        }
+        
         update();
         return;
     }
@@ -848,6 +860,12 @@ void DrawingArea::mouseReleaseEvent(QMouseEvent *event)
         m_dragging = false;
         m_multyShapesStartPos.clear(); // 清除批量移动时记录的起始位置
         setCursor(Qt::ArrowCursor);
+        
+        // 发出位置变化信号以更新控件
+        if (m_selectedShape) {
+            emit shapePositionChanged(m_selectedShape->getRect().topLeft());
+        }
+        
         update();
         return;
     }
