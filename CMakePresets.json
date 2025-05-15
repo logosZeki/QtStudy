@@ -13,6 +13,19 @@
                 "CMAKE_CXX_COMPILER": "G:/Devolop/Qt5.14.1/Tools/mingw730_32/bin/g++.exe",
                 "CMAKE_BUILD_TYPE": "Debug"
             }
+        },
+        {
+            "name": "GCC 7.3.0 i686-w64-mingw32",
+            "displayName": "GCC 7.3.0 i686-w64-mingw32",
+            "description": "Using compilers: C = G:\\Devolop\\Qt5.14.1\\Tools\\mingw730_32\\bin\\gcc.exe, CXX = G:\\Devolop\\Qt5.14.1\\Tools\\mingw730_32\\bin\\g++.exe",
+            "generator": "MinGW Makefiles",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "G:/Devolop/Qt5.14.1/Tools/mingw730_32/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "G:/Devolop/Qt5.14.1/Tools/mingw730_32/bin/g++.exe",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
         }
     ]
 }

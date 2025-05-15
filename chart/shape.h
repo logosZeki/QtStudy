@@ -229,6 +229,7 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Diamond"); }
+    QPoint getConnectionPoint(ConnectionPoint::Position position) const;
     static void registerShape();
     
 private:

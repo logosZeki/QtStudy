@@ -317,8 +317,6 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addWidget(leftSpacer);
     m_fontCombo = new QComboBox();
     m_fontCombo->addItem(tr("San Francisco"));
-    m_fontCombo->addItem(tr("寰蒋闆呴粦"));
-    m_fontCombo->addItem(tr("瀹嬩綋"));
     m_fontCombo->addItems(QFontDatabase().families());
     m_fontCombo->setFixedWidth(120);
     m_fontCombo->setEnabled(false);
