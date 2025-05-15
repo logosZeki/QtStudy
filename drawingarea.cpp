@@ -910,12 +910,7 @@ if (!m_selectedShape) return;
     // 获取图形的填充颜色并设置为编辑器的背景色
     QColor fillColor = m_selectedShape->fillColor();
     QColor transparentFillColor = fillColor; 
-    double presentTransparency=m_selectedShape->transparency()/100.0; // 获取透明度
-    if(presentTransparency==1.0){
-        transparentFillColor.setAlphaF(1); 
-    }else{//当透明度不为1时，设置编辑框背景全透明
-        transparentFillColor.setAlphaF(0.0); // 编辑框背景全透明
-    }
+    transparentFillColor.setAlphaF(0.0); // 编辑框背景全透明
     
 
     // 设置编辑器样式，使用带有透明度的背景色

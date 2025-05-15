@@ -211,8 +211,7 @@ void Shape::drawText(QPainter* painter) const
 QRect Shape::textRect() const
 {
     // 默认实现，子类可以重写以提供更合适的文本区域
-    int margin = qMin(m_rect.width(), m_rect.height()) / 10;
-    return m_rect.adjusted(margin, margin, -margin, -margin);
+    return m_rect;
 }
 
 
@@ -370,14 +369,6 @@ void CircleShape::paint(QPainter* painter)
     drawText(painter);
 }
 
-QRect CircleShape::textRect() const
-{
-    // 为椭圆提供合适的文本区域
-    int marginX = m_rect.width() / 4;
-    int marginY = m_rect.height() / 4;
-    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
-}
-
 bool CircleShape::contains(const QPoint& point) const
 {
     // 检查点是否在椭圆内
@@ -456,13 +447,6 @@ QPolygon PentagonShape::createPentagonPolygon() const
     return polygon;
 }
 
-QRect PentagonShape::textRect() const
-{
-    // 为五边形提供合适的文本区域
-    int margin = qMin(m_rect.width(), m_rect.height()) / 4;
-    return m_rect.adjusted(margin, margin, -margin, -margin);
-}
-
 bool PentagonShape::contains(const QPoint& point) const
 {
     return createPentagonPolygon().containsPoint(point, Qt::OddEvenFill);
@@ -522,14 +506,6 @@ void EllipseShape::paint(QPainter* painter)
     
     // 如果有文本，绘制文本
     drawText(painter);
-}
-
-QRect EllipseShape::textRect() const
-{
-    // 为椭圆提供合适的文本区域
-    int marginX = m_rect.width() / 4;
-    int marginY = m_rect.height() / 4;
-    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
 }
 
 bool EllipseShape::contains(const QPoint& point) const
@@ -631,14 +607,6 @@ QPolygon DiamondShape::createDiamondPolygon() const
     return polygon;
 }
 
-QRect DiamondShape::textRect() const
-{
-    // 为菱形提供合适的文本区域
-    int marginX = m_rect.width() / 4;
-    int marginY = m_rect.height() / 4;
-    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
-}
-
 bool DiamondShape::contains(const QPoint& point) const
 {
     return createDiamondPolygon().containsPoint(point, Qt::OddEvenFill);
@@ -719,14 +687,6 @@ QPolygon HexagonShape::createHexagonPolygon() const
     polygon << QPoint(m_rect.left(), m_rect.top() + h/2);
     
     return polygon;
-}
-
-QRect HexagonShape::textRect() const
-{
-    // 为六边形提供合适的文本区域
-    int marginX = m_rect.width() / 4;
-    int marginY = m_rect.height() / 4;
-    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
 }
 
 bool HexagonShape::contains(const QPoint& point) const
@@ -820,13 +780,6 @@ QPolygon OctagonShape::createOctagonPolygon() const
     return polygon;
 }
 
-QRect OctagonShape::textRect() const
-{
-    // 为八边形提供合适的文本区域
-    int margin = m_rect.width() / 4;
-    return m_rect.adjusted(margin, margin, -margin, -margin);
-}
-
 bool OctagonShape::contains(const QPoint& point) const
 {
     return createOctagonPolygon().containsPoint(point, Qt::OddEvenFill);
@@ -882,14 +835,6 @@ void CloudShape::paint(QPainter* painter)
     
     // 如果有文本，绘制文本
     drawText(painter);
-}
-
-QRect CloudShape::textRect() const
-{
-    // 为云朵提供合适的文本区域
-    int marginX = m_rect.width() / 5;
-    int marginY = m_rect.height() / 5;
-    return m_rect.adjusted(marginX, marginY, -marginX, -marginY);
 }
 
 bool CloudShape::contains(const QPoint& point) const

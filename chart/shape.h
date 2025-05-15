@@ -203,7 +203,6 @@ public:
     bool contains(const QPoint& point) const override;
     
     QString displayName() const override { return QObject::tr("Circle"); }
-    QRect textRect() const override;
     
     // 向工厂注册
     static void registerShape();
@@ -218,7 +217,6 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Pentagon"); }
-    QRect textRect() const override;
 
     virtual QPoint getConnectionPoint(ConnectionPoint::Position position) const;
     
@@ -238,7 +236,6 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Ellipse"); }
-    QRect textRect() const override;
     
     // 向工厂注册
     static void registerShape();
@@ -269,7 +266,6 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Diamond"); }
-    QRect textRect() const override;
     QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
     
     // 向工厂注册
@@ -288,7 +284,6 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Hexagon"); }
-    QRect textRect() const override;
     QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
     
     // 向工厂注册
@@ -307,7 +302,6 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Octagon"); }
-    QRect textRect() const override;
     QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
     
     // 向工厂注册
@@ -326,7 +320,6 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Cloud"); }
-    QRect textRect() const override;
     QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
     void findExtremePointsOnPath(
         const QPainterPath& path, 
