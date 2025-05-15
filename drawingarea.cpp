@@ -318,6 +318,9 @@ void DrawingArea::dropEvent(QDropEvent *event)
             // 发送图形数量变化信号
             emit shapesCountChanged(getShapesCount());
             
+            // 发送形状选择变化信号，使工具栏的格式按钮可用
+            emit shapeSelectionChanged(true);
+            
             update();
         }
         
