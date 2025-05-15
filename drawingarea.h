@@ -71,6 +71,12 @@ public:
     
     // 获取当前选中的图形
     Shape* getSelectedShape() const { return m_selectedShape; }
+
+    // 图层管理相关方法
+    void moveShapeUp();
+    void moveShapeDown();
+    void moveShapeToTop();
+    void moveShapeToBottom();
     
     // 字体设置方法
     void setSelectedShapeFontFamily(const QString& family);
@@ -152,11 +158,7 @@ private:
     void showShapeContextMenu(const QPoint &pos);
     void showCanvasContextMenu(const QPoint &pos);
     
-    // 图层管理相关方法
-    void moveShapeUp();
-    void moveShapeDown();
-    void moveShapeToTop();
-    void moveShapeToBottom();
+
     
     // 剪切板操作相关方法
     void copySelectedShape();               // 复制选中的图形

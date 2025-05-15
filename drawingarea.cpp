@@ -13,6 +13,7 @@
 #include <QDomDocument>
 #include <QFile>
 #include <QSvgRenderer>
+#include <QDebug> // 添加调试输出支持
 
 #include "chart/shapefactory.h"
 #include "chart/customtextedit.h"
@@ -1264,52 +1265,92 @@ void DrawingArea::showCanvasContextMenu(const QPoint &pos)
 // 向上移动一层
 void DrawingArea::moveShapeUp()
 {
-    if (!m_selectedShape) return;
+    if (!m_selectedShape) {
+        qDebug() << "moveShapeUp: No selected graphics";
+        return;
+    }
     
     int index = m_shapes.indexOf(m_selectedShape);
+    qDebug() << "Moveshapeup: current drawing index= " << index << ", Total number of drawings= " << m_shapes.size();
+    
     if (index < m_shapes.size() - 1) {
         // 使用std::swap替换QVector::swap
         std::swap(m_shapes[index], m_shapes[index + 1]);
-        update();
+        qDebug() << "Moveshapeup: swapped location, new index=" << (index + 1);
+        update(); // 更新绘图区域
+        
+        // 确保发送通知，告知界面图形已被修改
+        emit shapeSelectionChanged(true);
+    } else {
+        qDebug() << "Moveshapeup: the shape is already on the top layer";
     }
 }
 
 // 向下移动一层
 void DrawingArea::moveShapeDown()
 {
-    if (!m_selectedShape) return;
+    if (!m_selectedShape) {
+        qDebug() << "Moveshapedown: no selected shapes";
+        return;
+    }
     
     int index = m_shapes.indexOf(m_selectedShape);
+    qDebug() << "Moveshapedown: current drawing index=" << index << ", total number of drawings=" << m_shapes.size();
+    
     if (index > 0) {
         // 使用std::swap替换QVector::swap
         std::swap(m_shapes[index], m_shapes[index - 1]);
-        update();
+        qDebug() << "Moveshapedown: swapped location, new index=" << (index - 1);
+        update(); // 更新绘图区域
+        
+        // 确保发送通知，告知界面图形已被修改
+        emit shapeSelectionChanged(true);
+    } else {
+        qDebug() << "Moveshapedown: the graph is already at the lowest level";
     }
 }
 
 // 移到最顶层
 void DrawingArea::moveShapeToTop()
 {
-    if (!m_selectedShape) return;
+    if (!m_selectedShape) {
+        return;
+    }
     
     int index = m_shapes.indexOf(m_selectedShape);
-    if (index < m_shapes.size() - 1) {
+    
+    // 检查索引是否有效且不是最顶层
+    if (index >= 0 && index < m_shapes.size() - 1) {
+        // 使用临时变量保存指针，防止在removeAt后形状被销毁
+        Shape* shapeToMove = m_selectedShape;
         m_shapes.removeAt(index);
-        m_shapes.append(m_selectedShape);
-        update();
+        m_shapes.append(shapeToMove);
+        update(); // 更新绘图区域
+        
+        // 确保发送通知，告知界面图形已被修改
+        emit shapeSelectionChanged(true);
+    } else if (index < 0) {
+    } else {
     }
 }
 
 // 移到最底层
 void DrawingArea::moveShapeToBottom()
 {
-    if (!m_selectedShape) return;
+    if (!m_selectedShape) {
+        return;
+    }
     
     int index = m_shapes.indexOf(m_selectedShape);
+    
     if (index > 0) {
         m_shapes.removeAt(index);
         m_shapes.prepend(m_selectedShape);
-        update();
+        update(); // 更新绘图区域
+        
+        // 确保发送通知，告知界面图形已被修改
+        emit shapeSelectionChanged(true);
+    } else {
     }
 }
 

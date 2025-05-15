@@ -32,6 +32,9 @@ MainWindow::MainWindow(QWidget *parent)
     // 连接DrawingArea的shapeSelectionChanged信号到updateFontControls槽
     connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateFontControls);
     
+    // 连接DrawingArea的shapeSelectionChanged信号到updateArrangeControls槽
+    connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateArrangeControls);
+    
     // 连接DrawingArea的颜色变化信号到updateColorButtons槽
     connect(m_drawingArea, &DrawingArea::fontColorChanged, this, &MainWindow::updateColorButtons);
     connect(m_drawingArea, &DrawingArea::fillColorChanged, this, &MainWindow::updateColorButtons);
@@ -606,59 +609,71 @@ void MainWindow::createArrangeToolbar()
     
     // 创建按钮并设置Apple风格
     // 置于顶层按钮
-    QPushButton* bringToFrontButton = new QPushButton(tr("Move Shape To Top"));
-    bringToFrontButton->setIcon(QIcon::fromTheme("go-top"));
-    bringToFrontButton->setFixedHeight(30);
-    bringToFrontButton->setStyleSheet(
+    m_bringToFrontButton = new QPushButton(tr("Move Shape To Top"));
+    m_bringToFrontButton->setIcon(QIcon::fromTheme("go-top"));
+    m_bringToFrontButton->setFixedHeight(30);
+    m_bringToFrontButton->setStyleSheet(
         "QPushButton { padding-left: 8px; padding-right: 8px; border-radius: 4px; background-color: #f5f5f7; }"
         "QPushButton:hover { background-color: #e5e5e5; }"
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
-    m_arrangeToolbar->addWidget(bringToFrontButton);
+    m_arrangeToolbar->addWidget(m_bringToFrontButton);
     
     m_arrangeToolbar->addSeparator();
     
     // 置于底层按钮
-    QPushButton* sendToBackButton = new QPushButton(tr("Move Shape To Bottom"));
-    sendToBackButton->setIcon(QIcon::fromTheme("go-bottom"));
-    sendToBackButton->setFixedHeight(30);
-    sendToBackButton->setStyleSheet(
+    m_sendToBackButton = new QPushButton(tr("Move Shape To Bottom"));
+    m_sendToBackButton->setIcon(QIcon::fromTheme("go-bottom"));
+    m_sendToBackButton->setFixedHeight(30);
+    m_sendToBackButton->setStyleSheet(
         "QPushButton { padding-left: 8px; padding-right: 8px; border-radius: 4px; background-color: #f5f5f7; }"
         "QPushButton:hover { background-color: #e5e5e5; }"
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
-    m_arrangeToolbar->addWidget(sendToBackButton);
+    m_arrangeToolbar->addWidget(m_sendToBackButton);
     
     m_arrangeToolbar->addSeparator();
     
     // 上移一层按钮
-    QPushButton* bringForwardButton = new QPushButton(tr("Move Shape Up"));
-    bringForwardButton->setIcon(QIcon::fromTheme("go-up"));
-    bringForwardButton->setFixedHeight(30);
-    bringForwardButton->setStyleSheet(
+    m_bringForwardButton = new QPushButton(tr("Move Shape Up"));
+    m_bringForwardButton->setIcon(QIcon::fromTheme("go-up"));
+    m_bringForwardButton->setFixedHeight(30);
+    m_bringForwardButton->setStyleSheet(
         "QPushButton { padding-left: 8px; padding-right: 8px; border-radius: 4px; background-color: #f5f5f7; }"
         "QPushButton:hover { background-color: #e5e5e5; }"
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
-    m_arrangeToolbar->addWidget(bringForwardButton);
+    m_arrangeToolbar->addWidget(m_bringForwardButton);
     
     m_arrangeToolbar->addSeparator();
     
     // 下移一层按钮
-    QPushButton* sendBackwardButton = new QPushButton(tr("Move Shape Down"));
-    sendBackwardButton->setIcon(QIcon::fromTheme("go-down"));
-    sendBackwardButton->setFixedHeight(30);
-    sendBackwardButton->setStyleSheet(
+    m_sendBackwardButton = new QPushButton(tr("Move Shape Down"));
+    m_sendBackwardButton->setIcon(QIcon::fromTheme("go-down"));
+    m_sendBackwardButton->setFixedHeight(30);
+    m_sendBackwardButton->setStyleSheet(
         "QPushButton { padding-left: 8px; padding-right: 8px; border-radius: 4px; background-color: #f5f5f7; }"
         "QPushButton:hover { background-color: #e5e5e5; }"
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
-    m_arrangeToolbar->addWidget(sendBackwardButton);
+    m_arrangeToolbar->addWidget(m_sendBackwardButton);
     
     // 添加右侧弹性空间
     QWidget* rightSpacer = new QWidget();
     rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_arrangeToolbar->addWidget(rightSpacer);
+    
+    // 添加按钮信号连接
+    connect(m_bringToFrontButton, &QPushButton::clicked, m_drawingArea, &DrawingArea::moveShapeToTop);
+    connect(m_sendToBackButton, &QPushButton::clicked, m_drawingArea, &DrawingArea::moveShapeToBottom);
+    connect(m_bringForwardButton, &QPushButton::clicked, m_drawingArea, &DrawingArea::moveShapeUp);
+    connect(m_sendBackwardButton, &QPushButton::clicked, m_drawingArea, &DrawingArea::moveShapeDown);
+    
+    // 初始化按钮状态为禁用
+    m_bringToFrontButton->setEnabled(false);
+    m_sendToBackButton->setEnabled(false);
+    m_bringForwardButton->setEnabled(false);
+    m_sendBackwardButton->setEnabled(false);
 }
 
 void MainWindow::createExportAndImportToolbar()
@@ -1415,4 +1430,19 @@ void MainWindow::onLineStyleChanged(int index)
         // 更新绘图区域
         m_drawingArea->update();
     }
+}
+
+// 实现Arrange栏按钮状态更新
+void MainWindow::updateArrangeControls()
+{
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    
+    // 启用或禁用控件，取决于是否有选中的图形
+    bool hasSelection = (selectedShape != nullptr);
+    
+    // 更新Arrange栏按钮状态
+    m_bringToFrontButton->setEnabled(hasSelection);
+    m_sendToBackButton->setEnabled(hasSelection);
+    m_bringForwardButton->setEnabled(hasSelection);
+    m_sendBackwardButton->setEnabled(hasSelection);
 }

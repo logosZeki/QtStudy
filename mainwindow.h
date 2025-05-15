@@ -49,6 +49,9 @@ private slots:
     void onLineColorButtonClicked();
     void updateColorButtons();
     
+    // 图形排列相关槽函数
+    void updateArrangeControls();
+    
     // 透明度、线条粗细和线条样式相关槽函数
     void onTransparencyChanged(int index);
     void onLineWidthChanged(int index);
@@ -92,6 +95,12 @@ private:
     
     // 排列工具栏 (对应"排列"选项卡)
     QToolBar *m_arrangeToolbar;
+    
+    // 排列栏目按钮
+    QPushButton* m_bringToFrontButton;
+    QPushButton* m_sendToBackButton;
+    QPushButton* m_bringForwardButton;
+    QPushButton* m_sendBackwardButton;
     
     // 导出工具栏 (对应"导出"选项卡)
     QToolBar *m_exportAndImportToolbar;
