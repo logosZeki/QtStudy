@@ -25,7 +25,6 @@ public:
     explicit PageSettingDialog(QWidget *parent = nullptr, DrawingArea* drawingArea = nullptr);
     ~PageSettingDialog();
 
-    // 获取页面设置参数
     QColor getBackgroundColor() const;
     QSize getPageSize() const;
     bool getShowGrid() const;
@@ -34,7 +33,6 @@ public:
     int getGridThickness() const;
 
 signals:
-    // 设置被应用时发出的信号
     void settingsApplied();
 
 private slots:
@@ -98,7 +96,6 @@ private:
     QComboBox *m_gridSizeCombo;
     QComboBox *m_lineThicknessCombo;
 
-    // 按钮
     QPushButton *m_okButton;
     QPushButton *m_cancelButton;
     QPushButton *m_applyButton;

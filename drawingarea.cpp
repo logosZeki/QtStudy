@@ -1843,6 +1843,7 @@ bool DrawingArea::importFromSvg(const QString &filePath)
                 int startConnectionPointIndex = connectionElement.attribute("startConnectionPointIndex").toInt();
                 int endShapeIndex = connectionElement.attribute("endShapeIndex").toInt();
                 int endConnectionPointIndex = connectionElement.attribute("endConnectionPointIndex").toInt();
+                
                 ArrowLine* arrowLine = new ArrowLine(QPoint(startX, startY), QPoint(endX, endY));
                 bool startConnected = false;
                 bool endConnected = false;

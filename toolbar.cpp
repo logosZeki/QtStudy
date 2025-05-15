@@ -138,6 +138,7 @@ void ShapeItem::paintEvent(QPaintEvent* event)
         prototypeCloudPath.cubicTo(QPointF(80, 5), QPointF(40, 15), QPointF(35, 45));
         prototypeCloudPath.cubicTo(QPointF(0, 55), QPointF(0, 90), pointA);
         prototypeCloudPath.closeSubpath();
+        
         QRectF prototypeCloudBoundingRect =prototypeCloudPath.boundingRect();
         qreal protoX = prototypeCloudBoundingRect.left();
         qreal protoY = prototypeCloudBoundingRect.top();
@@ -208,6 +209,8 @@ void ShapeItem::mousePressEvent(QMouseEvent* event)
             arrow << endPoint << arrowP1 << arrowP2;
             painter.setBrush(Qt::black);
             painter.drawPolygon(arrow);
+
+
         } else if (m_type == ShapeTypes::RoundedRectangle) {
             int radius = tempRect.height() / 6;
             painter.drawRoundedRect(tempRect, radius, radius);
@@ -347,6 +350,7 @@ void ToolBar::createGraphicsLibTab()
     QVBoxLayout* layout = new QVBoxLayout(m_libraryWidget);
     layout->setContentsMargins(5, 0, 5, 5);
     layout->setSpacing(10);
+
     ShapeCategory* basicCategory = new ShapeCategory(tr("Basic shapes"), m_libraryWidget);
     basicCategory->addShape(ShapeTypes::Rectangle);
     basicCategory->addShape(ShapeTypes::Circle);
@@ -359,6 +363,7 @@ void ToolBar::createGraphicsLibTab()
     basicCategory->addShape(ShapeTypes::Octagon);
     basicCategory->addShape(ShapeTypes::Cloud);
     layout->addWidget(basicCategory);
+
     ShapeCategory* flowchartCategory = new ShapeCategory(tr("Flowchart"), m_libraryWidget);
     flowchartCategory->addShape(ShapeTypes::Pentagon);
     flowchartCategory->addShape(ShapeTypes::Octagon);

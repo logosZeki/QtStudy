@@ -7,7 +7,7 @@
 #include <QRegularExpression> 
 #include <QVector>
 #include <QDebug>
-#include <QFont>  // 添加QFont头文件
+#include <QFont> 
 #include <QColor>
 #include <QPainterPath>
 #define _USE_MATH_DEFINES
@@ -27,8 +27,7 @@ namespace ShapeTypes {
     const QString Circle = "Circle";
     const QString Pentagon = "Pentagon";
     const QString Ellipse = "Ellipse";
-    const QString ArrowLine = "ArrowLine"; // 新增带箭头直线类型
-    // 新增形状类型
+    const QString ArrowLine = "ArrowLine";
     const QString RoundedRectangle = "RoundedRectangle";
     const QString Diamond = "Diamond";
     const QString Hexagon = "Hexagon";
@@ -41,27 +40,23 @@ class Shape
 {
 public:
     static const int CONNECTION_POINT_SIZE = 8;
-    // 类型标识符现在是字符串
+
     Shape(const QString& type, const int& basis);
     virtual ~Shape();
     
     virtual void paint(QPainter* painter) = 0;
-    
-    // 画笔和画刷设置方法
     void setupPainter(QPainter* painter) const;
     
     virtual QRect getRect() const { return m_rect; }
     virtual void setRect(const QRect& rect);
-    
-    // 返回形状类型标识符
     QString type() const { return m_type; }
     
-    // 返回显示名称（可以与类型不同）
+    // 显示名称，可以与类型不同
     virtual QString displayName() const { return QObject::tr(m_type.toUtf8().constData()); }
     
     virtual bool contains(const QPoint& point) const;
 
-    // 调整大小相关的枚举和方法
+    // 调整大小用
     enum HandlePosition {
         None = -1,
         TopLeft = 0,
@@ -86,17 +81,11 @@ public:
     // 调整大小
     void resize(HandlePosition handle, const QPoint& offset);
     
-    // 文本相关方法
     void setText(const QString& text);
     QString text() const;
     bool isEditing() const;
     void setEditing(bool editing);
-    //void updateText(const QString& text);
-    
-    // 绘制文本
     void drawText(QPainter* painter) const;
-    
-    // 获取文本位置
     virtual QRect textRect() const;
 
     // 连接点相关方法
@@ -104,11 +93,7 @@ public:
 
     virtual QPoint getConnectionPoint(ConnectionPoint::Position position) const;
 
-    
-    // 获取所有可用的连接点
     virtual QVector<ConnectionPoint*> getConnectionPoints();
-
-    // 检测点击了哪个连接点（如果有）
     ConnectionPoint* hitConnectionPoint(const QPoint& point, bool isStart) const;
 
     // 字体相关方法
@@ -135,23 +120,15 @@ public:
     
     QFont getFont() const;
 
-    // 填充颜色相关方法
     void setFillColor(const QColor& color);
     QColor fillColor() const;
-    
-    // 线条颜色相关方法
     void setLineColor(const QColor& color);
     QColor lineColor() const;
-
-    // 透明度相关方法
     void setTransparency(int transparency);
     int transparency() const;
     
-    // 线条粗细相关方法
     void setLineWidth(qreal width);
     qreal lineWidth() const;
-    
-    // 线条样式相关方法
     void setLineStyle(int style);
     int lineStyle() const;
 
@@ -172,12 +149,8 @@ protected:
     // 手柄大小常量
     static const int HANDLE_SIZE = 8;
     // 连接点大小常量
-    
-    
-    // 存储连接点
+
     mutable QVector<ConnectionPoint*> m_connectionPoints;
-    
-    // 创建连接点（惰性初始化）
     virtual void createConnectionPoints() const;
 };
 
@@ -187,10 +160,8 @@ class RectangleShape : public Shape
 public:
     RectangleShape(const int& basis);
     void paint(QPainter* painter) override;
-    
     QString displayName() const override { return QObject::tr("Rectangle"); }
     
-    // 向工厂注册
     static void registerShape();
 };
 
@@ -203,8 +174,6 @@ public:
     bool contains(const QPoint& point) const override;
     
     QString displayName() const override { return QObject::tr("Circle"); }
-    
-    // 向工厂注册
     static void registerShape();
 };
 
@@ -219,8 +188,6 @@ public:
     QString displayName() const override { return QObject::tr("Pentagon"); }
 
     virtual QPoint getConnectionPoint(ConnectionPoint::Position position) const;
-    
-    // 向工厂注册
     static void registerShape();
     
 private:
@@ -236,8 +203,6 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Ellipse"); }
-    
-    // 向工厂注册
     static void registerShape();
 };
 
@@ -249,8 +214,6 @@ public:
     void paint(QPainter* painter) override;
     
     QString displayName() const override { return QObject::tr("Rounded Rectangle"); }
-    
-    // 向工厂注册
     static void registerShape();
     
 private:
@@ -266,9 +229,6 @@ public:
     
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Diamond"); }
-    QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
-    
-    // 向工厂注册
     static void registerShape();
     
 private:
@@ -285,8 +245,6 @@ public:
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Hexagon"); }
     QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
-    
-    // 向工厂注册
     static void registerShape();
     
 private:
@@ -303,8 +261,6 @@ public:
     bool contains(const QPoint& point) const override;
     QString displayName() const override { return QObject::tr("Octagon"); }
     QPoint getConnectionPoint(ConnectionPoint::Position position) const override;
-    
-    // 向工厂注册
     static void registerShape();
     
 private:
@@ -328,7 +284,6 @@ public:
         QPointF& outLeftmost, 
         QPointF& outRightmost,
         int numberOfSamples ) const;
-    // 向工厂注册
     static void registerShape();
 private:
     QPainterPath createCloudPath();

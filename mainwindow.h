@@ -57,9 +57,7 @@ private slots:
     void onLineWidthChanged(int index);
     void onLineStyleChanged(int index);
     
-    // 导出功能相关槽函数
     void exportAsPng();
-    // SVG导出与导入功能相关槽函数
     void exportAsSvg();
     void importFromSvg();
     
@@ -97,20 +95,16 @@ private:
     QToolBar *m_topToolbar;
     QTabBar *m_tabBar;
     
-    // 主工具栏 (对应"开始"选项卡)
     QToolBar *m_mainToolbar;
-    
-    // 排列工具栏 (对应"排列"选项卡)
     QToolBar *m_arrangeToolbar;
+    QToolBar *m_exportAndImportToolbar;
     
     // 排列栏目按钮
     QPushButton* m_bringToFrontButton;
     QPushButton* m_sendToBackButton;
     QPushButton* m_bringForwardButton;
     QPushButton* m_sendBackwardButton;
-    
-    // 导出工具栏 (对应"导出"选项卡)
-    QToolBar *m_exportAndImportToolbar;
+
     
     // 页面设置对话框
     PageSettingDialog *m_pageSettingDialog;

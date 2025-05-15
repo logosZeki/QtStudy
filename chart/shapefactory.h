@@ -5,17 +5,13 @@
 #include <QMap>
 #include <functional>
 
-class Shape; // 前向声明
+class Shape; 
 
 class ShapeFactory {
 public:
     static ShapeFactory& instance();
-    
-    // 注册形状类型及其创建函数
     void registerShape(const QString& shapeType, 
                       std::function<Shape*(const int&)> creator);
-    
-    // 根据类型名创建形状实例
     Shape* createShape(const QString& shapeType, const int& basis);
     
     // 获取所有已注册的形状类型

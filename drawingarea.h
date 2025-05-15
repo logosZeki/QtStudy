@@ -241,7 +241,6 @@ private:
     QVector<QPoint> m_copiedShapesPositions; // 存储多个复制图形的相对位置
     QVector<Connection*> m_copiedConnections; // 存储复制的连接线
     QVector<QPoint> m_copiedConnectionsPositions; // 存储复制连接线的相对位置
-    // 存储连接线与图形的绑定关系 (原始索引 -> 新索引)
     QVector<QPair<int, int>> m_copiedConnectionStartShapes; // 连接线起点与图形的绑定关系
     QVector<QPair<int, int>> m_copiedConnectionEndShapes; // 连接线终点与图形的绑定关系
     QVector<ConnectionPoint::Position> m_copiedConnectionStartPoints; // 连接线起点的连接点位置

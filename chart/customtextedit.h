@@ -11,7 +11,6 @@ class CustomTextEdit : public QTextEdit
 public:
     explicit CustomTextEdit(QWidget *parent = nullptr);
     
-    // 设置对齐方式并重新居中
     void setTextAlignment(Qt::Alignment alignment);
     
 protected:

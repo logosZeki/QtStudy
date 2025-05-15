@@ -16,29 +16,27 @@ public:
         Right,
         Bottom,
         Left,
-        Free // 新增自由位置类型，不依赖Shape
+        Free 
     };
 
     ConnectionPoint(Shape* owner, Position position);
-    ConnectionPoint(const QPoint& freePosition); // 新增自由位置构造函数
-    
+    ConnectionPoint(const QPoint& freePosition); 
     QPoint getPosition() const;
     Shape* getOwner() const { return m_owner; }
     Position getPositionType() const { return m_position; }
 
     bool equalTo(const ConnectionPoint* other) const;
-    void setPosition(const QPoint& pos); // 新增设置位置方法
-    
+    void setPosition(const QPoint& pos); 
+
     static QString positionToString(Position pos);
     static Position stringToPosition(const QString& str);
 
 private:
     Shape* m_owner;
     Position m_position;
-    QPoint m_freePosition; // 存储自由位置的坐标
+    QPoint m_freePosition; 
 };
 
-// 连线类
 class Connection
 {
 public:
@@ -50,7 +48,6 @@ public:
     void setStartPoint(ConnectionPoint* point);
     void setEndPoint(ConnectionPoint* point);
     void setTemporaryEndPoint(const QPoint& point);
-    
     ConnectionPoint* getStartPoint() const { return m_startPoint; }
     ConnectionPoint* getEndPoint() const { return m_endPoint; }
     
@@ -63,7 +60,6 @@ public:
     QPoint getStartPosition() const;
     QPoint getEndPosition() const;
     
-    // 判断点是否接近起点或终点
     bool isNearStartPoint(const QPoint& point, int threshold = 10) const;
     bool isNearEndPoint(const QPoint& point, int threshold = 10) const;
     
@@ -83,21 +79,19 @@ protected:
     ConnectionPoint* m_endPoint;
     QPoint m_temporaryEndPoint; // 用于绘制连线预览
     bool m_selected; // 是否被选中
-    
-    // 辅助方法计算线段到点的距离
     double pointToLineDistance(const QPoint& point, 
                               const QPoint& lineStart, 
                               const QPoint& lineEnd) const;
 };
 
-// 箭头直线类
+
 class ArrowLine : public Connection
 {
 public:
     ArrowLine(const QPoint& startPoint, const QPoint& endPoint);
     virtual ~ArrowLine();
     
-    // 重写绘制方法以支持选中状态
+    // 支持选中状态
     virtual void paint(QPainter* painter) override;
 };
 
