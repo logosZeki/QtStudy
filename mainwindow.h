@@ -109,7 +109,9 @@ private:
     QPushButton *m_fontColorButton;
     QFrame *m_fontColorIndicator;
     QPushButton  *m_fillColorButton;
+    QFrame *m_fillColorIndicator;
     QPushButton *m_lineColorButton;
+    QFrame *m_lineColorIndicator;
     QComboBox *m_alignCombo;
     
     // 透明度、线条粗细和线条样式控件

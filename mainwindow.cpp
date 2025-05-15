@@ -32,18 +32,16 @@ MainWindow::MainWindow(QWidget *parent)
     // 连接DrawingArea的shapeSelectionChanged信号到updateFontControls槽
     connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateFontControls);
     
-    // 连接DrawingArea的fontColorChanged信号到updateFontColorButton槽
-    connect(m_drawingArea, &DrawingArea::fontColorChanged, this, &MainWindow::updateFontColorButton);
+    // 连接DrawingArea的颜色变化信号到updateColorButtons槽
+    connect(m_drawingArea, &DrawingArea::fontColorChanged, this, &MainWindow::updateColorButtons);
+    connect(m_drawingArea, &DrawingArea::fillColorChanged, this, &MainWindow::updateColorButtons);
+    connect(m_drawingArea, &DrawingArea::lineColorChanged, this, &MainWindow::updateColorButtons);
+    connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateColorButtons);
     
     // 连接状态栏更新信号
     connect(m_drawingArea, &DrawingArea::selectionChanged, this, &MainWindow::updateStatusBarInfo);
     connect(m_drawingArea, &DrawingArea::scaleChanged, this, &MainWindow::updateZoomSlider);
     connect(m_drawingArea, &DrawingArea::shapesCountChanged, this, &MainWindow::updateStatusBarInfo);
-    
-    // 连接填充颜色和线条颜色变化信号到更新按钮状态槽
-    connect(m_drawingArea, &DrawingArea::fillColorChanged, this, &MainWindow::updateColorButtons);
-    connect(m_drawingArea, &DrawingArea::lineColorChanged, this, &MainWindow::updateColorButtons);
-    connect(m_drawingArea, &DrawingArea::shapeSelectionChanged, this, &MainWindow::updateColorButtons);
     
     // 设置DrawingArea初始缩放比例
     updateZoomSlider();
@@ -472,16 +470,8 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
 
     // 创建填充颜色按钮 - Apple风格
-    m_fillColorButton = new QPushButton(tr("Fill"));
-    m_fillColorButton->setIcon(QIcon::fromTheme("format-fill-color"));
-    m_fillColorButton->setToolTip(tr("Fill Color"));
-    m_fillColorButton->setFixedHeight(30);
-    m_fillColorButton->setMinimumWidth(80);
-    m_fillColorButton->setStyleSheet(
-        "QPushButton { padding-left: 8px; padding-right: 8px; border-radius: 4px; background-color: #f5f5f7; }"
-        "QPushButton:hover { background-color: #e5e5e5; }"
-        "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
-    );
+    m_fillColorButton = Utils::getAutoChangeColorsButton(this, tr("Fill"), 54, 38, 28, 8);
+    m_fillColorIndicator = m_fillColorButton->findChild<QFrame*>("colorIndicator");
     m_mainToolbar->addWidget(m_fillColorButton);
     
     // 连接填充颜色按钮的点击信号
@@ -506,16 +496,8 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
     
     // 创建线条颜色按钮 - Apple风格
-    m_lineColorButton = new QPushButton(tr("Line"));
-    m_lineColorButton->setIcon(QIcon::fromTheme("draw-line"));
-    m_lineColorButton->setToolTip(tr("Line Color"));
-    m_lineColorButton->setFixedHeight(30);
-    m_lineColorButton->setMinimumWidth(80);
-    m_lineColorButton->setStyleSheet(
-        "QPushButton { padding-left: 8px; padding-right: 8px; border-radius: 4px; background-color: #f5f5f7; }"
-        "QPushButton:hover { background-color: #e5e5e5; }"
-        "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
-    );
+    m_lineColorButton = Utils::getAutoChangeColorsButton(this, tr("Line"), 54, 38, 28, 8);
+    m_lineColorIndicator = m_lineColorButton->findChild<QFrame*>("colorIndicator");
     m_mainToolbar->addWidget(m_lineColorButton);
     
     // 连接线条颜色按钮的点击信号
@@ -822,21 +804,23 @@ void MainWindow::updateFontControls()
     m_fontColorButton->setEnabled(hasSelection);
     m_alignCombo->setEnabled(hasSelection);
     
-    // 如果有选中的图形，更新指示器显示选中图形的颜色
-    // 如果没有选中图形，将指示器颜色重置为白色
-    if (hasSelection) {
-        QColor fontColor = selectedShape->fontColor();
-        updateFontColorButton(fontColor);
-    } else {
-        // 无选中图形时重置为白色
-        updateFontColorButton(QColor(255, 255, 255));
-    }
-    
     // 也更新填充颜色和线条颜色按钮的状态
     m_fillColorButton->setEnabled(hasSelection);
     m_lineColorButton->setEnabled(hasSelection);
     
-    // 更新透明度、线条粗细和线条样式下拉框的状态
+    // 如果有选中的图形，更新指示器显示选中图形的颜色
+    // 如果没有选中图形，将指示器颜色重置为白色
+    if (hasSelection) {
+        // 更新所有颜色按钮
+        updateColorButtons();
+    } else {
+        // 无选中图形时重置为白色
+        Utils::updateColorButton(m_fontColorButton, QColor(255, 255, 255));
+        Utils::updateColorButton(m_fillColorButton, QColor(255, 255, 255));
+        Utils::updateColorButton(m_lineColorButton, QColor(255, 255, 255));
+    }
+    
+    // 也更新透明度、线条粗细和线条样式下拉框的状态
     m_transparencyCombo->setEnabled(hasSelection);
     m_lineWidthCombo->setEnabled(hasSelection);
     m_lineStyleCombo->setEnabled(hasSelection);
@@ -861,11 +845,6 @@ void MainWindow::updateFontControls()
         m_boldAction->setChecked(selectedShape->isFontBold());
         m_italicAction->setChecked(selectedShape->isFontItalic());
         m_underlineAction->setChecked(selectedShape->isFontUnderline());
-        
-        // 不再需要这行，因为前面已经处理了
-        // 更新字体颜色按钮样式
-        // QColor fontColor = selectedShape->fontColor();
-        // updateFontColorButton(fontColor);
         
         // 更新对齐方式下拉框
         Qt::Alignment alignment = selectedShape->textAlignment();
@@ -945,17 +924,16 @@ void MainWindow::onUnderlineActionTriggered()
 void MainWindow::onFontColorButtonClicked()
 {
     // 打开颜色选择对话框，应用新的字体颜色到选中的图形
-    QColor initialColor = Qt::black;
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
-        initialColor = selectedShape->fontColor();
-    }
-    
-    QColor color = QColorDialog::getColor(initialColor, this, tr("选择字体颜色"));
-    if (color.isValid()) {
-        m_drawingArea->setSelectedShapeFontColor(color);
-        // 手动更新颜色指示器，以防信号没有被正确处理
-        updateFontColorButton(color);
+        QColor initialColor = selectedShape->fontColor();
+        QColor color = QColorDialog::getColor(initialColor, this, tr("选择字体颜色"));
+        
+        if (color.isValid()) {
+            m_drawingArea->setSelectedShapeFontColor(color);
+            // 手动更新颜色指示器
+            Utils::updateColorButton(m_fontColorButton, color);
+        }
     }
 }
 
@@ -984,7 +962,15 @@ void MainWindow::onAlignmentChanged(int index)
 
 void MainWindow::updateFontColorButton(const QColor& color)
 {
-    Utils::updateColorButton(m_fontColorButton, color);
+    // 如果没有选中图形，直接更新按钮颜色
+    Shape* selectedShape = m_drawingArea->getSelectedShape();
+    if (!selectedShape) {
+        Utils::updateColorButton(m_fontColorButton, color);
+        return;
+    }
+    
+    // 如果有选中图形，调用updateColorButtons来统一处理所有颜色按钮
+    updateColorButtons();
 }
 
 void MainWindow::exportAsPng()
@@ -1324,10 +1310,12 @@ void MainWindow::onFillColorButtonClicked()
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->fillColor();
-        QColor color = QColorDialog::getColor(initialColor, this, tr("Select fill color"));
+        QColor color = QColorDialog::getColor(initialColor, this, tr("选择填充颜色"));
         
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeFillColor(color);
+            // 手动更新颜色指示器
+            Utils::updateColorButton(m_fillColorButton, color);
         }
     }
 }
@@ -1338,10 +1326,12 @@ void MainWindow::onLineColorButtonClicked()
     Shape* selectedShape = m_drawingArea->getSelectedShape();
     if (selectedShape) {
         QColor initialColor = selectedShape->lineColor();
-        QColor color = QColorDialog::getColor(initialColor, this, tr("Select line color"));
+        QColor color = QColorDialog::getColor(initialColor, this, tr("选择线条颜色"));
         
         if (color.isValid()) {
             m_drawingArea->setSelectedShapeLineColor(color);
+            // 手动更新颜色指示器
+            Utils::updateColorButton(m_lineColorButton, color);
         }
     }
 }
@@ -1354,33 +1344,17 @@ void MainWindow::updateColorButtons()
         return;
     }
     
-    // 填充颜色按钮样式更新 - Apple风格
-    QColor fillColor = selectedShape->fillColor();
-    QString textColor = fillColor.lightness() < 128 ? "white" : "black";
-    QString fillColorStyle = QString(
-        "QPushButton { "
-        "  background-color: %1; "
-        "  color: %2; "
-        "  padding-left: 8px; "
-        "  padding-right: 8px; "
-        "  border-radius: 4px; "
-        "}"
-    ).arg(fillColor.name()).arg(textColor);
-    m_fillColorButton->setStyleSheet(fillColorStyle);
+    // 更新字体颜色按钮
+    QColor fontColor = selectedShape->fontColor();
+    Utils::updateColorButton(m_fontColorButton, fontColor);
     
-    // 线条颜色按钮样式更新 - Apple风格
+    // 更新填充颜色按钮
+    QColor fillColor = selectedShape->fillColor();
+    Utils::updateColorButton(m_fillColorButton, fillColor);
+    
+    // 更新线条颜色按钮
     QColor lineColor = selectedShape->lineColor();
-    textColor = lineColor.lightness() < 128 ? "white" : "black";
-    QString lineColorStyle = QString(
-        "QPushButton { "
-        "  background-color: %1; "
-        "  color: %2; "
-        "  padding-left: 8px; "
-        "  padding-right: 8px; "
-        "  border-radius: 4px; "
-        "}"
-    ).arg(lineColor.name()).arg(textColor);
-    m_lineColorButton->setStyleSheet(lineColorStyle);
+    Utils::updateColorButton(m_lineColorButton, lineColor);
 }
 
 void MainWindow::onTransparencyChanged(int index)
