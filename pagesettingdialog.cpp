@@ -61,23 +61,13 @@ PageSettingDialog::~PageSettingDialog()
 
 void PageSettingDialog::initDefaultValues()
 {
-    // 默认背景颜色为白色
+    // 设置默认值
     m_backgroundColor = Qt::white;
-    
-    // 从DrawingArea获取当前页面尺寸
-    m_pageSize = m_drawingArea->getDrawingAreaSize();
-    
-    // 默认显示网格
+    m_pageSize = QSize(A4_WIDTH, A4_HEIGHT);
     m_showGrid = true;
-    
-    // 默认网格颜色为浅灰色
-    m_gridColor = QColor(220, 220, 220);
-    
-    // 默认网格大小为20像素
-    m_gridSize = 20;
-    
-    // 默认网格线条粗细为1像素
-    m_gridThickness = 1;
+    m_gridColor = QColor(200, 200, 200);
+    m_gridSize = 15;
+    m_gridThickness = 2;
     
     // 初始化最近使用颜色列表
     m_recentColors.append(Qt::white);
@@ -196,18 +186,18 @@ void PageSettingDialog::setupUi()
     // 替换网格大小Spinner为下拉框
     m_gridSizeCombo = new QComboBox();
     m_gridSizeCombo->addItem(tr("Small (10 px)"), 10);
-    m_gridSizeCombo->addItem(tr("Normal (20 px)"), 20);
-    m_gridSizeCombo->addItem(tr("Large (30 px)"), 30);
-    m_gridSizeCombo->addItem(tr("Very large (40 px)"), 40);
+    m_gridSizeCombo->addItem(tr("Normal (15 px)"), 15);
+    m_gridSizeCombo->addItem(tr("Large (25 px)"), 25);
+    m_gridSizeCombo->addItem(tr("Very large (35 px)"), 35);
     
     // 根据当前值设置默认选项
     if (m_gridSize == 10) {
         m_gridSizeCombo->setCurrentIndex(0);
-    } else if (m_gridSize == 20) {
+    } else if (m_gridSize == 15) {
         m_gridSizeCombo->setCurrentIndex(1);
-    } else if (m_gridSize == 30) {
+    } else if (m_gridSize == 25) {
         m_gridSizeCombo->setCurrentIndex(2);
-    } else if (m_gridSize == 40) {
+    } else if (m_gridSize == 35) {
         m_gridSizeCombo->setCurrentIndex(3);
     } else {
         // 如果是其他值，设为正常
@@ -223,20 +213,26 @@ void PageSettingDialog::setupUi()
     
     // 替换线条粗细Spinner为下拉框
     m_lineThicknessCombo = new QComboBox();
-    m_lineThicknessCombo->addItem(tr("Thin (0.5 px)"), 0.5);
-    m_lineThicknessCombo->addItem(tr("Normal (1 px)"), 1);
-    m_lineThicknessCombo->addItem(tr("Thick (2 px)"), 2);
+    m_lineThicknessCombo->addItem(tr("Very thin (0.5 px)"), 0.5);
+    m_lineThicknessCombo->addItem(tr("Thin (1.5 px)"), 1.5);
+    m_lineThicknessCombo->addItem(tr("Normal (2 px)"), 2);
+    m_lineThicknessCombo->addItem(tr("Thick (2.5 px)"), 2.5);
+    m_lineThicknessCombo->addItem(tr("Very thick (3 px)"), 3);
     
     // 根据当前值设置默认选项
     if (m_gridThickness == 0.5) {
         m_lineThicknessCombo->setCurrentIndex(0);
-    } else if (m_gridThickness == 1) {
+    } else if (m_gridThickness == 1.5) {
         m_lineThicknessCombo->setCurrentIndex(1);
     } else if (m_gridThickness == 2) {
         m_lineThicknessCombo->setCurrentIndex(2);
+    } else if (m_gridThickness == 2.5) {
+        m_lineThicknessCombo->setCurrentIndex(3);
+    } else if (m_gridThickness == 3) {
+        m_lineThicknessCombo->setCurrentIndex(4);
     } else {
         // 如果是其他值，设为正常
-        m_lineThicknessCombo->setCurrentIndex(1);
+        m_lineThicknessCombo->setCurrentIndex(2);
     }
     
     // 保留旧的Spinner，但隐藏，以便兼容旧代码

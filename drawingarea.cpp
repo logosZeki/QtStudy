@@ -48,8 +48,8 @@ DrawingArea::DrawingArea(QWidget *parent)
       m_drawingAreaSize(Default_WIDTH, Default_HEIGHT),
       m_showGrid(true),
       m_gridColor(QColor(220, 220, 220)),
-      m_gridSize(20),
-      m_gridThickness(1),
+      m_gridSize(15),
+      m_gridThickness(2),
       m_multiSelectedShapes(),
       m_multySelectedConnections(),
       m_multyShapesStartPos(),
@@ -68,8 +68,8 @@ DrawingArea::DrawingArea(QWidget *parent)
     m_drawingAreaSize = QSize(Default_WIDTH, Default_HEIGHT); // 初始化绘图区域尺寸
     m_showGrid = true;
     m_gridColor = QColor(220, 220, 220);
-    m_gridSize = 20;
-    m_gridThickness = 1;
+    m_gridSize = 15;
+    m_gridThickness = 2;
     
     // 设置绘图区域背景色为白色，更符合现代UI风格
     setStyleSheet("DrawingArea { background-color: white; }");
@@ -1793,19 +1793,38 @@ void DrawingArea::drawGrid(QPainter *painter)
     
     painter->save();
     
-    QPen gridPen(m_gridColor, m_gridThickness);
-    painter->setPen(gridPen);
-    
     // 在当前变换后的坐标系中绘制网格
     QRectF gridRect(0, 0, m_drawingAreaSize.width(), m_drawingAreaSize.height());
     
+    // 淡色和深色网格颜色
+    QColor lightColor(245, 245, 245);  // 淡色网格
+    QColor darkColor(241, 241, 241);   // 深色网格
+    
     // 绘制水平网格线
     for (int y = 0; y <= gridRect.height(); y += m_gridSize) {
+        if (y % (m_gridSize * 4) == 0) {
+            // 绘制深色网格
+            QPen darkPen(darkColor, m_gridThickness);
+            painter->setPen(darkPen);
+        } else {
+            // 绘制淡色网格
+            QPen lightPen(lightColor, m_gridThickness);
+            painter->setPen(lightPen);
+        }
         painter->drawLine(0, y, gridRect.width(), y);
     }
     
     // 绘制垂直网格线
     for (int x = 0; x <= gridRect.width(); x += m_gridSize) {
+        if (x % (m_gridSize * 4) == 0) {
+            // 绘制深色网格
+            QPen darkPen(darkColor, m_gridThickness);
+            painter->setPen(darkPen);
+        } else {
+            // 绘制淡色网格
+            QPen lightPen(lightColor, m_gridThickness);
+            painter->setPen(lightPen);
+        }
         painter->drawLine(x, 0, x, gridRect.height());
     }
     
