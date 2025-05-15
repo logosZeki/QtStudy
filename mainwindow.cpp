@@ -450,18 +450,59 @@ void MainWindow::createMainToolbar()
     m_mainToolbar->addSeparator();
     
     // 添加字体颜色按钮 - Apple风格
-    m_fontColorButton = new QPushButton(tr("Font"));
-    m_fontColorButton->setIcon(QIcon::fromTheme("format-text-color"));
+    m_fontColorButton = new QPushButton("", this);
     m_fontColorButton->setToolTip(tr("Font Color"));
-    m_fontColorButton->setFixedHeight(30);
-    m_fontColorButton->setMinimumWidth(80);
+    m_fontColorButton->setFixedHeight(38);
+    m_fontColorButton->setFixedWidth(54);
     m_fontColorButton->setEnabled(false);
     m_fontColorButton->setStyleSheet(
-        "QPushButton { padding-left: 8px; padding-right: 8px; border-radius: 4px; background-color: #f5f5f7; }"
+        "QPushButton { "
+        "  padding: 1px; "
+        "  border-radius: 4px; "
+        "  background-color: #f5f5f7; "
+        "  text-align: center; "
+        "}"
         "QPushButton:hover { background-color: #e5e5e5; }"
         "QPushButton:disabled { color: rgba(0, 0, 0, 0.25); }"
     );
+    
+    // 创建一个垂直布局，包含文本和色块
+    QVBoxLayout* fontBtnLayout = new QVBoxLayout(m_fontColorButton);
+    fontBtnLayout->setContentsMargins(0, 4, 0, 3);
+    fontBtnLayout->setSpacing(3);
+    fontBtnLayout->setAlignment(Qt::AlignCenter);
+    
+    // 添加"Font"文本标签
+    QLabel* fontLabel = new QLabel(tr("Font"), m_fontColorButton);
+    fontLabel->setFixedWidth(54);
+    fontLabel->setAlignment(Qt::AlignCenter);
+    fontLabel->setStyleSheet("QLabel { color: #333; font-size: 12px; }");
+    fontBtnLayout->addWidget(fontLabel);
+    
+    // 添加颜色小方块
+    m_fontColorIndicator = new QFrame(m_fontColorButton);
+    m_fontColorIndicator->setFixedHeight(8);
+    m_fontColorIndicator->setFixedWidth(28);
+    m_fontColorIndicator->setFrameShape(QFrame::StyledPanel);
+    m_fontColorIndicator->setStyleSheet(
+        "QFrame { "
+        "  background-color: white; "
+        "  border: 1px solid #666; "
+        "  border-radius: 3px; "
+        "}"
+    );
+    // 让颜色指示器居中
+    QHBoxLayout* indicatorLayout = new QHBoxLayout();
+    indicatorLayout->setContentsMargins(0, 0, 0, 0);
+    indicatorLayout->setSpacing(0);
+    indicatorLayout->setAlignment(Qt::AlignCenter);
+    indicatorLayout->addWidget(m_fontColorIndicator);
+    fontBtnLayout->addLayout(indicatorLayout);
+    
     m_mainToolbar->addWidget(m_fontColorButton);
+    
+    // 设置字体颜色按钮的初始状态
+    updateFontColorButton(QColor(0, 0, 0)); // 默认黑色
     
     m_mainToolbar->addSeparator();
 
@@ -827,6 +868,23 @@ void MainWindow::updateFontControls()
     m_fontColorButton->setEnabled(hasSelection);
     m_alignCombo->setEnabled(hasSelection);
     
+    // 确保字体颜色按钮保持窄宽度
+    m_fontColorButton->setFixedWidth(54);
+    QLabel* fontLabel = m_fontColorButton->findChild<QLabel*>();
+    if (fontLabel) {
+        fontLabel->setFixedWidth(54);
+    }
+    
+    // 如果有选中的图形，更新指示器显示选中图形的颜色
+    // 如果没有选中图形，将指示器颜色重置为白色
+    if (hasSelection) {
+        QColor fontColor = selectedShape->fontColor();
+        updateFontColorButton(fontColor);
+    } else {
+        // 无选中图形时重置为白色
+        updateFontColorButton(QColor(255, 255, 255));
+    }
+    
     // 也更新填充颜色和线条颜色按钮的状态
     m_fillColorButton->setEnabled(hasSelection);
     m_lineColorButton->setEnabled(hasSelection);
@@ -857,12 +915,10 @@ void MainWindow::updateFontControls()
         m_italicAction->setChecked(selectedShape->isFontItalic());
         m_underlineAction->setChecked(selectedShape->isFontUnderline());
         
+        // 不再需要这行，因为前面已经处理了
         // 更新字体颜色按钮样式
-        QColor fontColor = selectedShape->fontColor();
-        QString colorStyle = QString("QPushButton { background-color: %1; color: %2 }")
-                             .arg(fontColor.name())
-                             .arg(fontColor.lightness() < 128 ? "white" : "black");
-        m_fontColorButton->setStyleSheet(colorStyle);
+        // QColor fontColor = selectedShape->fontColor();
+        // updateFontColorButton(fontColor);
         
         // 更新对齐方式下拉框
         Qt::Alignment alignment = selectedShape->textAlignment();
@@ -951,6 +1007,8 @@ void MainWindow::onFontColorButtonClicked()
     QColor color = QColorDialog::getColor(initialColor, this, tr("选择字体颜色"));
     if (color.isValid()) {
         m_drawingArea->setSelectedShapeFontColor(color);
+        // 手动更新颜色指示器，以防信号没有被正确处理
+        updateFontColorButton(color);
     }
 }
 
@@ -979,18 +1037,41 @@ void MainWindow::onAlignmentChanged(int index)
 
 void MainWindow::updateFontColorButton(const QColor& color)
 {
-    // 字体颜色按钮样式更新 - Apple风格
-    QString textColor = color.lightness() < 128 ? "white" : "black";
-    QString colorStyle = QString(
-        "QPushButton { "
-        "  background-color: %1; "
-        "  color: %2; "
-        "  padding-left: 8px; "
-        "  padding-right: 8px; "
-        "  border-radius: 4px; "
-        "}"
-    ).arg(color.name()).arg(textColor);
-    m_fontColorButton->setStyleSheet(colorStyle);
+    // 根据按钮的启用/禁用状态更新样式
+    if (m_fontColorButton->isEnabled()) {
+        // 启用状态 - 显示当前字体颜色
+        m_fontColorIndicator->setStyleSheet(
+            QString("QFrame { "
+                   "  background-color: %1; "
+                   "  border: 1px solid #666; "
+                   "  border-radius: 3px; "
+                   "}")
+            .arg(color.name())
+        );
+        
+        // 启用Font标签 - 正常颜色
+        QLabel* fontLabel = m_fontColorButton->findChild<QLabel*>();
+        if (fontLabel) {
+            fontLabel->setFixedWidth(54);
+            fontLabel->setStyleSheet("QLabel { color: #333; font-size: 12px; }");
+        }
+    } else {
+        // 禁用状态 - 始终使用白色小按钮，不管传入的color是什么
+        m_fontColorIndicator->setStyleSheet(
+            "QFrame { "
+            "  background-color: rgb(255, 255, 255); "
+            "  border: 1px solid #aaa; "
+            "  border-radius: 3px; "
+            "}"
+        );
+        
+        // 禁用Font标签 - 淡化文字颜色
+        QLabel* fontLabel = m_fontColorButton->findChild<QLabel*>();
+        if (fontLabel) {
+            fontLabel->setFixedWidth(54);
+            fontLabel->setStyleSheet("QLabel { color: rgba(0, 0, 0, 0.25); font-size: 12px; }");
+        }
+    }
 }
 
 void MainWindow::exportAsPng()

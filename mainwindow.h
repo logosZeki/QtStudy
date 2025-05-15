@@ -14,6 +14,7 @@
 #include <QAction>
 #include <QStatusBar>
 #include <QSlider>
+#include <QFrame>
 
 class ToolBar;
 class DrawingArea;
@@ -106,6 +107,7 @@ private:
     QAction *m_italicAction;
     QAction *m_underlineAction;
     QPushButton *m_fontColorButton;
+    QFrame *m_fontColorIndicator;
     QPushButton  *m_fillColorButton;
     QPushButton *m_lineColorButton;
     QComboBox *m_alignCombo;
