@@ -2,6 +2,8 @@
 #define UTILS_H
 
 #include <QCursor>  // 添加这一行以包含QCursor的声明
+#include <QPushButton>
+#include <QColor>
 
 class Utils {
 public:
@@ -19,6 +21,19 @@ public:
 
     // 静态工具方法
     static QCursor getCrossCursor();
+    
+    // 获取自动变色按钮（如字体颜色按钮）
+    static QPushButton* getAutoChangeColorsButton(
+        QWidget* parent, 
+        const QString& text = "Font", 
+        int btnWidth = 54, 
+        int btnHeight = 38, 
+        int indicatorWidth = 28, 
+        int indicatorHeight = 8
+    );
+    
+    // 更新颜色按钮的显示颜色
+    static void updateColorButton(QPushButton* button, const QColor& color);
 
     static const int Default_WIDTH = 1600;    
     static const int Default_HEIGHT = 780;
