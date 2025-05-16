@@ -13,7 +13,7 @@ QCursor Utils::getCrossCursor(){
     painter.drawLine(16, 0, 16, 31);
     painter.end();
     QCursor customCursor(pixmap, 16, 16);
-    return customCursor;
+    return customCursor; 
 }
 QPushButton* Utils::getAutoChangeColorsButton(
     QWidget* parent, 

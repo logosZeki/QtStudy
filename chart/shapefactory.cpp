@@ -15,5 +15,5 @@ Shape* ShapeFactory::createShape(const QString& shapeType, const int& basis) {
     return nullptr;
 }
 QStringList ShapeFactory::availableShapes() const {
-    return m_creators.keys();
+    return m_creators.keys(); 
 }

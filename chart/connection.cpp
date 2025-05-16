@@ -9,7 +9,7 @@ ConnectionPoint::ConnectionPoint(const QPoint& freePosition)
     : m_owner(nullptr), m_position(Free), m_freePosition(freePosition)
 {
 }
-QPoint ConnectionPoint::getPosition() const
+QPoint ConnectionPoint::getPosition() const 
 {
     if (m_position == Free) {
         return m_freePosition;

@@ -7,7 +7,7 @@ CustomTextEdit::CustomTextEdit(QWidget* parent)
     setAlignment(Qt::AlignCenter);
     m_alignment = Qt::AlignCenter;
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); 
     m_centerPending = false;
 }
 void CustomTextEdit::setTextAlignment(Qt::Alignment alignment)

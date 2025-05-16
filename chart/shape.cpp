@@ -442,7 +442,7 @@ bool DiamondShape::contains(const QPoint& point) const
 }
 QPoint DiamondShape::getConnectionPoint(ConnectionPoint::Position position) const
 {
-    QRect rect = this->getRect();
+    QRect rect = this->getRect(); 
     switch (position) {
     case ConnectionPoint::Top:
         return QPoint(rect.center().x(), rect.top());
