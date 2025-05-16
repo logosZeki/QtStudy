@@ -8,7 +8,7 @@ get_filename_component(CURRENT_DIR_PATH "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
 get_filename_component(CURRENT_DIR_NAME "${CURRENT_DIR_PATH}" NAME) 
 project(${CURRENT_DIR_NAME})
 
-set(CMAKE_CXX_STANDARD 11) 
+set(CMAKE_CXX_STANDARD 11)  
 
 if(MSVC)
 	add_compile_options(/Zc:__cplusplus)
