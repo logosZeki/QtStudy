@@ -18,7 +18,7 @@ PageSettingDialog::PageSettingDialog(QWidget *parent, DrawingArea* drawingArea)
     , m_gridSizeModified(false)
     , m_lineThicknessModified(false)
     , m_pageSizeModified(false)
-    , m_drawingArea(drawingArea)
+    , m_drawingArea(drawingArea) 
 {
     setWindowTitle(tr("Page Settings"));
     setMinimumSize(400, 500);
